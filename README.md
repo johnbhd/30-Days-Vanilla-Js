@@ -7,6 +7,10 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
 ## 🗂️ Table of Contents
 1. [DAY 1](#day-1)
    + [Calculateor](#calculator)
+   + [Types Of](#types-of)
+2. [DAY 2](#day-2)
+   + [Content Changing](#content-changing)
+
 
 ## Dump Project in JS Created by Chatgpt
   **[Morse Code](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/dump%20js%20create%20by%20chat/morse-code)**
@@ -40,19 +44,30 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
 
 Stay tuned for my daily updates and new challenges!
 <hr><br>
+
 ### **Day 1**
 
-- ### **Calculator**
+1. ### **Calculator**
   _Description:_ SIMPLE CALCULATOR 
    - I will create a function that takes two numbers and an operator (`+`, `-`, `*`, `/`)
    - Perform the calculation and return the result
    - Call the function with different values and log the output
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%201/calculator%20simple)**
 
-1. **Variable & Data Types Practice**
+2. ### **Types Of**
+    _Description: Types of JS 
    - I will declare variables using `let`, `const`, and `var`
    - Store different data types (string, number, boolean, object, array, function)
    - Log their types using `typeof`
-
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%201/typeof)**
 
 ### **Day 2**
+
+1. ### **Content Changing**
+  _Description: Content Changing using button 
+   - Create a P and button in Js
+   - Use module ES6 Features of import/export
+   - Change content when button click
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/changing-text)**
+
+
