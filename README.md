@@ -9,21 +9,25 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
    + [Calculateor](#calculator)
 
 ## Dump Project in JS Created by Chatgpt
-  **[Morse Code](https://github.com/johnbhd/1ST-YEAR-BSIT-PROJECT/tree/sorting-algorithms-visualizer)**
+  **[Morse Code](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/dump%20js%20create%20by%20chat/morse-code)**
 
-## Learning Plan
-- **Duration**: 30 Days
-- **Tasks Per Day**:
-  - 1 task if it's complex
-  - 2 tasks if they are simpler
-- **Topics Covered**:
-  - Variables & Data Types
-  - Functions & Scope
-  - Closures
-  - Objects & Arrays
-  - DOM Manipulation
-  - Event Handling
-  - Asynchronous JavaScript (Promises, Async/Await)
+## **Learning Plan**  
+- **Duration**: 30 Days  
+- **Tasks Per Day**:  
+  - Day 1 starts with 2 tasks, increasing by 1 each day  
+- **Topics Covered**:  
+  - Variables & Data Types  
+  - Functions & Scope  
+  - Closures  
+  - Objects & Arrays  
+  - DOM Manipulation  
+  - Event Handling  
+  - Asynchronous JavaScript (Promises, Async/Await)  
+  - API Fetching & JSON Handling  
+  - Local Storage & Session Storage  
+  - Form Handling & Validation  
+  - ES6+ Features  
+  - Mini Projects for Practical Application  
 
 ## How I Progress
 - I will complete the assigned tasks daily.
@@ -35,7 +39,7 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
 - Build a solid foundation for advanced JavaScript development.
 
 Stay tuned for my daily updates and new challenges!
-
+<hr><br>
 ### **Day 1**
 
 - ### **Calculator**
@@ -43,7 +47,7 @@ Stay tuned for my daily updates and new challenges!
    - I will create a function that takes two numbers and an operator (`+`, `-`, `*`, `/`)
    - Perform the calculation and return the result
    - Call the function with different values and log the output
-  **[Click here to view](https://github.com/johnbhd/1ST-YEAR-BSIT-PROJECT/tree/sorting-algorithms-visualizer)**
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%201/calculator%20simple)**
 
 1. **Variable & Data Types Practice**
    - I will declare variables using `let`, `const`, and `var`
