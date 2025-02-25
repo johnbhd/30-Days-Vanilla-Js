@@ -10,6 +10,7 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
    + [Types Of](#types-of)
 2. [DAY 2](#day-2)
    + [Content Changing](#content-changing)
+   + [Background Color Random Generator](#background-color-random-generator)
 
 
 ## Dump Project in JS Created by Chatgpt
@@ -69,5 +70,20 @@ Stay tuned for my daily updates and new challenges!
    - Use module ES6 Features of import/export
    - Change content when button click
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/changing-text)**
+
+2. ### **Background Color Random Generator**
+  + Description: When button click background color will change randomly
+   - Using Math random
+   - Arrow Function
+   - concatinate
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/background-random)**
+
+3. ### **Show Password**
+  + Description: Content Changing using button 
+   - Create a P and button in Js
+   - Use module ES6 Features of import/export
+   - Change content when button click
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/changing-text)**
+
 
 
