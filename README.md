@@ -11,6 +11,7 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
 2. [DAY 2](#day-2)
    + [Content Changing](#content-changing)
    + [Background Color Random Generator](#background-color-random-generator)
+   + [Show Password](#show-password)
 
 
 ## Dump Project in JS Created by Chatgpt
@@ -79,11 +80,11 @@ Stay tuned for my daily updates and new challenges!
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/background-random)**
 
 3. ### **Show Password**
-  + Description: Content Changing using button 
-   - Create a P and button in Js
-   - Use module ES6 Features of import/export
-   - Change content when button click
-  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/changing-text)**
+  + Description: Showing Password in inputs
+   - Ternary operator of if-els
+   - Function Parameter
+   - Inputs setAttributes
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/show-password)**
 
 
 
