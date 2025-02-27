@@ -3,12 +3,12 @@ export const TextArea = () => {
     const textInput = document.createElement('textarea');
     const Rtitle = document.createElement('h2');
 
-    const paraCount = document.createElement('h4');
-    const sentCount = document.createElement('h4');
-    const wordCount = document.createElement('h4');
-    const charCount = document.createElement('h4');
-    const numCount = document.createElement('h4');
-    const speCount = document.createElement('h4');
+    const paraCount = document.createElement('P');
+    const sentCount = document.createElement('P');
+    const wordCount = document.createElement('P');
+    const charCount = document.createElement('P');
+    const numCount = document.createElement('P');
+    const speCount = document.createElement('P');
 
     // Using an object 
     const resultNames = {
@@ -37,12 +37,12 @@ export const TextArea = () => {
     Rtitle.innerHTML = 'Result';
 
     // Assign values using the object
-    paraCount.innerHTML = resultNames.para + resultValue.para;
-    sentCount.innerHTML = resultNames.sent + resultValue.sent;
-    wordCount.innerHTML = resultNames.word + resultValue.word;
-    charCount.innerHTML = resultNames.char + resultValue.char;
-    numCount.innerHTML = resultNames.num + resultValue.num;
-    speCount.innerHTML = resultNames.spe + resultValue.spe;
+    paraCount.innerHTML = `<strong>${resultNames.para}</strong> ${resultValue.para}`;
+    sentCount.innerHTML = `<strong>${resultNames.sent}</strong> ${resultValue.sent}`;
+    wordCount.innerHTML = `<strong>${resultNames.word}</strong> ${resultValue.word}`;
+    charCount.innerHTML = `<strong>${resultNames.char}</strong> ${resultValue.char}`;
+    numCount.innerHTML = `<strong>${resultNames.num}</strong> ${resultValue.num}`;
+    speCount.innerHTML = `<strong>${resultNames.spe}</strong> ${resultValue.spe}`;
 
     return { title, textInput, Rtitle, paraCount, sentCount, wordCount, charCount, numCount, speCount };
 };

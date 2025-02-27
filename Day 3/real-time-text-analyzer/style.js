@@ -3,7 +3,7 @@ export const Style = (title, textInput, Rtitle,  container, resultDiv, paraCount
     document.body.style.display = 'flex';
     document.body.style.flexDirection = 'column';
     document.body.style.alignItems = 'center';
-    document.body.style.fontFamily = 'arial';
+    document.body.style.fontFamily = 'calibri';
     document.body.style.justifyContent = 'center';
  
     document.body.style.margin = '0px';
