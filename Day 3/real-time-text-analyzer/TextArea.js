@@ -10,6 +10,8 @@ export const TextArea = () => {
     const numCount = document.createElement('P');
     const speCount = document.createElement('P');
 
+    const button = document.createElement('button');
+
     // Using an object 
     const resultNames = {
         para: "Paragraph Count: ",
@@ -23,26 +25,50 @@ export const TextArea = () => {
     // Result value
     const resultValue = {
         para: 0,
-        sent: 3,
-        word: 4,
-        char: 5,
-        num: 8,
-        spe: 8
+        sent: 0,
+        word: 0,
+        char: 0,
+        num: 0,
+        spe: 0
     };
 
-
     title.innerHTML = 'Text Analyzer';
-    textInput.placeholder = "Add Text here...";
-
+    button.innerHTML = 'Count';
     Rtitle.innerHTML = 'Result';
+    textInput.placeholder = "Add Text here...";
+    textInput.name = 'textinput';
 
-    // Assign values using the object
-    paraCount.innerHTML = `<strong>${resultNames.para}</strong> ${resultValue.para}`;
-    sentCount.innerHTML = `<strong>${resultNames.sent}</strong> ${resultValue.sent}`;
-    wordCount.innerHTML = `<strong>${resultNames.word}</strong> ${resultValue.word}`;
-    charCount.innerHTML = `<strong>${resultNames.char}</strong> ${resultValue.char}`;
-    numCount.innerHTML = `<strong>${resultNames.num}</strong> ${resultValue.num}`;
-    speCount.innerHTML = `<strong>${resultNames.spe}</strong> ${resultValue.spe}`;
+    const ResultUpdate = () => {
+        // Assign values using the object
+        paraCount.innerHTML = `<strong>${resultNames.para}</strong> ${resultValue.para}`;
+        sentCount.innerHTML = `<strong>${resultNames.sent}</strong> ${resultValue.sent}`;
+        wordCount.innerHTML = `<strong>${resultNames.word}</strong> ${resultValue.word}`;
+        charCount.innerHTML = `<strong>${resultNames.char}</strong> ${resultValue.char}`;
+        numCount.innerHTML = `<strong>${resultNames.num}</strong> ${resultValue.num}`;
+        speCount.innerHTML = `<strong>${resultNames.spe}</strong> ${resultValue.spe}`;
+    }
 
-    return { title, textInput, Rtitle, paraCount, sentCount, wordCount, charCount, numCount, speCount };
+    // Word count 
+    const wordFunc = (inputVal) => {
+        resultValue.word = inputVal.trim().split(/\s+/).filter(word => word.length > 0).length;
+    }
+
+    // Character count 
+    const charFunc = (inputVal) => {
+        resultValue.char = inputVal.trim().length;
+
+    }
+
+    // button then all value will change
+    button.addEventListener('click', () => {
+        const inputVal = textInput.value; // inputs
+        charFunc(inputVal);
+        wordFunc(inputVal);
+
+        ResultUpdate(); // add funciton then
+    });
+
+    ResultUpdate(); // calling it 
+
+    return { title, textInput, Rtitle, paraCount, sentCount, wordCount, charCount, numCount, speCount, button};
 };

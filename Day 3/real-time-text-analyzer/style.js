@@ -1,4 +1,4 @@
-export const Style = (title, textInput, Rtitle,  container, resultDiv, paraCount, sentCount, wordCount, charCount, numCount, speCount) => {
+export const Style = (title, textInput, Rtitle,  container, resultDiv, paraCount, sentCount, wordCount, charCount, numCount, speCount, button) => {
     // body 
     document.body.style.display = 'flex';
     document.body.style.flexDirection = 'column';
@@ -10,6 +10,10 @@ export const Style = (title, textInput, Rtitle,  container, resultDiv, paraCount
     
     // container
     container.style.width = '80%';
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.alignItems = 'center';
+
     container.style.marginTop = '5vh';
 
     // result div
@@ -36,8 +40,29 @@ export const Style = (title, textInput, Rtitle,  container, resultDiv, paraCount
     styleH4(speCount);
 
     // input
-    textInput.style.padding = '10px 10px';
+    textInput.style.padding = '20px 20px';
     textInput.style.width = '100%';
     textInput.style.height = '40vh';
     textInput.style.fontSize = '24px';
+
+    // button
+    button.style.padding = '15px 30px';
+    button.style.fontSize = '25px';
+
+    button.style.backgroundColor = 'lightblue';
+    button.style.border = 'none';
+    button.style.cursor = 'pointer';
+    button.style.opacity = '100%';
+    button.style.fontWeight  = '700';
+    button.style.marginTop = '1vh';
+
+
+    // button hover
+    button.addEventListener('mouseover', () => {
+        
+        button.style.opacity = '80%';
+    })
+    button.addEventListener('mouseout', () => {
+        button.style.opacity = '100%';
+    })
 }

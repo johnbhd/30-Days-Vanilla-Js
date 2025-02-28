@@ -1,13 +1,14 @@
 import { TextArea } from "./TextArea.js";
 import { Style } from "./style.js";
 
-const {title, textInput, Rtitle, paraCount, sentCount, wordCount, charCount, numCount, speCount} = TextArea();
+const {title, textInput, Rtitle, paraCount, sentCount, wordCount, charCount, numCount, speCount, button} = TextArea();
 
 const container = document.createElement('div');
 const resultDiv = document.createElement('div');
 
 container.appendChild(title);
 container.appendChild(textInput);
+container.appendChild(button);
 
 resultDiv.appendChild(Rtitle);
 resultDiv.appendChild(paraCount);
@@ -19,4 +20,4 @@ resultDiv.appendChild(speCount);
 
 document.body.append(container);
 document.body.append(resultDiv);
-Style(title, textInput, Rtitle, container, resultDiv, paraCount, sentCount, wordCount, charCount, numCount, speCount);
+Style(title, textInput, Rtitle, container, resultDiv, paraCount, sentCount, wordCount, charCount, numCount, speCount, button);
