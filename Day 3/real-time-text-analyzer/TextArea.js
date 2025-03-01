@@ -11,15 +11,16 @@ export const TextArea = () => {
     const speCount = document.createElement('P');
 
     const button = document.createElement('button');
+    const resetbut = document.createElement('button');
 
     // Using an object 
     const resultNames = {
-        para: "Paragraph Count: ",
-        sent: "Sentences Count: ",
-        word: "Word Count: ",
-        char: "Character Count: ",
-        num: "Number Count: ",
-        spe: "Special Character: "
+        para: "Paragraphs: ",
+        sent: "Sentences: ",
+        word: "Words: ",
+        char: "Characters: ",
+        num: "Numbers: ",
+        spe: "Special Characters: "
     };
 
     // Result value
@@ -34,6 +35,7 @@ export const TextArea = () => {
 
     title.innerHTML = 'Text Analyzer';
     button.innerHTML = 'Count';
+    resetbut.innerHTML = 'Reset';
     Rtitle.innerHTML = 'Result';
     textInput.placeholder = "Add Text here...";
     textInput.name = 'textinput';
@@ -47,6 +49,14 @@ export const TextArea = () => {
         numCount.innerHTML = `<strong>${resultNames.num}</strong> ${resultValue.num}`;
         speCount.innerHTML = `<strong>${resultNames.spe}</strong> ${resultValue.spe}`;
     }
+    // paragraph count
+    const paraFunc = (inputVal) => {
+        resultValue.para = inputVal.trim().split(/\n+/).filter(p => p.trim().length > 0).length;
+    }
+    // sentence count
+    const sentenceFunc = (inputVal) => {
+        resultValue.sent = inputVal.trim().split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+    }
 
     // Word count 
     const wordFunc = (inputVal) => {
@@ -58,17 +68,53 @@ export const TextArea = () => {
         resultValue.char = inputVal.trim().length;
 
     }
+    // number count
+      const numFunc = (inputVal) => {
+        resultValue.num = (inputVal.match(/\d+/g) || []).length;
+    }
+    // special char count
+      const specialFunc = (inputVal) => {
+        resultValue.spe = (inputVal.match(/[^a-zA-Z0-9\s]/g) || []).length;
+    }
 
     // button then all value will change
-    button.addEventListener('click', () => {
+    const handleEvent = () => {
         const inputVal = textInput.value; // inputs
+        // call all function
+        paraFunc(inputVal);
+        sentenceFunc(inputVal); 
         charFunc(inputVal);
         wordFunc(inputVal);
+        numFunc(inputVal);
+        specialFunc(inputVal);
 
         ResultUpdate(); // add funciton then
+    }
+
+    button.addEventListener('click', () => { handleEvent()});
+    textInput.addEventListener('keydown', (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            handleEvent();
+        }
+        
     });
 
-    ResultUpdate(); // calling it 
 
-    return { title, textInput, Rtitle, paraCount, sentCount, wordCount, charCount, numCount, speCount, button};
+
+    resetbut.addEventListener('click', () => {
+        textInput.value = ''; 
+
+        resultValue.para = 0;
+        resultValue.sent = 0;
+        resultValue.word = 0;
+        resultValue.char = 0;
+        resultValue.num = 0;
+        resultValue.spe = 0;
+        ResultUpdate(); // calling it 
+    })
+
+    ResultUpdate(); // calling it 
+    
+    return { title, textInput, Rtitle, paraCount, sentCount, wordCount, charCount, numCount, speCount, button, resetbut};
 };
