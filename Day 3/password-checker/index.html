@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Checker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h3>Enter Password</h3>
+        <div class="show">
+        <input type="password" placeholder="" id="password">
+        
+             <i class="fa-solid fa-eye-slash" id="eye"></i>
+        </div>
+        <div class="strength">
+            <div class="strength-bar" id="strength-bar"></div>
+        </div>
+        <p id="strength-text"><strong>Strength: </strong> <span id="level"></span></p>
+
+        <!-- Password Requirements -->
+        <ul class="requirements">
+            <li id="length">❌ At least 6 characters</li>
+            <li id="uppercase">❌ At least 1 uppercase letter</li>
+            <li id="number">❌ At least 1 number</li>
+            <li id="special">❌ At least 1 special character</li>
+        </ul>
+    </div>
+    <footer>
+        &copy; 2025 johnbhd on github
+    </footer>
+    
+</body>
+
+<script src="main.js" type="module"></script>
+</html>

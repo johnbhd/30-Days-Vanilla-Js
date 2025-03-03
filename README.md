@@ -86,5 +86,19 @@ Stay tuned for my daily updates and new challenges!
    - Inputs setAttributes
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/show-password)**
 
+### **Day 3**
 
+1. ### **Rext Counter**
+  + Description: will count paragraph, sentences, word, character, numbers and special character
+   - Object
+   - event keydown
+   - function manipulation
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/real-time-text-analyzer)**
+
+2. ### **Password Checker**
+  + Description: This will check input password to weak, moderate and strong
+   - if shortcut
+   - show password
+   - .test
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/password-checker)**
 
