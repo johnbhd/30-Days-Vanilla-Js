@@ -1,0 +1,122 @@
+* {
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+body {
+    background-color: #414b90;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+}
+h2 {
+    color: #414b90;
+}
+.fields {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+#input-text {
+    flex: 1;
+    border-radius: 20px;
+    outline: none;
+    padding: 5px 10px;
+    border: 1px solid black;
+}
+button {
+    flex: 1;
+    padding: 6px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: none;
+    background-color: #414b90;
+    color: white;
+    font-weight: bold;
+    transition: 0.3s ease;
+}
+button:hover {
+    background-color: #2f3979;
+}
+.taskCon {
+    max-height: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;  
+}
+.taskCon::-webkit-scrollbar {
+    width: 5px;
+}
+.taskCon::-webkit-scrollbar-thumb {
+    background: #414b90;
+    border-radius: 10px;
+}
+.taskCon::-webkit-scrollbar-thumb:hover {
+    background: #2f3979;
+}
+.taskCon::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 10px;
+}
+.task {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    border-radius: 5px;
+    width: 100%;
+}
+.task input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: #414b90;
+}
+.task input[type="checkbox"]:checked + input[type="text"] {
+    color: gray;
+    text-decoration: line-through;
+}
+.task input[type="text"] {
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    background: none;
+    flex: 1;
+    margin: 0 10px;
+}
+.delete {
+    font-size: 14px;
+    cursor: pointer;
+    color: #414b90;
+}
+/* Custom Scrollbar for Mobile */
+@media (max-width: 768px) {
+    .taskCon {
+        scrollbar-width: thin; 
+        scrollbar-color: #414b90 #e0e0e0; 
+    }
+    .taskCon::-webkit-scrollbar {
+        width: 4px; 
+    }
+    .taskCon::-webkit-scrollbar-thumb {
+        background: #414b90;
+        border-radius: 10px;
+    }
+    .taskCon::-webkit-scrollbar-track {
+        background: #e0e0e0;
+        border-radius: 10px;
+    }
+}

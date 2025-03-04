@@ -12,7 +12,10 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
    + [Content Changing](#content-changing)
    + [Background Color Random Generator](#background-color-random-generator)
    + [Show Password](#show-password)
-
+2. [DAY 3](#day-3)
+   + [Text Counter](#text-counter)
+   + [Password Checker](#password-checker)
+   + [Basic Todo List](#basic-todo-list)
 
 ## Dump Project in JS Created by Chatgpt
   **[Morse Code](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/dump%20js%20create%20by%20chat/morse-code)**
@@ -88,7 +91,7 @@ Stay tuned for my daily updates and new challenges!
 
 ### **Day 3**
 
-1. ### **Rext Counter**
+1. ### **Text Counter**
   + Description: will count paragraph, sentences, word, character, numbers and special character
    - Object
    - event keydown
@@ -102,3 +105,9 @@ Stay tuned for my daily updates and new challenges!
    - .test
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/password-checker)**
 
+3. ### **Basic Todo List**
+  + Description: A simple todo list that have functionality of add, update and delete task 
+   - Locale storage
+   - events function
+   - Form function
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/basic-todo-list)**
