@@ -96,18 +96,18 @@ Stay tuned for my daily updates and new challenges!
    - Object
    - event keydown
    - function manipulation
-  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/real-time-text-analyzer)**
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/real-time-text-analyzer)**
 
 2. ### **Password Checker**
   + Description: This will check input password to weak, moderate and strong
    - if shortcut
    - show password
    - .test
-  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/password-checker)**
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/password-checker)**
 
 3. ### **Basic Todo List**
   + Description: A simple todo list that have functionality of add, update and delete task 
    - Locale storage
    - events function
    - Form function
-  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/basic-todo-list)**
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/basic-todo-list)**
