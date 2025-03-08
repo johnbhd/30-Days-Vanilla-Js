@@ -12,7 +12,7 @@ body {
 }
 .container {
     background-color: #f8f9fd;
-    width: min(90%, 400px);
+    width: 30%;
     padding: 30px 30px;
     border-radius: 20px;
     box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.1);
@@ -80,5 +80,10 @@ tr, td {
     }
     option {
         font-size: 12px;
+    }
+}
+@media(max-width: 1024px) {
+    .container {
+        width: 90%;
     }
 }
