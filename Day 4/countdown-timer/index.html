@@ -5,28 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Countdown Timer</title>
     <link rel="stylesheet" href="style.css">
-</head>
+    </head>
 <body>
-    <div class="container">
-        <h2>🎈 <span id="name">JB</span> Turns <span id="age">20</span> in...</h2>
-        <div class="con-box">
-            <div class="box">
-                <h3>09</h3>
-                <div class="time">DAYS</div>
+    <div class="container" id="container">
+      <div class="overlay" id="overlay"></div>
+        <div class="modal" id="modal">
+            <div class="modal-body" id="modal-body">
+                <form id="myForm">
+                    <h4>Enter the following</h4>
+                    <label>Name: </label>
+                    <input type="text" id="name" required><br>
+                    <label>Birthday: </label>
+                    <input type="date" id="bday" required>
+                    <button type="submit">Submit</button>
+                </form>
             </div>
-            <div class="box">
-                <h3>13</h3>
-                <div class="time">HOURS</div>
+        </div> 
+        <div class="wrapper" id="wrapper">
+            <h2>🎈 <span id="nameSpan"></span> Turns <span id="age"></span> in...</h2>
+            <div class="con-box">
+                <div class="box">
+                    <h3>09</h3>
+                    <div class="time">DAYS</div>
+                </div>
+                <div class="box">
+                    <h3>13</h3>
+                    <div class="time">HOURS</div>
+                </div>
+                <div class="box">
+                    <h3>57</h3>
+                    <div class="time">MINUTES</div>
+                </div>
+                <div class="box">
+                    <h3>43</h3>
+                    <div class="time">SECONDS</div>
+                </div>
+        
             </div>
-            <div class="box">
-                <h3>57</h3>
-                <div class="time">MINUTES</div>
-            </div>
-            <div class="box">
-                <h3>43</h3>
-                <div class="time">SECONDS</div>
-            </div>
-       
         </div>
     </div>
 </body>
