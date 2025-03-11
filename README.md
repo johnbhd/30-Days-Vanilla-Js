@@ -12,10 +12,14 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
    + [Content Changing](#content-changing)
    + [Background Color Random Generator](#background-color-random-generator)
    + [Show Password](#show-password)
-2. [DAY 3](#day-3)
+3. [DAY 3](#day-3)
    + [Text Counter](#text-counter)
    + [Password Checker](#password-checker)
    + [Basic Todo List](#basic-todo-list)
+   + [Simple Login Json](#simple-login-json)
+3. [DAY 3](#day-3)
+   + [Math Table Generator](#math-table-generator)
+   + [Birthday Countdown Timer](#birthday-countdown-timer)
 
 ## Dump Project in JS Created by Chatgpt
   **[Morse Code](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/dump%20js%20create%20by%20chat/morse-code)**
@@ -111,3 +115,27 @@ Stay tuned for my daily updates and new challenges!
    - events function
    - Form function
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/basic-todo-list)**
+
+4. ### **Simple Login Json**
+  + Description: A simple login api json name byepassme there was 1000 dump user there 
+   - fetch api
+   - async await
+   - find data or map
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/simle-login-dump-api-json)**
+
+
+### **Day 4**
+
+1. ### **Math Table Generator**
+  + Description: This math table that will generate mathematical operation and will show 11 range of answer
+   - For loop
+   - arithmetic operation
+   - ternary operator
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/math-table-generator)**
+
+2. ### **Birthday Countdown Timer**
+  + Description: Its a app were user type name and birthday and will count the number of time of your near birthday
+   - Localstorage
+   - time date
+   - 
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/countdown-timer)**
