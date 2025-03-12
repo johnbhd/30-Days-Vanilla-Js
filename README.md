@@ -17,7 +17,7 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
    + [Password Checker](#password-checker)
    + [Basic Todo List](#basic-todo-list)
    + [Simple Login Json](#simple-login-json)
-3. [DAY 3](#day-3)
+3. [DAY 4](#day-4)
    + [Math Table Generator](#math-table-generator)
    + [Birthday Countdown Timer](#birthday-countdown-timer)
 
@@ -138,4 +138,4 @@ Stay tuned for my daily updates and new challenges!
    - Localstorage
    - time date
    - 
-  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/countdown-timer)**
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/birthday-countdown-timer)**
