@@ -105,3 +105,78 @@ h3 {
     background: linear-gradient(45deg, #442bff, #4147ff);
     transform: scale(1.05);
 }
+.edit {
+    position: relative;
+    left: 40px;
+    cursor: pointer;
+}@media (max-width: 1024px) {
+    h2 {
+        font-size: 32px;
+    }
+    .edit {
+        left: 20px;
+    }
+    .box {
+        height: 22vh;
+        width: 18vh;
+    }
+    h3 {
+        font-size: 50px;
+    }
+    .con-box {
+        gap: 15px;
+    }
+    .time {
+        font-size: 14px;
+        padding: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    h2 {
+        font-size: large;
+    }
+    .edit {
+        left: 10px;
+    }
+    .box {
+        height: 20vh;
+        width: 15vh;
+    }
+    h3 {
+        font-size: 30px;
+      
+    }
+    .con-box {
+        gap: 13px;
+        margin-top: 40px;
+    }
+    .time {
+        font-size: 10px;
+        padding: 12px;
+    }
+} 
+
+@media (max-width: 480px) {
+    h2 {
+        font-size: medium;
+    }
+    .edit {
+        left: 5px;
+    }
+    .box {
+        height: 14vh;
+        width:11vh;
+    }
+    h3 {
+        font-size: 24px;
+    }
+    .con-box {
+        gap: 5px;
+        margin-top: 13px;
+    }
+    .time {
+        font-size: 8px;
+        padding: 8px;
+    }
+}
