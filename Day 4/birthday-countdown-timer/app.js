@@ -101,15 +101,19 @@ const updateCountdown = (targetDate, intervalId) => {
         return;
     }
 
+    const months = Math.floor(diff / (1000 * 60 * 60 * 24 * 30.44)); 
+    const weeks = Math.floor((diff % (1000 * 60 * 60 * 24 * 30.44)) / (1000 * 60 * 60 * 24 * 7));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-    document.querySelector(".box:nth-child(1) h3").textContent = formatTime(days);
-    document.querySelector(".box:nth-child(2) h3").textContent = formatTime(hours);
-    document.querySelector(".box:nth-child(3) h3").textContent = formatTime(minutes);
-    document.querySelector(".box:nth-child(4) h3").textContent = formatTime(seconds);
+    document.querySelector(".box:nth-child(1) h3").textContent = formatTime(months);
+    document.querySelector(".box:nth-child(2) h3").textContent = formatTime(weeks);
+    document.querySelector(".box:nth-child(3) h3").textContent = formatTime(days);
+    document.getElementById("hrs").textContent = formatTime(hours);
+    document.getElementById("mins").textContent = formatTime(minutes);
+    document.getElementById("sec").textContent = formatTime(seconds);
 };
 
 const checkBirthdayReset = () => {
