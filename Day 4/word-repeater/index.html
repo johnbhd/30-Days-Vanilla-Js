@@ -4,8 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Word Reapeter</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
+    <div class="container">
+        <form id="form">
+            <h2>Word Repeater</h2>
+            <div class="input-field">
+                <input type="text" id="textInput" placeholder="Enter Word" required>
+                <input type="number" id="countInput" placeholder="Count" required>
+                <button type="submit">Enter</button>
+            </div>
+            <div id="result">
+                <textarea id="output" disabled></textarea><br><br>
+                <button id="copy">Copy Text</div>
+            </div>
+        </form>
+    </div>
+    <footer>
+        &copy; 2025 <a href="https://github.com/johnbhd" target="_blank">johnbhd on github</a> 
+    </footer>
 </body>
+<script src="app.js" defer></script>
 </html>

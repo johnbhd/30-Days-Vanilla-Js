@@ -20,6 +20,7 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
 3. [DAY 4](#day-4)
    + [Math Table Generator](#math-table-generator)
    + [Birthday Countdown Timer](#birthday-countdown-timer)
+   + [Word Repeater](#word-repeater)
 
 ## Dump Project in JS Created by Chatgpt
   **[Morse Code](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/dump%20js%20create%20by%20chat/morse-code)**
@@ -57,85 +58,104 @@ Stay tuned for my daily updates and new challenges!
 ### **Day 1**
 
 1. ### **Calculator**
-  + Description: SIMPLE CALCULATOR 
+    *Description*: SIMPLE CALCULATOR 
    - I will create a function that takes two numbers and an operator (`+`, `-`, `*`, `/`)
    - Perform the calculation and return the result
    - Call the function with different values and log the output
+   <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%201/calculator%20simple)**
 
 2. ### **Types Of**
-  + Description: Types of JS 
+    *Description*: Types of JS 
    - I will declare variables using `let`, `const`, and `var`
    - Store different data types (string, number, boolean, object, array, function)
    - Log their types using `typeof`
+      <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%201/typeof)**
 
 ### **Day 2**
 
 1. ### **Content Changing**
-  + Description: Content Changing using button 
+    *Description*: Content Changing using button 
    - Create a P and button in Js
    - Use module ES6 Features of import/export
    - Change content when button click
+      <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/changing-text)**
 
 2. ### **Background Color Random Generator**
-  + Description: When button click background color will change randomly
+   *Description*: When button click background color will change randomly
    - Using Math random
    - Arrow Function
    - concatinate
+      <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/background-random)**
 
 3. ### **Show Password**
-  + Description: Showing Password in inputs
+    *Description*: Showing Password in inputs
    - Ternary operator of if-els
    - Function Parameter
    - Inputs setAttributes
+      <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/show-password)**
 
 ### **Day 3**
 
 1. ### **Text Counter**
-  + Description: will count paragraph, sentences, word, character, numbers and special character
+    *Description*: will count paragraph, sentences, word, character, numbers and special character
    - Object
    - event keydown
    - function manipulation
+      <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/real-time-text-analyzer)**
 
 2. ### **Password Checker**
-  + Description: This will check input password to weak, moderate and strong
+    *Description*: This will check input password to weak, moderate and strong
    - if shortcut
    - show password
    - .test
+      <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/password-checker)**
 
 3. ### **Basic Todo List**
-  + Description: A simple todo list that have functionality of add, update and delete task 
+    *Description*: A simple todo list that have functionality of add, update and delete task 
    - Locale storage
    - events function
    - Form function
+      <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/basic-todo-list)**
 
 4. ### **Simple Login Json**
-  + Description: A simple login api json name byepassme there was 1000 dump user there 
+    *Description*: A simple login api json name byepassme there was 1000 dump user there 
    - fetch api
    - async await
    - find data or map
+      <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/simle-login-dump-api-json)**
 
 
 ### **Day 4**
 
 1. ### **Math Table Generator**
-  + Description: This math table that will generate mathematical operation and will show 11 range of answer
+    *Description*: This math table that will generate mathematical operation and will show 11 range of answer
    - For loop
    - arithmetic operation
    - ternary operator
+      <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/math-table-generator)**
 
 2. ### **Birthday Countdown Timer**
-  + Description: Its a app were user type name and birthday and will count the number of time of your near birthday
+    *Description*: Its a app were user type name and birthday and will count the number of time of your near birthday
    - Localstorage
    - time date
-   - 
+   - fa
+      <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/birthday-countdown-timer)**
+
+3. ### **Word Repeater**
+   *Description*: A Word Repeater where the user input text will be loop base on the count number that user enter.
+   - For loop
+   - Copyclipboard js
+   - Setinterval
+      <br>
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/word-repeater)**
