@@ -21,6 +21,7 @@ I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goa
    + [Math Table Generator](#math-table-generator)
    + [Birthday Countdown Timer](#birthday-countdown-timer)
    + [Word Repeater](#word-repeater)
+   + [Reverse Text](#reverse-text)
 
 ## Dump Project in JS Created by Chatgpt
   **[Morse Code](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/dump%20js%20create%20by%20chat/morse-code)**
@@ -159,3 +160,8 @@ Stay tuned for my daily updates and new challenges!
    - Setinterval
       <br>
   **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/word-repeater)**
+4. ### **Reverse Text**
+   *Description*: A Text reverse that automatic reverse text when user enter something.
+   - Array - spit, join, reverse
+      <br>
+  **[Click here to view](https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/reverse-text)**
