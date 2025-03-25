@@ -18,7 +18,7 @@ body {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    width: 30%;
+    max-width: 350px;
 }
 h2 {
     text-align: center;
@@ -27,14 +27,19 @@ h2 {
 .range {
     margin-top: 20px;
     display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
     gap: 10px;
 }
 .range input {
+    flex: 1;
     height: 5vh;
     width: 36%;
 }
 .range button {
+    border: 1px solid black;
     width: 15vh;
+    height: 5vh;
 }
 .output {
     display: flex;
@@ -69,4 +74,20 @@ button:hover {
 .Message {
     margin-top: 10px;
     text-align: center;
+}
+footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 3vh;
+    color: #cbdbcb;
+}
+a {
+    text-decoration: none;
+    color: #cccbdb;
+    text-decoration: underline;
+}
+@media screen and (max-width: 768px) {
+    body {
+      padding: 20px;
+    }
 }

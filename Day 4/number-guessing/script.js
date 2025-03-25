@@ -8,8 +8,11 @@ const restart = document.getElementById('restart');
 const guess = document.getElementById('guess');
 const message = document.getElementById('messageSpan');
 
-let randomnum = 0, startval = 1, endval = 10, attempts = 0;
-
+let randomnum, startval = 1, endval = 10, attempts = 0;
+// random num
+function generateRandomNum() {
+    randomnum = Math.floor(Math.random() * (endval - startval + 1)) + startval;
+}
 // range click
 function rangeToggle() {
     startval = parseInt(startnum.value);
@@ -17,11 +20,12 @@ function rangeToggle() {
     
     attempts = 0;
     
-    
+    generateRandomNum();
+
     guess.placeholder = `Enter a Number (${startval}-${endval})`;
     message.textContent = `Guess a number between ${startval} and ${endval}`;
 }
-
+// user guess
 function submitGuess() {
     const userGuess = parseInt(guess.value);
     
@@ -40,24 +44,23 @@ function submitGuess() {
     } else {
         message.textContent = '📈 Too high! Try again.';
         attempts++;
-    }
-    console.log(`start: ${startval}`);
-    console.log(`end: ${endval}`);
-    
-    console.log(`randomnum: ${randomnum}`);
-    console.log(`Guess: ${userGuess}`);
-    console.log(`attempt: ${attempts}`);
-    
-    
+    }  
 }
-randomnum = Math.floor(Math.random() * (endval - startval + 1)) + startval;
+// restart
 function restartToggle() {
     attempts = 0;
-    randomnum = Math.floor(Math.random() * (endval - startval + 1)) + startval;
+    generateRandomNum();
     message.textContent = "Game reset! Set a new range.";
     guess.value = "";
 }
+// enter key
+guess.addEventListener('keypress', (event) => {
+    if (event.key === "Enter") {
+        submit.click();
+    }
+})
 
 rangeBut.addEventListener('click', rangeToggle);
 submit.addEventListener('click', submitGuess);
 restart.addEventListener('click', restartToggle);
+generateRandomNum();

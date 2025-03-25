@@ -137,7 +137,18 @@ h3 {
     position: relative;
     left: 40px;
     cursor: pointer;
-}@media (max-width: 1024px) {
+}
+footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 3vh;
+}
+a {
+    text-decoration: none;
+    color: #cbdbcb;
+    text-decoration: underline;
+}
+@media (max-width: 1024px) {
     h2 {
         font-size: 32px;
     }
