@@ -8,7 +8,24 @@
 </head>
 <body>
     <div class="container">
-        Fibonacci Sequence
+        <h2>Fibonacci Generator</h2>
+        <p>Formula: F(n) = F(n-1) + F(n-2)</p>
+       
+        <div class="field">
+            <input type="number" id="startNum" value="0">
+            <input type="number" id="endNum" value="10">       
+        </div>
+            <button id="generate">Generate</button>
+            <label>Result: </label>
+            <textarea id="result"></textarea>
+            <div class="cal"> 
+                <div class="choice">
+                    <button id="list">List</button>
+                    <button id="table">Table</button>
+                </div>
+                <label>Calculation:</label>
+            <textarea id="calculation"></textarea>
+        </div>
     </div>
 </body>
 <script src="app.js"></script>
