@@ -3,30 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fibonacci Sequence</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Fibonacci Sequence (Dragon Ball UI)</title>
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
+    <img id="goku" src="https://raw.githubusercontent.com/jbmvdev/img-host/main/goku1.png" alt="Goku 1" />
+    <img id="gokusaiyan" src="https://raw.githubusercontent.com/jbmvdev/img-host/main/gokusaiyan.png" alt="Goku Saiyan" />
     <div class="container">
         <h2>Fibonacci Generator</h2>
         <p>Formula: F(n) = F(n-1) + F(n-2)</p>
-       
+        
         <div class="field">
             <input type="number" id="startNum" value="0">
             <input type="number" id="endNum" value="10">       
         </div>
-            <button id="generate">Generate</button>
-            <label>Result: </label>
-            <textarea id="result"></textarea>
-            <div class="cal"> 
-                <div class="choice">
-                    <button id="list">List</button>
-                    <button id="table">Table</button>
-                </div>
+        <button id="generate">Generate</button>
+        <label>Result: </label>
+        <textarea id="result"></textarea>
+        <div class="wrapper">
+            <div class="cal" id="cal"> 
                 <label>Calculation:</label>
-            <textarea id="calculation"></textarea>
+                <textarea id="calculation"></textarea>
+            </div>
         </div>
     </div>
+    <img id="vegeta" src="https://raw.githubusercontent.com/jbmvdev/img-host/main/vegeta.png" alt="Vegeta" />
+    <img id="pikolo" src="https://raw.githubusercontent.com/jbmvdev/img-host/main/pikolo.png" alt="Pikolo" />
+    <iframe  width="560" height="315" src="https://www.youtube.com/embed/pYnLO7MVKno?autoplay=1&controls=1&start_radio=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    
 </body>
 <script src="app.js"></script>
 </html>
