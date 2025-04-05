@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sum of Array</title>
+</head>
+<body>
+    <h2>Sum of Array</h2>
+    <div id="array">
+    
+    </div>
+</body>
+<script>
+  let num = [2,1,2,4,5];
+  const sumArray = document.getElementById("array");
+  let sum = 0;
+  function Sum(x) {
+    for (i = 0; i < num.length; i++) {
+      sum += num[i];
+      
+    }
+    return sum;
+  }
+  sumArray.textContent = Sum();
+  
+</script>
+</html>
