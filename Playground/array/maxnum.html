@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maximum value of Array</title>
+</head>
+<body>
+    <h2>Maximum value of Array</h2>
+    <div id="array">
+    
+    </div>
+</body>
+<script>
+  let num = [4,1,230,19,35];
+  const array = document.getElementById("array");
+  let maxi = num[0];
+  
+  function Max() {
+    let i = 1;
+    while (i < num.length) {
+      maxi = Math.max(maxi, num[i]);
+      i++;
+    }
+    return maxi;
+  }
+  array.textContent = "Maximum value is " + Max();
+  
+</script>
+</html>
