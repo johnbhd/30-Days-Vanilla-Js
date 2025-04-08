@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reverse Array</title>
+</head>
+<body>
+  <h2>Reverse Array</h2>
+  <div id="array"></div>
+</body>
+<script>
+  let fruits = ["banana", "apple", "orange"];
+  const array = document.getElementById("array");
+
+  let original = [...fruits];
+  let reversed = [...fruits].reverse(); 
+
+  array.innerHTML = "<b>Original: </b>" + original.join(", ") + "<br><b>Reversed: </b>" + reversed.join(", ");
+</script>
+</html>
