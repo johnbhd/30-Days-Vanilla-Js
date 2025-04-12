@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Management - Local Storage</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <h2>Student Management</h2>
@@ -13,9 +14,9 @@
             <h4>Add Student</h4>
                 <form id="FieldForm">
                     <label>Name: </label>
-                    <input type="text" id="nameAdd">
+                    <input type="text" id="nameAdd" required>
                     <label>Age: </label>
-                    <input type="number" id="ageAdd">
+                    <input type="number" id="ageAdd" required>
                     <label for="courseAdd">Course: </label>
                     <select id="courseAdd">
                         <option value="BSIT">BSIT</option>
@@ -43,8 +44,35 @@
         </div>
         <div class="data">
             <h4>Student Data</h4>
-   
-                <table>
+                <div class="sort">
+                    <div class="show">
+                        <p>Show</p>
+                        <select id="">
+                            <option value="">10</option>
+                            <option value="">20</option>
+                        </select>
+                        <p>Entries</p>
+                    </div>
+                    <div class="course">
+                        <p>Course: </p>
+                        <select id="">
+                            <option value="BSIT">BSIT</option>
+                            <option value="Nursing">Nursing</option>
+                            <option value="Business Administration">Business Administration</option>
+                            <option value="Accountancy">Accountancy</option>
+                            <option value="Education">Education</option>
+                            <option value="Engineering">Engineering</option>
+                            <option value="Hospitality Management">Hospitality Management</option>
+                            <option value="CS">CS</option>
+                            <option value="Psychology">Psychology</option>
+                            <option value="Architecture">Architecture</option>
+                        </select>
+                    </div>
+                    <div class="search">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" placeholder="Search...">
+                      </div>
+                <table id="table">
                     <thead>
                       <tr>
                         <th>Name</th>
@@ -56,8 +84,31 @@
                     </thead>
                     <tbody id="dataResult"></tbody>
                   </table>
+                </div>
+                <div class="bottom-field">
+                    <button onclick="SaveData()">Save</button>
+                    <div class="pagination">
+                        <i class="fa-solid fa-chevron-left pages"></i>
+                        <div class="pages">1</div>
+                        <i class="fa-solid fa-chevron-right pages"></i>
+                    </div>
+                </div>
+ 
+
+        <div id="simpleModal" class="modal">
+        <div class="modal-content">
+            <p>Choose File Download</p>
+            <div class="modal-buttons">
+            <button id="pdf">PDF</button>
+            <button id="jpg">JPG</button>
+            </div>
         </div>
+        </div>
+
     </div>
 </body>
 <script src="app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.1/jspdf.umd.min.js" integrity="sha512-ad3j5/L4h648YM/KObaUfjCsZRBP9sAOmpjaT2BDx6u9aBrKFp7SbeHykruy83rxfmG42+5QqeL/ngcojglbJw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.2/jspdf.plugin.autotable.min.js" integrity="sha512-JizZOUNesiGhMcp9fsA/9W31FOat6QysBM8hSj6ir8iIANIUJ2mhko7Lo1+j0ErftmJ8SebMZLm9iielKjeIEQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 </html>

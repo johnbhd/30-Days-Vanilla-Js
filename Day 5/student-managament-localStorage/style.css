@@ -57,7 +57,7 @@ h4 {
     height: 100%;
 }
 #FieldForm label {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
 }
 #FieldForm input, #FieldForm select{
     width: 100%;
@@ -79,16 +79,51 @@ h4 {
 .data h2 {
     text-align: center;
 }
+.sort {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 20px;
+}
+.show, .course {
+    display: flex;
+    gap: 0.5rem;
+}
+.show select,.course select {
+    outline: none;
+}
+.search {
+    position: relative;
+    width: 140px; 
+}
+.search i {
+    position: absolute;
+    top: 50%;
+    left: 6px;
+    transform: translateY(-50%);
+    font-size: 10px; 
+    color: black;
+}
+.search input {
+    width: 100%;
+    padding: 4px 6px 4px 24px; 
+    font-size: 10px; 
+    border: 1px solid black;
+    border-radius: 2px;
+    cursor: pointer;
+    outline: none;
+}
 table {
     width: 100%;
-    margin-top: 20px;
+    margin-top: 10px;
     text-align: center;
     border-collapse: collapse;
 }
 tr, th, td {
     padding: 7px;
     border: 1px solid #d9d9d9;
-
 }
 thead th {
     font-size: 1.2rem;
@@ -98,14 +133,17 @@ tbody td {
     height: 100%;
     max-height: 50px;
 }
-tbody td input {
+tbody td input, tbody td select{
     width: 100%;
     height: 100%;
-    font-size: 1rem;
+    font-size: 0.9rem;
     background: none;
     border: none;
     outline: none;
     text-align: center;
+    -webkit-appearance: none; 
+    -moz-appearance: none;   
+    appearance: none;   
 }
 tbody tr:hover {
     background-color: #f0f0f0;
@@ -133,11 +171,86 @@ td button:hover {
     justify-content: center;
     gap: 0.5rem;
 }
-#update {
+.updateBut {
     background-color: green;
 }
-#delete {
+.deleteBut {
     background-color: red;
+}
+.bottom-field {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0px 0px 0px;
+}
+.bottom-field button {
+    padding: 6px 20px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: 1px solid gray;
+    background-color: blue;
+    color: white;
+    cursor: pointer;
+    height: auto; /* Avoid fixed height issues */
+    line-height: 1.5;
+    transition: background 0.2s ease;
+}
+
+.bottom-field button:hover {
+    background-color: darkblue;
+}
+.pagination {   
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+}
+.pages {
+    border: 1px solid black;
+    width: 40px;
+    padding: 7px;
+    height: 35px;
+    text-align: center;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0; 
+    top: 0;
+    width: 100%; 
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 250px;
+    text-align: center;
+}
+.modal-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 15px;
+}
+.modal-buttons button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+#pdf {
+    background-color: #4CAF50;
+    color: white;
+}
+#jpg {
+    background-color: #f44336;
+    color: white;
 }
 @media (max-width: 768px) {
     .but {
