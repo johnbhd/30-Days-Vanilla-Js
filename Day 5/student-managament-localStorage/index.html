@@ -55,7 +55,8 @@
                     </div>
                     <div class="course">
                         <p>Course: </p>
-                        <select id="">
+                        <select id="sortCourse">
+                            <option value="">All Course</option>
                             <option value="BSIT">BSIT</option>
                             <option value="Nursing">Nursing</option>
                             <option value="Business Administration">Business Administration</option>
@@ -70,7 +71,7 @@
                     </div>
                     <div class="search">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" placeholder="Search...">
+                        <input type="text" placeholder="Search..." id="search">
                       </div>
                 <table id="table">
                     <thead>
@@ -97,7 +98,10 @@
 
         <div id="simpleModal" class="modal">
         <div class="modal-content">
-            <p>Choose File Download</p>
+            <div class="headModal">
+                <p>Choose File Download</p>
+                <i class="fa-solid fa-xmark xmark"></i>
+            </div>
             <div class="modal-buttons">
             <button id="pdf">PDF</button>
             <button id="jpg">JPG</button>
@@ -110,5 +114,5 @@
 <script src="app.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.1/jspdf.umd.min.js" integrity="sha512-ad3j5/L4h648YM/KObaUfjCsZRBP9sAOmpjaT2BDx6u9aBrKFp7SbeHykruy83rxfmG42+5QqeL/ngcojglbJw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.2/jspdf.plugin.autotable.min.js" integrity="sha512-JizZOUNesiGhMcp9fsA/9W31FOat6QysBM8hSj6ir8iIANIUJ2mhko7Lo1+j0ErftmJ8SebMZLm9iielKjeIEQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </html>

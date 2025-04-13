@@ -103,13 +103,13 @@ h4 {
     top: 50%;
     left: 6px;
     transform: translateY(-50%);
-    font-size: 10px; 
+    font-size: 12px; 
     color: black;
 }
 .search input {
     width: 100%;
     padding: 4px 6px 4px 24px; 
-    font-size: 10px; 
+    font-size: 14px; 
     border: 1px solid black;
     border-radius: 2px;
     cursor: pointer;
@@ -180,7 +180,7 @@ td button:hover {
 .bottom-field {
     display: flex;
     justify-content: space-between;
-    margin: 10px 0px 0px 0px;
+    margin: 15px 0px 0px 0px;
 }
 .bottom-field button {
     padding: 6px 20px;
@@ -242,6 +242,16 @@ td button:hover {
     padding: 8px 16px;
     border: none;
     border-radius: 6px;
+    cursor: pointer;
+}
+.headModal {
+    display: flex;
+    justify-content: center;
+}
+
+.xmark {
+    position: relative;
+    left: 20px;
     cursor: pointer;
 }
 #pdf {
