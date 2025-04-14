@@ -1,4 +1,9 @@
 const form = document.getElementById('FieldForm');
+
+let students = JSON.parse(localStorage.getItem('students')) || [];
+students.sort((a, b) => b.createdAt - a.createdAt); 
+// dump data
+
 // Add Students
 form.addEventListener('submit', () => {
     const Inputs = form.querySelectorAll('input, select');
@@ -19,22 +24,19 @@ form.addEventListener('submit', () => {
 console.log("Data: \n"+localStorage.getItem('students'));
 
 // Display Data in table
-function DisplayData(Selectcourse, searchval) {
-    let dataLocalInfo = JSON.parse(localStorage.getItem('students')) || [];
+function DisplayData(sortSearch) {
     const dataResult = document.getElementById('dataResult');
-    const sortCourse = document.getElementById('sortCourse').value;
-    console.log(searchval);
-
     dataResult.innerHTML = ''; 
-    let display = [];
-    
-    if (sortCourse === "") {
-        display = dataLocalInfo.sort((a, b) => b.createdAt - a.createdAt);
-    } else {
-        display = dataLocalInfo.filter(student => student.courseAdd === Selectcourse || student.courseAdd === 'All');    
+
+    if (sortSearch.length === 0) {
+        dataResult.innerHTML = `
+        <tr>
+            <td colspan="5" style="text-align:center; font-weight: bold;">No students found.</td>
+        </tr>
+    `;
     }
 
-    display.forEach((student, index) => {
+    sortSearch.forEach((student, index) => {
         const dataTable = `
             <tr id="dataRow" data-index="${index}">
                 <td><input type="text" value="${student.nameAdd}" class="name1"></td>
@@ -65,43 +67,88 @@ function DisplayData(Selectcourse, searchval) {
                     <button class="deleteBut">Delete</button>
                 </td>
             </tr>
-
-
         `;
         dataResult.innerHTML += dataTable;
     });
 }
-// sort data
-function SortCourse() {
-    const sortCourse = document.getElementById('sortCourse');
-    const searchval = document.getElementById('search').value;
-    sortCourse.addEventListener('change', () => {
-        const selectCourse = sortCourse.value;       
-        DisplayData(selectCourse, searchval);
-    });
 
-}/*
-function Search() {
-    const search = document.getElementById('search');
-    const selectCourse   = document.getElementById('sortCourse').value;
-    search.addEventListener('input', () => {
-        const searchval = search.value;
-        DisplayData(selectCourse, searchval);
-    });
-}*/
-//Search();
+function SearchAndFilter() {
+    const searchInput = document.getElementById('search');
+    const selectInput = document.getElementById('sortCourse');
+    const arrowSort = document.querySelector('.arrowSort');
+
+    let isDescending = true;
+    let students = JSON.parse(localStorage.getItem('students')) || [];
+    let filtered = [...students];   
+
+        const sortStudents = () => {
+            filtered.sort((a, b) => {
+                return isDescending 
+                    ? b.createdAt - a.createdAt
+                    : a.createdAt - b.createdAt
+            });
+        };
+
+    const filterStudents = () => {
+        const searchval = searchInput.value.toLowerCase();
+        const selectval = selectInput.value;
+
+        students = JSON.parse(localStorage.getItem('students')) || [];
+
+        filtered = selectval === "" 
+            ? students
+            : students.filter(student => student.courseAdd === selectval);
+        
+        if (searchval !== "") {
+            filtered = filtered.filter(student  => {
+                return (
+                    student.nameAdd.toLowerCase().includes(searchval) ||
+                    student.ageAdd.toString().includes(searchval) ||
+                    student.courseAdd.toLowerCase().includes(searchval) ||
+                    student.sectionAdd.toLowerCase().includes(searchval) 
+                );      
+            });
+        }
+
+        sortStudents();       
+        DisplayData(filtered); 
+    };
+
+    const toggleSortOrder = () => {
+        isDescending = !isDescending;
+
+        const arrowIcon = document.querySelector('.arrowSort');
+        if (isDescending) {
+
+            arrowIcon.innerHTML = '<i class="fa-solid fa-caret-down"></i>';  // Downward arrow
+        } else {
+
+            arrowIcon.innerHTML = '<i class="fa-solid fa-caret-up"></i>';  // Upward arrow
+        }
+            sortStudents();
+            DisplayData(filtered);
+        };
+
+    searchInput.addEventListener('input', filterStudents);
+    selectInput.addEventListener('change', filterStudents);
+    arrowSort.addEventListener('click', toggleSortOrder);
+
+    sortStudents();         
+    DisplayData(filtered);  
+}
+
 // delete and update 
 document.getElementById('dataResult').addEventListener('click', (e) => {
     const row = e.target.closest("tr");
     const index = row.dataset.index;
     
     if (e.target.classList.contains('deleteBut')) {
-        let students = JSON.parse(localStorage.getItem('students'));
-        
         students.splice(index, 1);
         localStorage.setItem("students", JSON.stringify(students));
         alert("Succesfully Deleted!");
+        location.reload();
         DisplayData();
+          
     }
     if (e.target.classList.contains('updateBut')) {
         UpdateData(row, index);
@@ -120,8 +167,7 @@ function UpdateData(row, index) {
         updatedStudent[fields[i]] = value;
     });
     
-    let students = JSON.parse(localStorage.getItem('students')) || [];
-    students[index] = updatedStudent;
+     students[index] = updatedStudent;
     
     localStorage.setItem('students', JSON.stringify(students));
     alert('Successfully Updated!');
@@ -255,5 +301,6 @@ function JPGSave() {
     
 }
 
-SortCourse();
-DisplayData();
+
+SearchAndFilter();
+DisplayData(students);

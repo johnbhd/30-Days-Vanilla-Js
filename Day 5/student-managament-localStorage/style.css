@@ -254,6 +254,14 @@ td button:hover {
     left: 20px;
     cursor: pointer;
 }
+.arrowSort {
+    font-size: 0.8em; 
+    line-height: 1;
+    position: relative; 
+    top: -0.2em;
+    right: 0.5em;
+    cursor: pointer;
+}
 #pdf {
     background-color: #4CAF50;
     color: white;
