@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Square Root Map Vanilla Js</title>
+</head>
+<body>
+    <div id="array">
+      
+    </div>
+</body>
+<script>
+const array = document.getElementById("array");
+function Num() {
+  return num = [2, 4, 6, 8, 10];
+}
+let mapSquare = Num().map(n => n * n);
+
+let orig = num.join(" - ");
+let square = mapSquare.join(" - ");
+
+array.innerHTML = "Numbers: "+orig + "<br>" + "Square Root: "+ square;
+</script>
+</html>
