@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Array Sum of all - Vanilla Js</title>
+</head>
+<body>
+  
+    <div id="array">
+      
+    </div>
+</body>
+<script>
+function Data() {
+  let arr3d = [
+    [
+      [2, 4, 6],
+      [8,10, 12],
+      [14, 16, 18]
+    ],
+    [
+      [14, 16, 18],
+      [2, 4, 6],
+      [8,10, 12]
+    ],
+  ];
+  return arr3d;
+}
+function Display() {
+  const data = Data();
+  let sum = 0;
+  let count = 0;
+  for (let layer of data) {
+    for (let row of layer) {
+      for (let value of row) {
+        sum += value;
+        count++;
+      }
+    }
+  }
+  const display = document.getElementById("array");
+  let all = sum / count;
+  display.innerHTML = "This is the data: "+ data + "<br>"+ "Sum of all: "+all;
+}
+Display();
+</script>
+</html>
