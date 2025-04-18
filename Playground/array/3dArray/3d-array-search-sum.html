@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> 3D Array Search, Sum, and Average - Vanilla JS</title>
+</head>
+<style>
+* {
+  font-family: Arial;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border: 1px solid black;
+    text-align: center;
+}
+th {
+    background-color: #f2f2f2;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+  
+</style>
+<body>
+<div class="container">
+    <h2>3D Array Search, Sum, and Average</h2>
+    <div id="display">
+      <table>
+        <thead>
+          <tr id="sthead">
+          </tr>
+        </thead>
+        <tbody>
+          <tr id="stlayer">
+          </tr>
+        </tbody>
+      </table>
+                <p id ="result1"></p>
+       <table>
+        <thead>
+          <tr id ="ndhead">
+          
+          </tr>
+
+        </thead>
+        <tbody>
+          <tr id="ndlayer">
+          </tr>
+        </tbody>
+      </table>
+        <p id ="result2"></p> <br>
+      <label>Search: </label>
+      <input type="number" placeholder="Enter number">
+    </div>
+</div>
+</body>
+<script>
+const display = document.getElementById("display");
+const stDiv = document.getElementById("stlayer");
+const ndDiv = document.getElementById("ndlayer");
+const stHead = document.getElementById("sthead");
+const ndHead = document.getElementById("ndhead");
+const result1 = document.getElementById("result1");
+const result2 = document.getElementById("result2");
+const data = Data();
+let title = ["1st Layer", "2nd Layer"];
+const layerOne = Table(data[0], stDiv, title[0], stHead);
+const layerTwo = Table(data[1], ndDiv, title[1], ndHead);
+
+result1.innerHTML = `<b>Sum:</b> ${layerOne.sum}<br><b>Average:</b> ${layerOne.average}`;
+
+result2.innerHTML = `<b>Sum:</b> ${layerTwo.sum}<br><b>Average:</b> ${layerTwo.average}`;
+
+
+function Data() {
+  let arr3d = [
+    [
+      [2, 4, 6],
+      [8,10, 12],
+      [14, 16, 18]
+    ],
+    [
+      [14, 16, 18],
+      [2, 4, 6],
+      [8,10, 12]
+    ],
+  ];
+  return arr3d;
+}
+function Table(layerData, target, label, theadTarget) {
+  let colThSt = 0;
+  let sum = 0;
+  
+    for (let row of layerData) {
+      for (let num of row) {
+          let tdLayer = document.createElement("td");
+          tdLayer.textContent = num;
+          
+          sum += num;
+          colThSt++;
+          
+          target.appendChild(tdLayer);
+      }
+    }
+  
+  const average = (sum / colThSt).toFixed(2);
+  let thLayer = document.createElement("th");
+  
+  thLayer.textContent = label;
+  thLayer.colSpan = colThSt;
+  
+  theadTarget.appendChild(thLayer);
+  
+  return { sum, average };
+}
+
+</script>
+</html>
