@@ -73,7 +73,8 @@ tr:hover {
       </table>
         <p id ="result2"></p> <br>
       <label>Search: </label>
-      <input type="number" placeholder="Enter number">
+      <input type="number" placeholder="Enter" id="search">
+      <p id="searchDisplay"></p>
     </div>
 </div>
 </body>
@@ -85,6 +86,8 @@ const stHead = document.getElementById("sthead");
 const ndHead = document.getElementById("ndhead");
 const result1 = document.getElementById("result1");
 const result2 = document.getElementById("result2");
+const search = document.getElementById("search");
+const searchDisplay = document.getElementById("searchDisplay");
 const data = Data();
 let title = ["1st Layer", "2nd Layer"];
 const layerOne = Table(data[0], stDiv, title[0], stHead);
@@ -94,6 +97,10 @@ result1.innerHTML = `<b>Sum:</b> ${layerOne.sum}<br><b>Average:</b> ${layerOne.a
 
 result2.innerHTML = `<b>Sum:</b> ${layerTwo.sum}<br><b>Average:</b> ${layerTwo.average}`;
 
+search.addEventListener("input", () => {
+  const searchval = parseInt(search.value);
+  searchDisplay.textContent = searchval;
+});
 
 function Data() {
   let arr3d = [
@@ -103,9 +110,9 @@ function Data() {
       [14, 16, 18]
     ],
     [
-      [14, 16, 18],
+      [11, 6, 18],
       [2, 4, 6],
-      [8,10, 12]
+      [8,10, 2]
     ],
   ];
   return arr3d;
