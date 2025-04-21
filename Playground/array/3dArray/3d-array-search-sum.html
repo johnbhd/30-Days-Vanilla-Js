@@ -97,10 +97,7 @@ result1.innerHTML = `<b>Sum:</b> ${layerOne.sum}<br><b>Average:</b> ${layerOne.a
 
 result2.innerHTML = `<b>Sum:</b> ${layerTwo.sum}<br><b>Average:</b> ${layerTwo.average}`;
 
-search.addEventListener("input", () => {
-  const searchval = parseInt(search.value);
-  searchDisplay.textContent = searchval;
-});
+
 
 function Data() {
   let arr3d = [
@@ -120,7 +117,7 @@ function Data() {
 function Table(layerData, target, label, theadTarget) {
   let colThSt = 0;
   let sum = 0;
-  
+  const tdElements = [];
     for (let row of layerData) {
       for (let num of row) {
           let tdLayer = document.createElement("td");
@@ -128,7 +125,7 @@ function Table(layerData, target, label, theadTarget) {
           
           sum += num;
           colThSt++;
-          
+          tdElements.push(tdLayer);
           target.appendChild(tdLayer);
       }
     }
@@ -140,7 +137,24 @@ function Table(layerData, target, label, theadTarget) {
   thLayer.colSpan = colThSt;
   
   theadTarget.appendChild(thLayer);
-  
+  search.addEventListener("input", () => {
+    const searchval = parseInt(search.value);
+    let count = 0;
+    tdElements.forEach(td => {
+      
+      if (parseInt(td.textContent) === searchval) { 
+        count++;
+        td.style.backgroundColor = "lightblue";
+      } else {
+        td.style.backgroundColor = "";
+      }
+    });
+  searchDisplay.textContent = !isNaN(searchval)
+    ? count > 0
+      ? `"${searchval}" found ${count} time(s)`
+      : `${searchval} not found`
+    : "";
+});
   return { sum, average };
 }
 
