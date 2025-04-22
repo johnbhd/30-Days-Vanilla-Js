@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Object - OOP JS</title>
+</head>
+<body>
+    <div id="object">
+      
+    </div>
+</body>
+<script>
+  const result = document.getElementById("object");
+  
+  function Book() {
+    const book = [
+      {
+        title: "Ecclesiastes",
+        author: "King Solomon",
+        year: "180 BCE"
+      },
+      {
+        title: "Atomic Habits",
+        author: "James Clear",
+        year: "October 16, 2018"
+      }
+    ];
+    return book;
+  }
+  function BookSummary() {
+    const books = Book();
+    
+    books.forEach(summary => {
+      result.innerHTML += summary.title+" by "+summary.author+", published in "+summary.year+"<br>";
+    });
+  }
+  BookSummary();
+
+</script>
+</html>
