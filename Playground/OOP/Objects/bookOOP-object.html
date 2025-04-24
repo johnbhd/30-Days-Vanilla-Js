@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Object - OOP JS</title>
+</head>
+<body>
+    <div id="object">
+      
+    </div>
+</body>
+<script>
+  const result = document.getElementById("object");
+  
+  function Book(title, author, year) {
+    this.title = title,
+    this.author = author,
+    this.year = year,
+    this.getSummary = function() {
+      return `${this.title} by ${this.author}, published in ${this.year}`;
+    }
+  }
+  const book1 = new Book("Romans", "Paul", "56-58 AD");
+  const book2 = new Book("Rich Dad Poor Dad", "Robert Kayosaki", "1997");
+  
+  result.innerHTML += book1.getSummary() + "<br>";
+  result.innerHTML += book2.getSummary();
+
+</script>
+</html>
