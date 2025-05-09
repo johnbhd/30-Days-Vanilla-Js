@@ -25,12 +25,13 @@ body {
     justify-content: space-around;
     align-items: center;
     gap: 20px;
+
 }
 .choices {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    margin-top: 25vh;
+
     gap: 5vh;
 }
 .choices img {
@@ -39,4 +40,14 @@ body {
     width: 20vh;
     background-color: gray;
     border-radius: 40%;
+}
+#imgChoice {
+    cursor: pointer;
+    padding: 10px;
+    width: 20vh;
+    background-color: gray;
+    border-radius: 40%;
+}
+#player, #computer {
+    padding: 20px;
 }

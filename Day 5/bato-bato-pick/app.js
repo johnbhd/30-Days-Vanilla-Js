@@ -17,7 +17,7 @@ function Choices() {
         },
         {
             choice: "gunting",
-            img: ["https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/scissor1.png", "https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/scissor2.png"]
+            img: ["https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/scissor2.png", "https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/scissor1.png"]
         }
     ];
   return pick;
@@ -25,13 +25,32 @@ function Choices() {
 
 pickChoices.forEach((picker, index) => {
     choices.innerHTML += `
-           <img src=${picker.img[0]} alt=${picker.choice} onclick=''>
+        <img src="${picker.img[0]}" alt="${picker.choice}" onclick="Choicy('${picker.img[0]}')">
     `;
     console.log(picker.img[0])
     console.log(picker.choice+ index);
     
     
 });
+function Choicy(picker) {
+    alert(picker);
+    player.innerHTML = `
+          <img id="imgChoice" src="${picker}">
+    `;
+    ComputerChoice()
+}
+function ComputerChoice() {
+    let randomBot = Math.floor(Math.random() * pickChoices.length);
+    const randomPick = pickChoices[randomBot].img[1];
+    
+    console.log(randomPick);
+ 
+
+    computer.innerHTML = `
+          <img id="imgChoice" src="${randomPick}">
+    `;
+
+}
 
 function getResult(playerChoice, computerChoice) {
     if (playerChoice ===  computerChoice) return "Tie";
