@@ -2,10 +2,20 @@ const player = document.getElementById('player');
 const computer = document.getElementById('computer');
 const choices = document.querySelector('.choices');
 const title = document.querySelector('h2');
+const vs = document.querySelector('.vs');
 
-const pickChoices = Choices();
+const Pscore = document.getElementById('pscore');
+const Cscore = document.getElementById('cscore');
+const Tscore = document.getElementById('tscore');
 
-function Choices() {
+vs.style.display = 'none';
+
+let PlayerScore = 0;
+let ComputerScore = 0;
+let TieScore = 0
+const getChoices = getGameChoices();
+
+function getGameChoices() {
     const pick = [
         {
             choice: "bato",
@@ -23,77 +33,57 @@ function Choices() {
   return pick;
 }
 
-pickChoices.forEach((picker, index) => {
-    choices.innerHTML += `
-        <img src="${picker.img[0]}" alt="${picker.choice}" onclick="Choicy('${picker.img[0]}')">
-    `;
-    console.log(picker.img[0])
-    console.log(picker.choice+ index);
-    
+getChoices.forEach((picker) => {
+    const img = document.createElement('img');
+    img.src = picker.img[0];
+    img.alt = picker.choice;
+    img.addEventListener('click', () => PlayerChoice(picker.img[0]));
+    choices.appendChild(img);
     
 });
-function Choicy(picker) {
-    alert(picker);
+function PlayerChoice(picker) {
     player.innerHTML = `
-          <img id="imgChoice" src="${picker}">
+          <img id="imgPickP" src="${picker}">
     `;
-    ComputerChoice()
-}
-function ComputerChoice() {
-    let randomBot = Math.floor(Math.random() * pickChoices.length);
-    const randomPick = pickChoices[randomBot].img[1];
     
-    console.log(randomPick);
+    vs.style.display = 'block';
+    const playerIndex = getChoices.find(items => items.img.includes(picker));
+    
+    const result = getResult(playerIndex.choice, ComputerChoice());
+    Pscore.innerHTML = PlayerScore;
+    Cscore.innerHTML = ComputerScore;
+    Tscore.innerHTML = TieScore;
  
 
-    computer.innerHTML = `
-          <img id="imgChoice" src="${randomPick}">
-    `;
+}
 
+function ComputerChoice() {
+    let randomBot = Math.floor(Math.random() * getChoices.length);
+    const randomPick = getChoices[randomBot].img[1];
+
+    computer.innerHTML = `
+          <img id="imgPickC" src="${randomPick}">
+    `;
+    const computerIndex = getChoices.find(items => items.img.includes(randomPick));
+
+    return computerIndex.choice;
 }
 
 function getResult(playerChoice, computerChoice) {
-    if (playerChoice ===  computerChoice) return "Tie";
-    if ((playerChoice + 1) % 3 === computerChoice) return "Computer Wins";
-    return "Player Wins"
-}
-console.log(getResult(1, 2));
-
-
-
-/*
-function Referee(playerchoices, computerChoice) {
-    const playerPick = playerchoices;
-    const computerPick = computerChoice.textContent;
-    
-    player.textContent = playerPick;
-    computer.textContent = computerPick;
-    if (playerPick === computerPick) {
-        title.textContent = 'tie';
-        // Computer Wins
-    } else if ((playerPick == "Gunting" && computerPick == "Bato") 
-            || (playerPick == "Papel" && computerPick == "Gunting") 
-            || (playerPick == "Bato" && computerPick == "Papel")) {
-        title.textContent = (`Computer Wins: ${computerPick}, beats Player: ${playerPick}`);
-    } else {
-        title.textContent = (`Player Wins: ${playerPick}, Computer Player: ${computerPick}`);
+    const rules = {
+        bato: "gunting",
+        gunting: "papel",
+        papel: "bato"
     }
-}
-function ComputerChoice() {
-    let randomBot = Math.floor(Math.random() * choices.length);
- 
-    return choices[randomBot];
+    if (playerChoice === computerChoice) {
+        TieScore++;
+        title.innerText = "Tie";
+    } else if (rules[playerChoice] === computerChoice) {
+        PlayerScore++;
+        title.innerText = "Player Wins";
+    } else {
+        ComputerScore++;
+        title.innerText = "Computer Wins";
+    }
 
 }
-
-choices.forEach(but => {
-    but.addEventListener('click', () => {
-        let playerchoices = but.value;
-        let computerChoice = ComputerChoice();
-
-        Referee(playerchoices, computerChoice);
-
-    
-    });
-});
-*/
