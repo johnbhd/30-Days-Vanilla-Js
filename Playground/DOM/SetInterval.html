@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SetInterval</title>
+</head>
+<body>
+    <div id="setinterval">
+      
+    </div>
+</body>
+<script>
+let time = document.getElementById("setinterval");
+let hello = document.createElement("h4");
+
+hello.textContent = "Hello";
+time.appendChild(hello);
+let isHello = true;
+
+setInterval(() => {
+  hello.textContent = isHello ? "World" : "Hello";
+  isHello = !isHello;
+}, 3000);
+
+</script>
+</html>
