@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Interval</title>
+</head>
+<body>
+    <div id="clearinterval">
+      
+    </div>
+</body>
+<script>
+let clearinterval = document.getElementById("clearinterval");
+let hello = document.createElement("h4");
+
+hello.textContent = "Hello";
+
+let setHello = setTimeout(function() {
+  hello.textContent = "World";
+}, 3000);
+
+setTimeout(() => {
+  clearTimeout(setHello);
+  hello.textContent = "Hello World"
+}, 5000);
+clearinterval.appendChild(hello);
+</script>
+</html>
