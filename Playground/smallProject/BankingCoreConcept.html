@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking Js</title>
+</head>
+<body>
+    <div id="banking"></div>
+</body>
+<script>
+
+
+function DivStructure() {
+  let bankDiv = document.getElementById("banking");
+  let title = document.createElement("h4");
+  let divBut = document.createElement("div");
+  const buttonsName = ["Balance", "Deposit", "Withdraw"];
+  
+  title.innerHTML = "Banking" + "<br>" + "Choose your option";
+  
+  for (let i = 0; i < 3; i++) {
+    let buttons = document.createElement("button");
+    buttons.textContent = buttonsName[i];
+    divBut.appendChild(buttons);
+  }
+  
+  divBut.style.display = "flex";
+  divBut.style.gap = "4vh";
+  
+  bankDiv.appendChild(title);
+  bankDiv.appendChild(divBut)
+}
+DivStructure();
+</script>
+</html>
