@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapping Class Data</title>
+</head>
+<body>
+    <div id="mapping">
+      
+    </div>
+</body>
+<script>
+let mapping = document.getElementById("mapping");
+let heading = document.createElement("h4");
+
+const UserData = Data();
+function Data() {
+  class User {
+    constructor(name, age) {
+      this.name = name;
+      this.age = age;
+    }
+  }
+  
+  const user = [
+    new User("John", 19),
+    new User("Doe", 13),
+    new User("Luffy", 23)
+  ];
+  return user;
+}
+let nameUser = "", ageUser = "";
+UserData.forEach(data => {
+  nameUser += data.name+", ";
+  ageUser += data.age+", ";
+
+});
+const mappingData = UserData.filter(user => user.age >= 18).map(user => user.name);
+
+heading.innerHTML = "Data Mapping Object"+ "<br> Name: "+ nameUser+"<br> Age: "+ageUser + "<br>Age >= 18 is "+mappingData.join(", ");
+
+mapping.appendChild(heading);
+</script>
+</html>
