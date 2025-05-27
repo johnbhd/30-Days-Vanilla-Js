@@ -10,7 +10,7 @@ body {
     align-items: center;
     height: 100vh;
     color: white;
-    background-image: linear-gradient(to right top, #788dad, #6290ae, #4b93aa, #3795a0, #329690);
+    background-image: linear-gradient(to bottom, #4facfe, #00f2fe);
 }
 .container {
     display: flex;
@@ -53,11 +53,36 @@ body {
 }
 #imgPickP {
     width: 30vh;
-    animation: rotatePlayer 2s ease-in-out forwards;
+    animation: rotatePlayer 2.5s ease-in-out forwards;
 }
 #imgPickC {
     width: 30vh;
-    animation: rotateComputer 2s ease-in-out forwards;
+    animation: rotateComputer 2.5s ease-in-out forwards;
+}
+.imgP {
+    width: 30vh;
+    transform: rotate(20deg);
+}
+.imgC {
+    width: 30vh;
+    transform: rotate(-20deg);
+}
+
+@media (max-width: 768px) {
+
+    .container {
+        margin: 0;
+        
+    }
+    .scoreboard {
+        gap: 2vh;
+    }
+    .imgP, .imgC {
+        width: 15vh;
+    }
+    #imgPickC, #imgPickP {
+        width: 15vh;
+    }
 }
 @keyframes rotatePlayer {
     0% {

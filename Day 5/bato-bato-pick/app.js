@@ -8,6 +8,8 @@ const Pscore = document.getElementById('pscore');
 const Cscore = document.getElementById('cscore');
 const Tscore = document.getElementById('tscore');
 
+const defaultPick = ["https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/rock1.png", "https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/rock2.png"];
+
 vs.style.display = 'none';
 
 let PlayerScore = 0;
@@ -42,9 +44,15 @@ getChoices.forEach((picker) => {
     
 });
 function PlayerChoice(picker) {
+
     player.innerHTML = `
-          <img id="imgPickP" src="${picker}">
+          <img id="imgPickP" src="${defaultPick[0]}">
     `;
+    setTimeout(() => {
+         player.innerHTML = `
+          <img class="imgP" src="${picker}">
+    `;
+    }, 2500);
     
     vs.style.display = 'block';
     const playerIndex = getChoices.find(items => items.img.includes(picker));
@@ -62,8 +70,14 @@ function ComputerChoice() {
     const randomPick = getChoices[randomBot].img[1];
 
     computer.innerHTML = `
-          <img id="imgPickC" src="${randomPick}">
+          <img id="imgPickC" src="${defaultPick[1]}">
     `;
+    setTimeout(() => {
+         computer.innerHTML = `
+          <img class="imgC" src="${randomPick}">
+    `;
+    }, 2500);
+    
     const computerIndex = getChoices.find(items => items.img.includes(randomPick));
 
     return computerIndex.choice;
