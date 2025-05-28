@@ -15,6 +15,7 @@ vs.style.display = 'none';
 let PlayerScore = 0;
 let ComputerScore = 0;
 let TieScore = 0
+
 const getChoices = getGameChoices();
 
 function getGameChoices() {
@@ -43,44 +44,43 @@ getChoices.forEach((picker) => {
     choices.appendChild(img);
     
 });
+
 function PlayerChoice(picker) {
+    const playerIndex = getChoices.find(items => items.img.includes(picker));
+
+    let randomBot = Math.floor(Math.random() * getChoices.length);
+    const computerData = getChoices[randomBot];
 
     player.innerHTML = `
           <img id="imgPickP" src="${defaultPick[0]}">
     `;
-    setTimeout(() => {
-         player.innerHTML = `
-          <img class="imgP" src="${picker}">
-    `;
-    }, 2500);
-    
-    vs.style.display = 'block';
-    const playerIndex = getChoices.find(items => items.img.includes(picker));
-    
-    const result = getResult(playerIndex.choice, ComputerChoice());
-    Pscore.innerHTML = PlayerScore;
-    Cscore.innerHTML = ComputerScore;
-    Tscore.innerHTML = TieScore;
- 
-
-}
-
-function ComputerChoice() {
-    let randomBot = Math.floor(Math.random() * getChoices.length);
-    const randomPick = getChoices[randomBot].img[1];
-
     computer.innerHTML = `
           <img id="imgPickC" src="${defaultPick[1]}">
     `;
-    setTimeout(() => {
-         computer.innerHTML = `
-          <img class="imgC" src="${randomPick}">
-    `;
-    }, 2500);
     
-    const computerIndex = getChoices.find(items => items.img.includes(randomPick));
+    vs.style.display = 'block';
+    title.innerText = "Rock... Paper... Scissors!";
+    title.style.color = '';
 
-    return computerIndex.choice;
+    choices.style.display = 'none';
+
+    setTimeout(() => {
+        player.innerHTML = `
+          <img class="imgP" src="${picker}">
+        `;
+        computer.innerHTML = `
+         <img class="imgC" src="${computerData.img[1]}">
+        `;
+        
+        getResult(playerIndex.choice, computerData.choice);
+
+        Pscore.innerHTML = PlayerScore;
+        Cscore.innerHTML = ComputerScore;
+        Tscore.innerHTML = TieScore;
+        
+        choices.style.display = 'flex';
+    }, 2500); 
+
 }
 
 function getResult(playerChoice, computerChoice) {
@@ -89,15 +89,18 @@ function getResult(playerChoice, computerChoice) {
         gunting: "papel",
         papel: "bato"
     }
+
     if (playerChoice === computerChoice) {
         TieScore++;
         title.innerText = "Tie";
     } else if (rules[playerChoice] === computerChoice) {
         PlayerScore++;
-        title.innerText = "Player Wins";
+        title.innerText = "Player Wins!";
+        title.style.color = '#88ff8a';
     } else {
         ComputerScore++;
-        title.innerText = "Computer Wins";
+        title.innerText = "Computer Wins!";
+        title.style.color = '	#e74c3c'
     }
-
+    
 }

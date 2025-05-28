@@ -10,7 +10,7 @@ body {
     align-items: center;
     height: 100vh;
     color: white;
-    background-image: linear-gradient(to bottom, #4facfe, #00f2fe);
+    background-image: linear-gradient(to bottom, #3a8dff, #00c6ff);
 }
 .container {
     display: flex;
@@ -27,7 +27,15 @@ body {
     justify-content: center;
     gap: 10vh;
 }
-
+h2 {
+    font-weight: 900;
+}
+h4 {
+    font-weight: bold;
+}
+h4, h2 {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
 .choices {
     display: flex;
     justify-content: center;
@@ -36,11 +44,19 @@ body {
 }
 .choices img {
     cursor: pointer;
-    padding: 10px;
     width: 20vh;
-    background-color: gray;
-    border-radius: 40%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
+.choices img:hover {
+    transform: scale(1.05);
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
 #imgChoice {
     cursor: pointer;
     padding: 10px;
@@ -67,12 +83,27 @@ body {
     width: 30vh;
     transform: rotate(-20deg);
 }
+@media (max-width: 1024px) {
+      .container {
+        padding: 1rem;
+        gap: 16px;
+    }
+
+    .scoreboard {
+        flex-direction: row;
+        gap: 5vw;
+    }
+
+    .choices {
+        flex-wrap: wrap;
+        gap: 5vw;
+    }
+}
 
 @media (max-width: 768px) {
-
     .container {
         margin: 0;
-        
+        padding: 1rem;
     }
     .scoreboard {
         gap: 2vh;
