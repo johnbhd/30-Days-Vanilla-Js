@@ -18,6 +18,13 @@ let TieScore = 0
 
 const getChoices = getGameChoices();
 
+player.innerHTML = `
+        <img src="${defaultPick[0]}" class='imgPC'>
+`;
+computer.innerHTML = `
+        <img src="${defaultPick[1]}" class='imgPC'>
+`;
+
 function getGameChoices() {
     const pick = [
         {
@@ -59,7 +66,7 @@ function PlayerChoice(picker) {
     `;
     
     vs.style.display = 'block';
-    title.innerText = "Rock... Paper... Scissors!";
+    title.innerText = "Bato... Bato... Pick!";
     title.style.color = '';
 
     choices.style.display = 'none';

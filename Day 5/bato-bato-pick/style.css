@@ -67,6 +67,7 @@ h4, h2 {
 #player, #computer {
     padding: 20px;
 }
+
 #imgPickP {
     width: 30vh;
     animation: rotatePlayer 2.5s ease-in-out forwards;
@@ -98,6 +99,9 @@ h4, h2 {
         flex-wrap: wrap;
         gap: 5vw;
     }
+    .imgPC {
+        width: 30vh;
+    }
 }
 
 @media (max-width: 768px) {
@@ -112,6 +116,9 @@ h4, h2 {
         width: 15vh;
     }
     #imgPickC, #imgPickP {
+        width: 15vh;
+    }
+    .imgPC {
         width: 15vh;
     }
 }
