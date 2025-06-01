@@ -1,0 +1,52 @@
+[
+    {
+        "name": "Calculator",
+        "img": "./src/assets/calculator.png",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%201/calculator%20simple",
+        "link": "./Day 1/calculator simple/cal.html",
+        "category": "none"
+    },
+    {
+        "name": "Background Random",
+        "img": "./src/assets/calculator.png",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/background-random",
+        "link": "./Day 2/background-random/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Changing Text",
+        "img": "./src/assets/calculator.png",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/changing-text",
+        "link": "./Day 2/changing-text/index.html",
+        "category": "none"
+    },
+     {
+        "name": "Basic Todo List",
+        "img": "./src/assets/calculator.png",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/basic-todo-list",
+        "link": "./Day 3/basic-todo-list/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Password Checker",
+        "img": "./src/assets/calculator.png",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/password-checker",
+        "link": "./Day 3/password-checker/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Real-Time Text Analyzer",
+        "img": "./src/assets/calculator.png",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/real-time-text-analyzer",
+        "link": "./Day 3/real-time-text-analyzer/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Simple Login (API JSON Dump)",
+        "img": "./src/assets/calculator.png",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/simle-login-dump-api-json",
+        "link": "./Day 3/simle-login-dump-api-json/index.html",
+        "category": "none"
+    }
+
+]
