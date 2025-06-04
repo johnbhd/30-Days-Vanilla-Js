@@ -5,32 +5,101 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Banking Js</title>
 </head>
+<style>
+  #depositDiv, #withdrawDiv {
+    display: none;
+  }
+</style>
 <body>
     <div id="banking"></div>
+    <div id = depositDiv>
+      <h2 id="depositHeader">Add Money to Your Account</h2>
+      <input type="number" id="depositInput" placeholder="Enter amount to deposit">
+      <button id="depositButton">Deposit</button>
+    </div>
+       <div id="withdrawDiv">
+  <h2 id="withdrawHeader">Withdraw Money from Your Account</h2>
+  <input type="number" id="withdrawInput" placeholder="Enter amount to withdraw">
+  <button id="withdrawButton">Withdraw</button>
+</div>
+
 </body>
 <script>
-
-
-function DivStructure() {
+function BankingUI() {
   let bankDiv = document.getElementById("banking");
   let title = document.createElement("h4");
-  let divBut = document.createElement("div");
+  let butContainer = document.createElement("div");
   const buttonsName = ["Balance", "Deposit", "Withdraw"];
-  
+  const depositDiv = document.getElementById("depositDiv");
+  const withdrawDiv = document.getElementById("withdrawDiv");
   title.innerHTML = "Banking" + "<br>" + "Choose your option";
   
-  for (let i = 0; i < 3; i++) {
-    let buttons = document.createElement("button");
-    buttons.textContent = buttonsName[i];
-    divBut.appendChild(buttons);
+  let storedBalance = JSON.parse(localStorage.getItem("balance")) || [];
+  
+  if (storedBalance === null) {
+    const randomUserBalance = Math.floor(Math.random() * 10000) - 1;
+    localStorage.setItem("balance", randomUserBalance);
+    storedBalance = randomUserBalance;
   }
   
-  divBut.style.display = "flex";
-  divBut.style.gap = "4vh";
+  let UserBalance = Number(storedBalance);
+  function Balance() {
+    alert(UserBalance);
+    
+  }
+  
+  function Deposit() {
+    
+    const depositHeader = document.getElementById("depositHeader");
+    const depositInput = document.getElementById("depositInput");
+    const depositButton = document.getElementById("depositButton");
+    withdrawDiv.style.display = "none";
+    depositDiv.style.display = "block";
+    
+    depositButton.addEventListener("click", () => {
+      UserBalance += parseInt(depositInput.value);
+      
+      localStorage.setItem("balance", UserBalance);
+      
+      alert("Your New Balance: "+ UserBalance);
+    });
+    
+    
+  }
+  
+  function Withdraw() {
+    const withdrawHeader = document.getElementById("withdrawHeader");
+    const withdrawInput = document.getElementById("withdrawInput");
+    const withdrawButton = document.getElementById("withdrawButton");
+    depositDiv.style.display = "none";
+    withdrawDiv.style.display = "block"
+    
+    withdrawButton.addEventListener("click", () => {
+      UserBalance -= parseInt(withdrawInput.value);
+      localStorage.setItem("balance", UserBalance);
+      alert("Your New Balance: "+ UserBalance);
+    });
+  }
+  
+  const choice = [
+    () => Balance(),
+    () => Deposit(), 
+    () => Withdraw()
+  ];
+  
+  for (let i = 0; i < buttonsName.length; i++) {
+    let buttons = document.createElement("button");
+    buttons.textContent = buttonsName[i];
+    buttons.onclick = choice[i]
+    butContainer.appendChild(buttons);
+  }
+  
+  butContainer.style.display = "flex";
+  butContainer.style.gap = "4vh";
   
   bankDiv.appendChild(title);
-  bankDiv.appendChild(divBut)
+  bankDiv.appendChild(butContainer)
 }
-DivStructure();
+BankingUI();
 </script>
 </html>
