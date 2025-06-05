@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management OOP</title>
+</head>
+<style>
+  * {
+    font-family: Arial;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap:10px;
+    height: 100vh;
+  }
+  input {
+    padding: 2px 10px;
+  }
+  table {
+    margin: 5px;
+    border: 1px solid black;
+    border-collapse: collapse;
+  }
+  tr, th, td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: center
+  }
+  .options {
+    display: flex;
+    gap: 10px
+  }
+</style>
+<body>
+    <div class="container">
+      <div>
+        <input type="text" placeholder="Search products or category...">
+        <button>Search</button>  
+      </div>
+      <div>
+        <table>
+          <thead>
+              <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+              
+          </tbody>
+        </table>
+      </div>
+      <div class="options">
+        <button>Add Products</button>
+        <button>View Out of Stock</button>
+        <button>Show Inventory Value</button>
+        
+      </div>
+      
+    </div>
+</body>
+<script>
+  const tbody = document.querySelector("tbody");
+  
+  const ProductDisplay = async () => {
+    try {
+      const response = await fetch("./product.json");
+      const data = await response.json();
+      
+      data.forEach((product, index) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${product.id}</td>
+            <td>${product.name}</td>
+            <td>${product.category}</td>
+            <td>$${product.price}</td>
+            <td>${product.stock}</td>
+            <td><button>Edit</button> <button>Delete</button></td>
+          </tr>
+        `;
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  
+  ProductDisplay();
+  
+</script>
+</html>
