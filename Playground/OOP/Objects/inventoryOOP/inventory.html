@@ -17,11 +17,15 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap:10px;
+    gap:20px;
     height: 100vh;
   }
   input {
     padding: 2px 10px;
+    outline: none;
+  }
+  button {
+    padding: 2px 5px;
   }
   table {
     margin: 5px;
@@ -37,9 +41,18 @@
     display: flex;
     gap: 10px
   }
+  .addProdCon {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-content: center;
+    gap: 10px;
+    margin: 10px;
+  }
 </style>
 <body>
     <div class="container">
+      <h2>Product Inventory Management OOP</h2>
       <div>
         <input type="text" placeholder="Search products or category...">
         <button>Search</button>  
@@ -56,29 +69,62 @@
               <th>Action</th>
             </tr>
           </thead>
-          <tbody>
-              
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
       <div class="options">
-        <button>Add Products</button>
+        <button id="addProductBut">Add Products</button>
         <button>View Out of Stock</button>
         <button>Show Inventory Value</button>
-        
       </div>
-      
+     <div class="addProdCon" id="addProductCon">
+        <h2>Add New Product</h2>
+        <input type="text" id="id" placeholder="ID">
+        <input type="text" id="name" placeholder="Name">
+        <input type="text" id="category" placeholder="Category">
+        <input type="number" id="price" placeholder="Price">
+        <input type="number" id="stock" placeholder="Stock">
+        <button id="addBtn">Add Product</button>
+        <button id="addClose">Close</button>
+      </div>
     </div>
 </body>
 <script>
   const tbody = document.querySelector("tbody");
+  const addProductBut = document.getElementById("addProductBut");
+  const addProductCon = document.getElementById("addProductCon");
+  const addClose = document.getElementById("addClose");
+  
+  
+  class Product {
+    constructor(id, name, category, price, stock) {
+      this.id = id;
+      this.name = name;
+      this.category = category;
+      this.price = price;
+      this.stock = stock;
+    }
+    getInfo() {
+      return `ID: ${this.id}, Name: ${this.name}, Category: ${this.category}, Price: $${this.price}, Stock: ${this.stock}`;
+    }
+  }
+  function addProduct() {
+    addProductBut.addEventListener("click", () => {
+      addProductCon.style.display = "flex";
+    });
+    addClose.addEventListener("click", () => {
+      addProductCon.style.display = "none";
+    });
+  }
   
   const ProductDisplay = async () => {
     try {
       const response = await fetch("./product.json");
       const data = await response.json();
       
-      data.forEach((product, index) => {
+      const products = data.map(p => new Product(p.id, p.name, p.category, p.price, p.stock));
+      
+      products.forEach((product, index) => {
         tbody.innerHTML += `
           <tr>
             <td>${product.id}</td>
@@ -89,7 +135,9 @@
             <td><button>Edit</button> <button>Delete</button></td>
           </tr>
         `;
+        console.log(product.getInfo());
       });
+      addProduct();
     } catch (error) {
       console.log(error);
     }
