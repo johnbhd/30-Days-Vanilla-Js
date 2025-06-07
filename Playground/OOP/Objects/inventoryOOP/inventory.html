@@ -108,6 +108,27 @@
       return `ID: ${this.id}, Name: ${this.name}, Category: ${this.category}, Price: $${this.price}, Stock: ${this.stock}`;
     }
   }
+  
+  class Inventory {
+    constructor() {
+      this.products = [];
+    }
+    addProduct(product) {
+      this.products.push(product);
+    }
+    saveLocalStorage() {
+      const rawData = JSON.stringify(this.products);
+      localStorage.setItem("inventory", rawData);
+    }
+    loadFromLocalStorage() {
+      const data = localStorage.getItem("inventory");
+      if (data) {
+        const parsed = JSON.parse(data);
+        this.products = parsed.map(p => new Product(p.id, p.name, p.category, p.price, p.stock)) 
+      }
+    }
+  }
+  
   function addProduct() {
     addProductBut.addEventListener("click", () => {
       addProductCon.style.display = "flex";
@@ -117,13 +138,19 @@
     });
   }
   
-  const ProductDisplay = async () => {
-    try {
-      const response = await fetch("./product.json");
-      const data = await response.json();
+  function displayProduct() {
+    tbody.innerHTML = "";
+    
+    const storedData = localStorage.getItem("inventory") || [];
+    
+    console.log(storedData);
+    if(!storedData) return;
+    
+    const productArray = JSON.parse(storedData);
+     
+    const products = productArray.map(p => new Product(p.id, p.name, p.category, p.price, p.stock));
       
-      const products = data.map(p => new Product(p.id, p.name, p.category, p.price, p.stock));
-      
+
       products.forEach((product, index) => {
         tbody.innerHTML += `
           <tr>
@@ -137,13 +164,29 @@
         `;
         console.log(product.getInfo());
       });
+  }
+  
+  const inventory = new Inventory();
+  
+  const FetchSaveProduct = async () => {
+    try {
+      const response = await fetch("./product.json");
+      const data = await response.json();
+    
+      data.forEach(p => {
+        const product = new Product(p.id, p.name, p.category, p.price, p.stock);
+        inventory.addProduct(product)
+      })  
+      inventory.saveLocalStorage();
+      
       addProduct();
+      displayProduct();
     } catch (error) {
       console.log(error);
     }
   }
   
-  ProductDisplay();
+  FetchSaveProduct();
   
 </script>
 </html>
