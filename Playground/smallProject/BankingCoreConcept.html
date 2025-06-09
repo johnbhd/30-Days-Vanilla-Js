@@ -3,103 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banking Js</title>
+    <title>Inventory Management OOP</title>
 </head>
 <style>
-  #depositDiv, #withdrawDiv {
+  * {
+    font-family: Arial;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+  }
+  .container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap:20px;
+    height: 100vh;
+  }
+  input {
+    padding: 2px 10px;
+    outline: none;
+  }
+  button {
+    padding: 2px 5px;
+  }
+  table {
+    margin: 5px;
+    border: 1px solid black;
+    border-collapse: collapse;
+  }
+  tr, th, td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: center
+  }
+  .options {
+    display: flex;
+    gap: 10px
+  }
+  .addProdCon {
     display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-content: center;
+    gap: 10px;
+    margin: 10px;
   }
 </style>
 <body>
-    <div id="banking"></div>
-    <div id = depositDiv>
-      <h2 id="depositHeader">Add Money to Your Account</h2>
-      <input type="number" id="depositInput" placeholder="Enter amount to deposit">
-      <button id="depositButton">Deposit</button>
+    <div class="container">
+      <h2>Product Inventory Management OOP</h2>
+      <div>
+        <input type="text" placeholder="Search products or category...">
+        <button>Search</button>  
+      </div>
+      <div>
+        <table>
+          <thead>
+              <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="options">
+        <button id="addProductBut">Add Products</button>
+        <button>View Out of Stock</button>
+        <button>Show Inventory Value</button>
+      </div>
+       <form id="productForm" class="addProdCon">
+          <h2>Add New Product</h2>
+          <input type="text" id="id" placeholder="ID" required>
+          <input type="text" id="name" placeholder="Name" required>
+          <input type="text" id="category" placeholder="Category" required>
+          <input type="number" id="price" placeholder="Price" required>
+          <input type="number" id="stock" placeholder="Stock" required>
+          <button type="submit">Add Product</button>
+          <button type="button" id="addClose">Close</button>
+        </form>
     </div>
-       <div id="withdrawDiv">
-  <h2 id="withdrawHeader">Withdraw Money from Your Account</h2>
-  <input type="number" id="withdrawInput" placeholder="Enter amount to withdraw">
-  <button id="withdrawButton">Withdraw</button>
-</div>
-
 </body>
 <script>
-function BankingUI() {
-  let bankDiv = document.getElementById("banking");
-  let title = document.createElement("h4");
-  let butContainer = document.createElement("div");
-  const buttonsName = ["Balance", "Deposit", "Withdraw"];
-  const depositDiv = document.getElementById("depositDiv");
-  const withdrawDiv = document.getElementById("withdrawDiv");
-  title.innerHTML = "Banking" + "<br>" + "Choose your option";
+  const tbody = document.querySelector("tbody");
+  const addProductBut = document.getElementById("addProductBut");
+  const addClose = document.getElementById("addClose");
+  const productForm = document.getElementById("productForm");
   
-  let storedBalance = JSON.parse(localStorage.getItem("balance")) || [];
-  
-  if (storedBalance === null) {
-    const randomUserBalance = Math.floor(Math.random() * 10000) - 1;
-    localStorage.setItem("balance", randomUserBalance);
-    storedBalance = randomUserBalance;
+  class Product {
+    constructor(id, name, category, price, stock) {
+      this.id = id;
+      this.name = name;
+      this.category = category;
+      this.price = price;
+      this.stock = stock;
+    }
+    getInfo() {
+      return `ID: ${this.id}, Name: ${this.name}, Category: ${this.category}, Price: $${this.price}, Stock: ${this.stock}`;
+    }
   }
   
-  let UserBalance = Number(storedBalance);
-  function Balance() {
-    alert(UserBalance);
-    
+  class Inventory {
+    constructor() {
+      this.products = [];
+    }
+    addProduct(product) {
+      this.products.push(product);
+    }
+    saveLocalStorage() {
+      const rawData = JSON.stringify(this.products);
+      localStorage.setItem("inventory", rawData);
+    }
+    loadFromLocalStorage() {
+      const data = localStorage.getItem("inventory");
+      if (data) {
+        const parsed = JSON.parse(data);
+        this.products = parsed.map(p => new Product(p.id, p.name, p.category, p.price, p.stock)) 
+      }
+    }
   }
   
-  function Deposit() {
-    
-    const depositHeader = document.getElementById("depositHeader");
-    const depositInput = document.getElementById("depositInput");
-    const depositButton = document.getElementById("depositButton");
-    withdrawDiv.style.display = "none";
-    depositDiv.style.display = "block";
-    
-    depositButton.addEventListener("click", () => {
-      UserBalance += parseInt(depositInput.value);
-      
-      localStorage.setItem("balance", UserBalance);
-      
-      alert("Your New Balance: "+ UserBalance);
+  function displayProduct() {
+    tbody.innerHTML = "";
+    const storedData = localStorage.getItem("inventory");
+    if(!storedData) return;
+    const productArray = JSON.parse(storedData);
+    const products = productArray.map(p => new Product(p.id, p.name, p.category, p.price, p.stock));
+    console.log(storedData);
+ 
+      products.forEach((product, index) => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${product.id}</td>
+            <td>${product.name}</td>
+            <td>${product.category}</td>
+            <td>$${product.price}</td>
+            <td>${product.stock}</td>
+            <td><button>Edit</button> <button>Delete</button></td>
+          </tr>
+        `;
+        console.log(product.getInfo());
+      });
+  }
+  
+  const inventory = new Inventory();
+  
+  function addProduct() {
+    addProductBut.addEventListener("click", () => {
+      productForm.style.display = "flex";
+    });
+    addClose.addEventListener("click", () => {
+      productForm.style.display = "none";
     });
     
-    
-  }
-  
-  function Withdraw() {
-    const withdrawHeader = document.getElementById("withdrawHeader");
-    const withdrawInput = document.getElementById("withdrawInput");
-    const withdrawButton = document.getElementById("withdrawButton");
-    depositDiv.style.display = "none";
-    withdrawDiv.style.display = "block"
-    
-    withdrawButton.addEventListener("click", () => {
-      UserBalance -= parseInt(withdrawInput.value);
-      localStorage.setItem("balance", UserBalance);
-      alert("Your New Balance: "+ UserBalance);
+    productForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        
+        const id = document.getElementById("id").value.trim();
+        const name = document.getElementById("name").value.trim();
+        const category = document.getElementById("category").value.trim();
+        const price = parseFloat(document.getElementById("price").value);
+        const stock = parseInt(document.getElementById("stock").value);
+        
+        const product = new Product(id, name, category, price, stock);
+        inventory.addProduct(product);
+        inventory.saveLocalStorage();
+        displayProduct();
+        productForm.reset();
+        productForm.style.display = "none";
     });
   }
   
-  const choice = [
-    () => Balance(),
-    () => Deposit(), 
-    () => Withdraw()
-  ];
-  
-  for (let i = 0; i < buttonsName.length; i++) {
-    let buttons = document.createElement("button");
-    buttons.textContent = buttonsName[i];
-    buttons.onclick = choice[i]
-    butContainer.appendChild(buttons);
+  const FetchSaveProduct = async () => {
+    try {
+      const loadedJSON = localStorage.getItem("loadedJSON");
+      
+      if (loadedJSON) {
+        inventory.loadFromLocalStorage();
+        displayProduct();
+        addProduct();
+        return;
+      }
+      
+      const response = await fetch("./product.json");
+      const data = await response.json();
+      
+      if (inventory.products.length === 0) {
+        data.forEach(p => {
+        const product = new Product(p.id, p.name, p.category, p.price, p.stock);
+        inventory.addProduct(product)
+      })  
+      }
+      
+      inventory.saveLocalStorage();
+      localStorage.setItem("loadedJSON", true)
+      displayProduct();
+      addProduct();
+    } catch (error) {
+      console.log(error);
+    }
   }
   
-  butContainer.style.display = "flex";
-  butContainer.style.gap = "4vh";
+  FetchSaveProduct();
   
-  bankDiv.appendChild(title);
-  bankDiv.appendChild(butContainer)
-}
-BankingUI();
 </script>
 </html>
