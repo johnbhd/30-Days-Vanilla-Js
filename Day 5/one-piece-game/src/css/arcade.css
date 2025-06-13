@@ -1,0 +1,36 @@
+* {
+    font-family: 'Roboto', sans-serif;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #0077B6;
+    color: white;
+}
+.container {
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px;
+}
+.luffy {
+    background: url('../assets/luffy/gum-gum-pistol-gear3/anime1.png');
+    width: 125px;
+    height: 190px;
+    image-rendering: pixelated;
+    background-repeat: no-repeat;
+    animation: movement 1s steps(6, end) forwards;
+}
+
+@keyframes movement {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: -710px 0;
+    }
+}
