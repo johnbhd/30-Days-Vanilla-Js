@@ -18,8 +18,8 @@ body {
 .luffy {
     position: relative;
     top: 10vh;
-    left: -60vh;
-    width: 120px;
+    left: 60vh;
+    width: 142px;
     height: 190px;
     background-color: white;
     image-rendering: pixelated;
@@ -27,41 +27,35 @@ body {
     overflow: hidden;
     padding: -50px;
 }
-.luffy-move1, .luffy-move2 {
+.gear2-move1, .gear2-move2, .gear2-move3{
   position: absolute;
   top: 0;
   left: 0;
 }
-.luffy-move1 {
-
-  animation: movement1 2s steps(4) forwards;
+.gear2-move1 {
+  animation: gear2-move1 1.5s steps(3) forwards;
+  top: -4vh;
+  left: -3vh;
 }
-.luffy-move2 {
-  top: -30px;
-  left: -10px;
-}
-#lmove-2a {
+.gear2-move2 {
   display: none;
+  animation: gear2-move2 1s steps(1) forwards;
+  top: -32vh;
+  left: -59vh;
 }
-#lmove-2b {
-  display: none;
-  transform: translate3d(-39%, 0, 0);
-}
-
-.luffy-move3 {
-  position: absolute;
-  display: none;
-  left: -12px;
-  top: -3px;
-}
-@keyframes movement1 {
+@keyframes gear2-move1 {
     from {
         transform: translate3d(0px, 0, 0);
     }
     to {
-        transform: translate3d(-60%, 0, 0);
+        transform: translate3d(-57%, 0, 0);
     }
 }
-
-
-
+@keyframes gear2-move2 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(-19%, 0, 0);
+    }
+}
