@@ -1,0 +1,97 @@
+* {
+    font-family: 'Roboto', sans-serif;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+body {
+    display: flex;
+    justify-content: center;
+    background-color: #0077B6;
+    color: white;
+}
+.container {
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px;
+}
+.zoro {
+    position: relative;
+    width: 260px;
+    height: 210px;
+    background-color: white;
+    image-rendering: pixelated;
+    background-repeat: no-repeat;
+    overflow: hidden;
+    padding: -50px;
+}
+.zoro-move1, .zoro-move2, .zoro-move3, .zoro-move4, .zoro-move5 {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.zoro-move1 {
+  animation: zoro-move1 1s steps(3) forwards;
+}
+.zoro-move2 {
+  display: none;
+  top: -30vh;
+  animation: zoro-move2 1s steps(3) forwards;
+}
+.zoro-move3 {
+  display: none;
+  top: -57vh;
+  animation: zoro-move3 1s steps(2) forwards;
+}
+.zoro-move4 {
+  display: none;
+  top: -56vh;
+  left: -76vh;
+  animation: zoro-move4 2s steps(2) forwards;
+}
+.zoro-move5 {
+  display: none;
+  top: -119vh;
+  left: 12vh;
+  animation: zoro-move5 2s steps(2) forwards;
+}
+@keyframes zoro-move1 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(-75%, 0, 0);
+    }
+}
+@keyframes zoro-move2 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(-77%, 0, 0);
+    }
+}
+@keyframes zoro-move3 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(-53%, 0, 0);
+    }
+}
+@keyframes zoro-move4 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(-44%, 0, 0);
+    }
+}
+@keyframes zoro-move5 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(-51%, 0, 0);
+    }
+}
