@@ -19,42 +19,62 @@ body {
     position: relative;
     width: 260px;
     height: 210px;
-    background-color: white;
+    background-color: white; 
     image-rendering: pixelated;
     background-repeat: no-repeat;
-    overflow: hidden;
+    /* overflow: hidden;  */
     padding: -50px;
 }
-.zoro-move1, .zoro-move2, .zoro-move3, .zoro-move4, .zoro-move5 {
+.zoro-move1, .zoro-move2, .zoro-move3, .zoro-move4, .zoro-move5, .zoro-move6, .zoro-move7, .zoro-move8 {
   position: absolute;
   top: 0;
   left: 0;
 }
 .zoro-move1 {
+
   animation: zoro-move1 1s steps(3) forwards;
 }
 .zoro-move2 {
-  display: none;
-  top: -30vh;
+    display: none;
+  top: -29vh;
   animation: zoro-move2 1s steps(3) forwards;
 }
 .zoro-move3 {
   display: none;
-  top: -57vh;
+  top: -55vh;
   animation: zoro-move3 1s steps(2) forwards;
 }
 .zoro-move4 {
   display: none;
-  top: -56vh;
-  left: -76vh;
-  animation: zoro-move4 2s steps(2) forwards;
+  top: -54vh;
+  left: -73.5vh;
+  animation: zoro-move4 1s steps(2) forwards;
 }
 .zoro-move5 {
   display: none;
-  top: -119vh;
+  top: -115vh;
   left: 12vh;
-  animation: zoro-move5 2s steps(2) forwards;
+  animation: zoro-move5 1s steps(2) forwards;
 }
+.zoro-move6 {
+  display: none;
+  top: -142vh;
+  left: -70vh;
+  animation: zoro-move6 1s steps(2) forwards;
+}
+.zoro-move7 {
+  display: none;
+  top: -174vh;
+  left: -100vh;
+  animation: zoro-move7 1s steps(1) forwards;
+}
+.zoro-move8 {
+  display: none;
+  top: -175vh;
+  left: -70vh;
+  animation: zoro-move8 7s steps(4) forwards;
+}
+
 @keyframes zoro-move1 {
     from {
         transform: translate3d(0px, 0, 0);
@@ -93,5 +113,29 @@ body {
     }
     to {
         transform: translate3d(-51%, 0, 0);
+    }
+}
+@keyframes zoro-move6 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(-37%, 0, 0);
+    }
+}
+@keyframes zoro-move7 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(0px, 0, 0);
+    }
+}
+@keyframes zoro-move8 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(0px, 0, 0);
     }
 }
