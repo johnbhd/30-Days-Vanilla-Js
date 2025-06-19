@@ -6,7 +6,7 @@
 }
 body {
     display: flex;
-    justify-content: center;
+    background-image: url('../assets/zoro/imgg2.jpg');
     background-color: #0077B6;
     color: white;
 }
@@ -19,13 +19,15 @@ body {
     position: relative;
     width: 260px;
     height: 210px;
-    background-color: white; 
+    /* background-color: white;   */
     image-rendering: pixelated;
     background-repeat: no-repeat;
-    /* overflow: hidden;  */
+    overflow: hidden;  
     padding: -50px;
+    top: 15vh;
+    left: 10vh
 }
-.zoro-move1, .zoro-move2, .zoro-move3, .zoro-move4, .zoro-move5, .zoro-move6, .zoro-move7, .zoro-move8 {
+.zoro-move1, .zoro-move2, .zoro-move3, .zoro-move4, .zoro-move5, .zoro-move6, .zoro-move7, .zoro-move8, .zoro-move9, .zoro-move10 {
   position: absolute;
   top: 0;
   left: 0;
@@ -35,31 +37,31 @@ body {
   animation: zoro-move1 1s steps(3) forwards;
 }
 .zoro-move2 {
-    display: none;
-  top: -29vh;
-  animation: zoro-move2 1s steps(3) forwards;
+  display: none;
+  top: -30vh;
+  animation: zoro-move2 2s steps(3) forwards;
 }
 .zoro-move3 {
   display: none;
-  top: -55vh;
+  top: -56vh;
   animation: zoro-move3 1s steps(2) forwards;
 }
 .zoro-move4 {
   display: none;
-  top: -54vh;
-  left: -73.5vh;
+  top: -56vh;
+  left: -76vh;
   animation: zoro-move4 1s steps(2) forwards;
 }
 .zoro-move5 {
   display: none;
-  top: -115vh;
+  top: -119vh;
   left: 12vh;
   animation: zoro-move5 1s steps(2) forwards;
 }
 .zoro-move6 {
   display: none;
-  top: -142vh;
-  left: -70vh;
+  top: -149vh;
+  left: -72vh;
   animation: zoro-move6 1s steps(2) forwards;
 }
 .zoro-move7 {
@@ -72,9 +74,20 @@ body {
   display: none;
   top: -175vh;
   left: -70vh;
-  animation: zoro-move8 7s steps(4) forwards;
+  animation: zoro-move8 1s steps(1) forwards;
 }
-
+.zoro-move9 {
+  display: none;
+  top: -175vh;
+  left: -44vh;
+  animation: zoro-move9 2s steps(3) forwards;
+}
+.zoro-move10 {
+  display: none;
+  top: -85vh;
+  left: -84vh;
+  animation: zoro-move10 2s steps(3) forwards;
+}
 @keyframes zoro-move1 {
     from {
         transform: translate3d(0px, 0, 0);
@@ -137,5 +150,21 @@ body {
     }
     to {
         transform: translate3d(0px, 0, 0);
+    }
+}
+@keyframes zoro-move9 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(43%, 0, 0);
+    }
+}
+@keyframes zoro-move10 {
+    from {
+        transform: translate3d(0px, 0, 0);
+    }
+    to {
+        transform: translate3d(89%, 0, 0);
     }
 }
