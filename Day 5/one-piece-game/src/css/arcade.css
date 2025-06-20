@@ -1,67 +1,28 @@
 * {
-    font-family: 'Roboto', sans-serif;
-    padding: 0;
-    margin: 0;
-    box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
 }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #222;
+}
+
 body {
-    display: flex;
-    justify-content: center;
-    background-color: #0077B6;
-    color: white;
-}
-.container {
-    text-align: center;
-    padding: 20px;
-    border-radius: 10px;
-}
-.luffy {
-    position: relative;
-    top: 10vh;
-    left: -60vh;
-    width: 120px;
-    height: 190px;
-    background-color: white;
-    image-rendering: pixelated;
-    background-repeat: no-repeat;
-    overflow: hidden;
-    padding: -50px;
-}
-.luffy-move1, .luffy-move2 {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-.luffy-move1 {
-
-  animation: movement1 2s steps(4) forwards;
-}
-.luffy-move2 {
-  top: -30px;
-  left: -10px;
-}
-#lmove-2a {
-  display: none;
-}
-#lmove-2b {
-  display: none;
-  transform: translate3d(-39%, 0, 0);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-image: url('../assets/map/map1.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
-.luffy-move3 {
-  position: absolute;
-  display: none;
-  left: -12px;
-  top: -3px;
+canvas {
+  display: block;
+  border: 1px solid black;
 }
-@keyframes movement1 {
-    from {
-        transform: translate3d(0px, 0, 0);
-    }
-    to {
-        transform: translate3d(-60%, 0, 0);
-    }
-}
-
-
-
