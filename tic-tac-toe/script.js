@@ -1,10 +1,8 @@
-  const tictacDiv = document.getElementById("tictactoe");
+ const tictacDiv = document.getElementById("tictactoe");
   const message = document.getElementById('message');
-  const stars = document.querySelector('.stars');
   const sizeBoard = 3;
   const empty = "&nbsp";
-  message.textContent = "Flic Flac Flow";
-
+  
   let scores;
   let count = 1;
   let player = ['X', 'O'];
@@ -24,12 +22,6 @@
       [7, 5, 3]
   ];
 
-  for (let i = 0; i < 20; i++) {
-    const star = document.createElement('div');
-    star.classList.add('star');
-    stars.appendChild(star);
-  }
-
   function BoardGame() {
     const board = document.createElement("table");
     
@@ -43,7 +35,6 @@
       
       for (let j = 0; j < sizeBoard; j++) {
         const cell = document.createElement("td");
-
         cell.style.border = "1px solid white";
         cell.style.color = "white";
         cell.style.width = "60px";
@@ -72,7 +63,7 @@
       const [a, b, c] = winnerCombo[i];
 
       if (playerMoves.includes(a) && playerMoves.includes(b) && playerMoves.includes(c)) 
-        return [a, b, c]; 
+        return true; 
     }
   }
   function CheckTie(x, y) {
@@ -84,28 +75,13 @@
     const cells = document.querySelectorAll('td');
     cells.forEach(cell => {
       cell.textContent = "";
-      cell.classList.remove('hightlight');
-      cell.classList.remove('dimmed');
     });
       
     moveX = [];
     moveY = [];
     currentPlayer = player[0];
     gameover = false;
-    message.textContent = "Flic Flac Flow";
-  }
-  function hightlightWinner(winner) {
-    const cells = document.querySelectorAll('td');
-
-    cells.forEach(cell => {
-      const indexs = Number(cell.dataset.index);
-
-      if (winner.includes(indexs)) {
-        cell.classList.add('hightlight');
-      } else {
-        cell.classList.add('dimmed')
-      }
-    })
+    message.textContent = "";
   }
 
   function ClickHandle(e) {
@@ -123,11 +99,8 @@
     
     const moves = currentPlayer === player[0] ? moveX : moveY;
     moves.push(index);
-
-    const winningTiles = CheckWinner(moves);
     
-    if (winningTiles) {
-      hightlightWinner(winningTiles);
+    if (CheckWinner(moves)) {
       message.textContent = `The winner is player ${currentPlayer}!`;
       gameover = true;
       return;
