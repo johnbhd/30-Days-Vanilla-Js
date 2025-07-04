@@ -54,6 +54,40 @@ td.dimmed {
   height: 4px;
   background-color: white;
 }
+p {
+  color: white;
+}
+.scoring {
+  display: flex;
+  gap: 30px;
+}
+.player1, .player2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.tie {
+  display: flex;
+  flex-direction: column;
+text-align: center;
+}
+.head {
+  display: flex;
+  gap: 10px;
+}
+input {
+  background: none;
+  color: white;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-weight: bold;
+  width: 20px;
+}
+
+.score {
+  color: white;
+}
 @keyframes blinker {
   0%, 100% { background-color: #0d1d31; }
   50% { background-color: #1E90FF; }
