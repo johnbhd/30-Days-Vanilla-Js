@@ -3,36 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TicTacToe</title>
+    <title>Flic Flac Flow</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="star.css">
 </head>
 <body>
   <div class="stars">
- 
   </div>
-
   <div class="container">
     <h1 id="message"></h1>
     <div id="tictactoe" role = "grid"></div>
     <div class="scoring">
       <div class="player1">
          <div class="head">
-           <p>PLAYER </p>
-           <input type="text" value="X">
+           <p>Player</p>
+           <input type="text" value="X" class="single-char" maxlength="1">
           </div>
-        <div class="score">0</div>
+        <div id="player1-score">0</div>
       </div>  
       <div class="tie">
-        <p>TIE</p>
-        <p>0</p>
+        <p>Tie</p>
+        <p id="tie">0</p>
       </div>
       <div class="player2">
         <div class="head">
-          <p>PLAYER </p>
-          <input type="text" value="O">
+          <p>Player</p>
+          <input type="text" value="O" class="single-char" maxlength="1">
           </div>
-          <div class="score">0</div>
+          <div id="player2-score">0</div>
         </div>
     </div>
   </div>
