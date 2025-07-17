@@ -60,6 +60,8 @@ p {
 .scoring {
   display: flex;
   gap: 30px;
+  color: white;
+  font-size: 1.8rem;
 }
 .player1, .player2 {
   display: flex;
@@ -83,10 +85,7 @@ input {
   cursor: pointer;
   font-weight: bold;
   width: 20px;
-}
-
-.score {
-  color: white;
+  font-size: 1.8rem;
 }
 @keyframes blinker {
   0%, 100% { background-color: #0d1d31; }
