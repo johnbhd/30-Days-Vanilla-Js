@@ -1,8 +1,10 @@
   const tictacDiv = document.getElementById("tictactoe");
   const message = document.getElementById('message');
   const stars = document.querySelector('.stars');
+  const player1Score = document.getElementById('player1-score');
+  const player2Score = document.getElementById('player2-score');
+  const tieScore = document.getElementById('tie');
   const sizeBoard = 3;
-  const empty = "&nbsp";
   message.textContent = "Flic Flac Flow";
 
   let scores;
@@ -12,6 +14,12 @@
   let gameover = false;
   let moveX = [];
   let moveY = [];
+  let gameScore = {
+    player1: 0,
+    player2: 0,
+    tie: 0
+  }
+  
   
   const winnerCombo = [
       [1, 2, 3],
@@ -77,6 +85,8 @@
   }
   function CheckTie(x, y) {
       if (x.length + y.length === 9) {
+         gameScore.tie++;
+         tieScore.textContent = gameScore.tie;
          return true;
       }
   }
@@ -96,7 +106,7 @@
   }
   function hightlightWinner(winner) {
     const cells = document.querySelectorAll('td');
-
+  
     cells.forEach(cell => {
       const indexs = Number(cell.dataset.index);
 
@@ -107,7 +117,15 @@
       }
     })
   }
-
+  function gameScoring() {
+    if (currentPlayer === player[0]) {
+      gameScore.player1++
+      player1Score.textContent = gameScore.player1;
+    } else {
+      gameScore.player2++
+      player2Score.textContent = gameScore.player2;
+    }
+  }
   function ClickHandle(e) {
     const row = e.target.dataset.row;
     const col = e.target.dataset.col;
@@ -130,9 +148,10 @@
       hightlightWinner(winningTiles);
       message.textContent = `The winner is player ${currentPlayer}!`;
       gameover = true;
+      gameScoring()
       return;
     }
-
+    
     if (CheckTie(moveX, moveY)) {
       message.textContent = `Game Tie!`;
       gameover = true;
