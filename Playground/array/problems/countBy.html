@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Count By</title>
+</head>
+<body>
+
+  <input type="number" id="x" placeholder="Enter x">
+  <input type="number" id="n" placeholder="Enter n">
+  <button onclick="runCount()">Run</button>
+  <div id="out"></div>
+
+  <script>
+    function countBy(x, n) {
+      let z = [];
+      for (let i = 1; i <= n; i++) {
+        z.push(x * i);
+      }
+      return z;
+    }
+
+    function runCount() {
+      let x = parseInt(document.getElementById("x").value);
+      let n = parseInt(document.getElementById("n").value);
+      let result = countBy(x, n);
+      document.getElementById("out").textContent = result.join(", ");
+    }
+  </script>
+
+</body>
+</html>
