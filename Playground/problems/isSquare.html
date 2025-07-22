@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Perfect Square</title>
+</head>
+<body>
+
+  <input type="number" id="num">
+  <button onclick="check()">Check</button>
+  <div id="out"></div>
+
+  <script>
+    let isSquare = (n) => Number.isInteger(Math.sqrt(n));
+
+    function check() {
+      let n = document.getElementById("num").value;
+      let result = isSquare(n) ? "true" : "false";
+      document.getElementById("out").textContent = result;
+    }
+  </script>
+
+</body>
+</html>
