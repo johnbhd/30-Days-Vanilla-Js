@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Growth Population</title>
+</head>
+<body>
+</body>
+<script>
+const question = document.createElement("p");
+const answer = document.createElement("p");
+
+const questionText = `
+    In a small town, the population is p0 = 1000 at the beginning of a year. 
+    The population regularly increases by 2 percent per year and 50 new inhabitants 
+    come to live in the town each year. How many years does the town need to see its 
+    population greater than or equal to p = 1200?
+
+    More generally, given parameters: p0 (starting population), percent (growth rate), 
+    aug (people added per year), and p (target population), return the number of years 
+    required for the population to reach or surpass p.
+
+    Example: nbYear(1500, 5, 100, 5000) should return 15.
+`;
+
+const inputsLabel = [
+  { id: "p0", placeholder: "Starting population (p0)"},
+  { id: "percent", placeholder: "Growth percent"},
+  { id: "aug", placeholder: "New people per year (aug)"},
+  { id: "p", placeholder: "Target population (p)"}
+];
+
+question.textContent = questionText;
+document.body.appendChild(question);
+
+inputsLabel.forEach(inputs => {
+  const inputTag = document.createElement("input");
+  inputTag.type = "number"
+  inputTag.id = inputs.id;
+  inputTag.placeholder = inputs.placeholder;
+  inputTag.required;
+  inputTag.style.margin = "2px"
+  
+  document.body.appendChild(inputTag);
+});
+
+const button = document.createElement("button");
+button.textContent = "Calculate";
+
+function nbYear(p0, percent, aug, p) {
+  let population = p0, year = 0;
+  
+  while (population < p) {
+    population = Math.floor(population + (population * percent/100) + aug);
+    year++;
+  }
+  
+  return year;
+}
+
+function showOutput() {
+  const p0 = parseInt(document.getElementById("p0").value);
+  const percent = parseFloat(document.getElementById("percent").value);
+  const aug = parseInt(document.getElementById("aug").value);
+  const p = parseInt(document.getElementById("p").value);
+
+  const years = nbYear(p0, percent, aug, p);
+  answer.textContent = `Result: ${years} year(s) needed.`;
+}
+
+document.body.append(button, answer);
+button.addEventListener("click", () => showOutput());
+</script>
+</html> 
