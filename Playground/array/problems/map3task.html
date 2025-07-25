@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3 exercise Map Vanilla Js</title>
+</head>
+<body>
+  
+</body>
+<script>
+const p = document.createElement("p");
+const select = document.createElement("select");
+let arr = [];
+
+function multiplyNum() {
+  arr = [1, 2, 3, 4, 5]
+  arr = arr.map(x => x * 3);
+  
+  return arr;
+}
+
+function upperCase() {
+  arr = ["cat", "dog", "bat"];
+  
+  return arr.map(u => u.toUpperCase()).join(" is ");
+}
+
+function mapObject() {
+  arr = [
+    { name: "Ana", score: 80},
+    { name: "Leo", score: 92},
+    { name: "Zoe", score: 75}
+  ];
+  
+  arr = arr.filter(n => n.score > 75).map(n => n.name ).join(" & ");
+  
+  return arr;
+}
+
+function output() {
+  let choices = ["Multiply", "Upper Case", "Map Object"];
+  let funcChoices = [multiplyNum, upperCase, mapObject];
+  
+  choices.forEach(c => {
+    const option = document.createElement("option");
+    option.value = c;
+    option.textContent = c;
+    select.appendChild(option);
+    
+  })
+  p.textContent = funcChoices[0]()
+  select.addEventListener("change", () => {
+    const selected = select.selectedIndex;
+    p.textContent = funcChoices[selected]();
+    
+  })
+}
+
+output()
+document.body.append(p, select);
+</script>
+</html>
