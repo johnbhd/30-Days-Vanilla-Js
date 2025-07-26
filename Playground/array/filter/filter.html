@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3 exercise Filter Vanilla Js</title>
+</head>
+<body>
+  
+</body>
+<script>
+const p = document.createElement("p");
+const select = document.createElement("select");
+let arr = [];
+
+function evenNum() {
+  arr = [1, 2, 3, 4, 5, 6, 7, 8]
+  arr = arr.filter(x => x % 2 == 0);
+  
+  return arr;
+}
+
+function wordLength() {
+  arr = ["sun", "planet", "galaxy", "star", "moon"];
+  
+  return arr.filter(u => u.length >= 4).join(" - ");
+}
+
+function mapObject() {
+  arr = [
+    { name: "Ana", score: 80},
+    { name: "Leo", score: 92},
+    { name: "Zoe", score: 75}
+  ];
+  
+  arr = arr.filter(n => n.score > 75).map(n => n.name ).join(" & ");
+
+  return arr;
+}
+
+function output() {
+  let choices = ["Even Numbers", "Word Length", "Filter Object"];
+  let funcChoices = [evenNum, wordLength, mapObject];
+  
+  choices.forEach(c => {
+    const option = document.createElement("option");
+    option.value = c;
+    option.textContent = c;
+    select.appendChild(option);
+    
+  })
+  p.textContent = funcChoices[0]()
+  select.addEventListener("change", () => {
+    const selected = select.selectedIndex;
+    p.textContent = funcChoices[selected]();
+    
+  })
+}
+
+output()
+document.body.append(p, select);
+</script>
+</html>
