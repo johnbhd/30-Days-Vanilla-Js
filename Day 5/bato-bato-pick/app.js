@@ -8,7 +8,7 @@ const Pscore = document.getElementById('pscore');
 const Cscore = document.getElementById('cscore');
 const Tscore = document.getElementById('tscore');
 
-const defaultPick = ["https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/rock1.png", "https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/rock2.png"];
+const defaultPick = ["./img/rock1.png", "./img/rock2.png"];
 
 vs.style.display = 'none';
 
@@ -29,15 +29,15 @@ function getGameChoices() {
     const pick = [
         {
             choice: "bato",
-            img: ["https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/rock1.png", "https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/rock2.png"]
+            img: ["./img/rock1.png", "./img/rock2.png"]
         },
         {
             choice: "papel",
-            img: ["https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/paper1.png", "https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/paper2.png"]
+            img: ["./img/paper1.png", "./img/paper2.png"]
         },
         {
             choice: "gunting",
-            img: ["https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/scissor2.png", "https://raw.githubusercontent.com/jbmvdev/img-host/main/pick/scissor1.png"]
+            img: ["./img/scissor2.png", "./img/scissor1.png"]
         }
     ];
   return pick;

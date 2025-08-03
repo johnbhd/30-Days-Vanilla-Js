@@ -1,6 +1,6 @@
 console.log("hello world")
 
-// task
+// task - make old code as OOP practice clean code architecture
 
 // score localstorage
 
@@ -11,3 +11,9 @@ console.log("hello world")
 
 
 // computer moves
+
+
+
+// Done
+
+// change character 
