@@ -17,3 +17,10 @@ console.log("hello world")
 // Done
 
 // change character 
+
+
+
+// GOAL 8-9-25
+
+// use oop approach 
+// make name clickable for the player or computer

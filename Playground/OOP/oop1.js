@@ -29,7 +29,7 @@ const DigitalBook = new Ebook(HandBooks.title, HandBooks.author, "2016", "1.2mb"
 HandBooks.displayInfo()
 DigitalBook.displayInfo()
 
-// OOP
+// OOP  
 
 // 1. Class ✅
 // Blueprint for creating objects (Book, Ebook)

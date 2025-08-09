@@ -87,7 +87,7 @@ input {
   width: 20px;
   font-size: 1.8rem;
 }
-.labelP {
+.labelP, .player-label {
   cursor: pointer;
 }
 @keyframes blinker {

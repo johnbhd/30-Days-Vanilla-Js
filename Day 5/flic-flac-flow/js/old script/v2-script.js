@@ -1,18 +1,9 @@
-class FlicFlacFlow {
-  
-  constructor() {
-    this.DOM = {
-      boardCon: document.getElementById("tictactoe"),
-      message: document.getElementById('message'),
-      stars: document.querySelector('.stars'),
-      player1Score: document.getElementById('player1-score'),
-      player2Score: document.getElementById('player2-score'),  
-      tieScore: document.getElementById('tie')
-    }
-    
-  }
-}
-
+const tictacDiv = document.getElementById("tictactoe");
+const message = document.getElementById('message');
+const stars = document.querySelector('.stars');
+const player1Score = document.getElementById('player1-score');
+const player2Score = document.getElementById('player2-score');
+const tieScore = document.getElementById('tie');
 
 const sizeBoard = 3;
 const empty = "&nbsp";
@@ -125,7 +116,7 @@ function gameRestart() {
   const cells = document.querySelectorAll('td');
   cells.forEach(cell => {
     cell.textContent = "";
-    cell.classList.remove('hightlight');
+    cell.classList.remove('highlight');
     cell.classList.remove('dimmed');
   });
     
@@ -139,15 +130,15 @@ function gameRestart() {
   
 }
 
-// hightlight winner
-function hightlightWinner(winner) {
+// highlight winner
+function highlightWinner(winner) {
   const cells = document.querySelectorAll('td');
 
   cells.forEach(cell => {
     const indexs = Number(cell.dataset.index);
 
     if (winner.includes(indexs)) {
-      cell.classList.add('hightlight');
+      cell.classList.add('highlight');
     } else {
       cell.classList.add('dimmed')
     }
@@ -186,7 +177,7 @@ function ClickHandle(e) {
   const winningTiles = CheckWinner(moves);
   
   if (winningTiles) {
-    hightlightWinner(winningTiles);
+    highlightWinner(winningTiles);
     message.textContent = `The winner is player ${currentPlayer}!`;
     gameover = true;
     gameScoring()
