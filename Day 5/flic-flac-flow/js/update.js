@@ -1,3 +1,8 @@
+import { Computer } from "./computer.js";
+const computer = Computer()
+
+console.log(computer)
+
 class FlicFlacFlow {
   constructor() {
     // this. is a encapsulation
@@ -35,6 +40,7 @@ class FlicFlacFlow {
     this.init() // calling function 
   }
   init() {
+    this.loadFromLocalStorage()
     this.setupEventListener()
     this.updatePlayer()
     this.createStar()
@@ -48,6 +54,38 @@ class FlicFlacFlow {
   getDataLocalStorage(key) {
     const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : null;
+  }
+  loadFromLocalStorage() {
+    // player label
+    const savePlayer1Label = this.getDataLocalStorage("Player1");
+    const savePlayer2Label = this.getDataLocalStorage("Player2");
+
+    if (savePlayer1Label) {
+      this.DOM.player1Label.textContent = savePlayer1Label;
+    }
+
+    if (savePlayer2Label) {
+      this.DOM.player2Label.textContent = savePlayer2Label;
+    }
+
+    // player char
+    const savedChar = this.getDataLocalStorage("PlayerChar");
+    if (savedChar && Array.isArray(savedChar)) {
+      this.DOM.playerChar1.value = savedChar[0];
+      this.DOM.playerChar2.value = savedChar[1];
+    }
+
+    // game score 
+    let savedGameScore = this.getDataLocalStorage("GameScore");
+    if (!savedGameScore) {
+        savedGameScore = { player1: 0, player2: 0, tie: 0 };
+        this.setDataLocalStorage("GameScore", savedGameScore);
+    }
+    this.gameScore = savedGameScore;
+
+    this.DOM.player1Score.textContent = savedGameScore.player1;
+    this.DOM.player2Score.textContent = savedGameScore.player2;
+    this.DOM.tieScore.textContent = savedGameScore.tie;
   }
 
   setupEventListener() {
@@ -129,6 +167,7 @@ class FlicFlacFlow {
     if (this.moveX.length + this.moveY.length === 9) {
       this.gameScore.tie++;
       this.DOM.tieScore.textContent = this.gameScore.tie;
+      this.setDataLocalStorage("GameScore", this.gameScore)
       return true;
     }
     return false;
@@ -153,10 +192,10 @@ class FlicFlacFlow {
   }
   highlightWinner(winner) {
     const cells = document.querySelectorAll('td');
-
+    
     cells.forEach(cell => {
       const indexs = Number(cell.dataset.index);
-
+      
       if (winner.includes(indexs)) {
         cell.classList.add('highlight');
       } else {
@@ -164,7 +203,7 @@ class FlicFlacFlow {
       }
     });
   }
-
+  
   gameScoring() {
     if (this.currentPlayer === this.player[0]) {
       this.gameScore.player1++
@@ -173,6 +212,8 @@ class FlicFlacFlow {
       this.gameScore.player2++
       this.DOM.player2Score.textContent = this.gameScore.player2;
     }
+
+    this.setDataLocalStorage("GameScore", this.gameScore)
   }
 
   ClickHandle(e) {
