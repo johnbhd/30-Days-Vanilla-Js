@@ -1,12 +1,10 @@
 import { Computer } from "./computer.js";
-const computer = Computer()
-
-console.log(computer)
 
 class FlicFlacFlow {
   constructor() {
     // this. is a encapsulation
     // constructor called method
+    // dom declaration
     this.DOM = {
       boardCon: document.getElementById("tictactoe"),
       message: document.getElementById('message'),
@@ -36,6 +34,9 @@ class FlicFlacFlow {
     this.moveX = [];
     this.moveY = [];
     this.gameScore = { player1: 0, player2: 0, tie: 0 };
+    this.computer = new Computer()
+    this.gameStarted = false
+    this.justStart = true
 
     this.init() // calling function 
   }
@@ -45,8 +46,15 @@ class FlicFlacFlow {
     this.updatePlayer()
     this.createStar()
     this.createBoard()
+    if (this.getDataLocalStorage("Player2") === "Computer") {
+      this.ComputerMoves()
+    }
   }
-  
+  // Computer
+  ComputerMoves() {
+
+  }
+
   // LOCAL STORAGE
   setDataLocalStorage(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
@@ -55,11 +63,13 @@ class FlicFlacFlow {
     const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : null;
   }
+
   loadFromLocalStorage() {
-    // player label
+    // player label localstorage
     const savePlayer1Label = this.getDataLocalStorage("Player1");
     const savePlayer2Label = this.getDataLocalStorage("Player2");
-
+    
+    // change label base on local storage
     if (savePlayer1Label) {
       this.DOM.player1Label.textContent = savePlayer1Label;
     }
@@ -75,7 +85,7 @@ class FlicFlacFlow {
       this.DOM.playerChar2.value = savedChar[1];
     }
 
-    // game score 
+    // game score local storage
     let savedGameScore = this.getDataLocalStorage("GameScore");
     if (!savedGameScore) {
         savedGameScore = { player1: 0, player2: 0, tie: 0 };
@@ -100,6 +110,7 @@ class FlicFlacFlow {
     })
   }
 
+  // changing player char base on input
   updatePlayer() {
     this.playerVal = [
       this.DOM.playerChar1.value  || "X",
@@ -122,6 +133,7 @@ class FlicFlacFlow {
     }
   }
 
+  // board of the game
   createBoard() {
     const board = document.createElement("table");
     board.style.border = "1px solid white";
@@ -173,6 +185,7 @@ class FlicFlacFlow {
     return false;
   }
 
+  // game restart
   gameRestart() {
     const cells = document.querySelectorAll('td');
     cells.forEach(cell => {
@@ -185,11 +198,16 @@ class FlicFlacFlow {
     this.moveY = [];
     this.currentPlayer = this.player[0];
     this.gameover = false;
+    this.gameStarted = false;
     this.DOM.message.textContent = "Flic Flac Flow";
-    this.DOM.playerChar1.readOnly = false;
-    this.DOM.playerChar2.readOnly = false;
-    
+    [this.DOM.playerChar1, this.DOM.playerChar2].forEach(ch => {
+      ch.readOnly = false
+      ch.style.opacity = "1"
+    })
+
   }
+
+  // winner
   highlightWinner(winner) {
     const cells = document.querySelectorAll('td');
     
@@ -203,7 +221,7 @@ class FlicFlacFlow {
       }
     });
   }
-  
+  // scoring
   gameScoring() {
     if (this.currentPlayer === this.player[0]) {
       this.gameScore.player1++
@@ -215,42 +233,99 @@ class FlicFlacFlow {
 
     this.setDataLocalStorage("GameScore", this.gameScore)
   }
-
+  
+  // game start click
   ClickHandle(e) {
-    this.setDataLocalStorage("PlayerChar", this.playerVal)
+    this.setDataLocalStorage("PlayerChar", this.playerVal) // render player character
     const index = Number(e.target.dataset.index);
-    this.DOM.playerChar1.readOnly = true;
-    this.DOM.playerChar2.readOnly = true;
-    
+ 
+    [this.DOM.playerChar1, this.DOM.playerChar2].forEach(ch => {
+      ch.readOnly = true
+      ch.style.opacity = "0.6"
+    })
+
+    // game started label
+    if (!this.gameover) {
+      this.gameStarted = true;
+
+      [this.DOM.player1Label, this.DOM.player2Label].forEach(el => {
+        el.style.pointerEvents = "none"
+        el.style.opacity = "0.6"
+      })
+    } else {
+        [this.DOM.player1Label, this.DOM.player2Label].forEach(el => {
+        el.style.pointerEvents = "auto"
+        el.style.opacity = "1"
+      })
+    }
+  
+    // if game end and click again it will restart
     if (this.gameover) {
       this.gameRestart();
       return;
     }
+
+    // Human Player
     if (e.target.textContent !== "") return;
-    
     e.target.textContent = this.currentPlayer; 
-    
+
+    const isAgainstComputer = this.getDataLocalStorage("Player2") === "Computer"
     const moves = this.currentPlayer === this.player[0] ? this.moveX : this.moveY;
-    moves.push(index);
+    moves.push(Number(e.target.dataset.index))
 
     const winningTiles = this.CheckWinner(moves);
     
     if (winningTiles) {
       this.highlightWinner(winningTiles);
-      this.DOM.message.textContent = `The winner is player ${this.currentPlayer}!`;
+      this.DOM.message.textContent = `The winner is ${this.currentPlayer} Player!`;
       this.gameover = true;
       this.gameScoring()
       return;
     }
-    
     if (this.CheckTie()) {
       this.DOM.message.textContent = `Game Tie!`;
       this.gameover = true;
       return;
     }
+    
+    // switch mode Computer
     this.currentPlayer = this.currentPlayer === this.player[0] ? this.player[1] : this.player[0];
     this.DOM.message.textContent = `${this.currentPlayer}'s Turn!`;
     
+    
+    if (isAgainstComputer  && this.currentPlayer === this.player[1] && !this.gameover) {
+      setTimeout(() => {
+        const compMove = this.computer.getMove(this.moveX, this.moveY)
+        if (compMove) {
+          const compCell = document.querySelector(`[data-index='${compMove}']`);
+          if(compCell && compCell.textContent === "") {
+            compCell.textContent = this.player[1]
+            this.moveY.push(compMove)
+          }
+          // Check if computer won
+          const compWinningTiles = this.CheckWinner(this.moveY);
+          if (compWinningTiles) {
+              this.highlightWinner(compWinningTiles);
+              this.DOM.message.textContent = `The winner is Computer!`;
+              this.gameover = true;
+              this.gameScoring();
+              return;
+          }
+          
+          // Check for tie after computer move
+          if (this.CheckTie()) {
+              this.DOM.message.textContent = `Game Tie!`;
+              this.gameover = true;
+              return;
+          }
+        }
+
+        // Switch back to human player
+        this.currentPlayer = this.player[0];
+        this.DOM.message.textContent = `Player's Turn!`;
+
+      })
+    }
   }
 }
 
