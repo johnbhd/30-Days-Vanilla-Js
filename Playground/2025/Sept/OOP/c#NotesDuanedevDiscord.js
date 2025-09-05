@@ -1,5 +1,5 @@
-console.log("oop c# ni kuya duandev, nads - js dev / sir willson flutter dev");
-
+console.log("oop c# ni kuya duandev, nads - js dev / sir willson flutter dev"); // 9-5-24 - 11:37pm
+// sir willson abad flutter
 /**
  * 🟢 Normal Class
  * - Blueprint to create objects (instances) using `new`.
@@ -42,4 +42,25 @@ console.log("oop c# ni kuya duandev, nads - js dev / sir willson flutter dev");
  * - Overloading = flexibility, same name but different parameters.
  * - Constructors can be overloaded too.
  * - Nullable vs Optional = nullability vs skipping argument.
+ */
+//duandev .net 
+/**
+ * 🟢 Access Modifiers
+ *
+ * public
+ * - Can be accessed anywhere (inside or outside the class).
+ * - Example: obj.Name  ✅
+ *
+ * private
+ * - Can only be accessed inside the same class.
+ * - Hides details from outside use (encapsulation).
+ * - Example: obj.secret ❌ (error)
+ *
+ * protected
+ * - (extra) Can be accessed inside the class and subclasses.
+ *
+ * ✅ Summary:
+ * - public = open to everyone
+ * - private = only inside the class
+ * - protected = only inside + subclasses
  */
