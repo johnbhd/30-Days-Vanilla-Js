@@ -2,91 +2,13 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Mini Airplane Game</title>
-  <style>
-    canvas { 
-      background: black; 
-      display: block; 
-      margin: auto; 
-    }
-  </style>
+  <title>Pong tennis</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<canvas id="game" width="400" height="600"></canvas>
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-let keys = {};
-let bullets = [];
-let enemies = [];
-
-let player = { x: 180, y: 500, w: 40, h: 40, speed: 5 };
-
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
-
-function shoot() {
-  bullets.push({ x: player.x + player.w/2 - 2, y: player.y, w: 4, h: 10, speed: 7 });
-}
-
-function spawnEnemy() {
-  let x = Math.random() * (canvas.width - 40);
-  enemies.push({ x, y: -40, w: 40, h: 40, speed: 2 });
-}
-
-setInterval(spawnEnemy, 1500); // new enemy every 1.5s
-
-function update() {
-  // Move player
-  if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed;
-  if (keys["ArrowRight"] && player.x < canvas.width - player.w) player.x += player.speed;
-  if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
-  if (keys["ArrowDown"] && player.y < canvas.height - player.h) player.y += player.speed;
-  if (keys[" "]) shoot();
-
-  // Move bullets
-  bullets.forEach(b => b.y -= b.speed);
-  bullets = bullets.filter(b => b.y > 0);
-
-  // Move enemies
-  enemies.forEach(e => e.y += e.speed);
-  enemies = enemies.filter(e => e.y < canvas.height);
-
-  // Check collisions
-  bullets.forEach((b, bi) => {
-    enemies.forEach((e, ei) => {
-      if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
-        enemies.splice(ei, 1);
-        bullets.splice(bi, 1);
-      }
-    });
-  });
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Player
-  ctx.fillStyle = "cyan";
-  ctx.fillRect(player.x, player.y, player.w, player.h);
-
-  // Bullets
-  ctx.fillStyle = "yellow";
-  bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
-
-  // Enemies
-  ctx.fillStyle = "red";
-  enemies.forEach(e => ctx.fillRect(e.x, e.y, e.w, e.h));
-}
-
-function loop() {
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-
-loop();
-</script>
+  <div class="container">
+    <canvas id="game" ></canvas>
+  </div>
 </body>
+<script type = "module" src="./js/main.js" defer></script>
 </html>
