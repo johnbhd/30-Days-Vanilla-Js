@@ -8,45 +8,135 @@
     },
     {
         "name": "Background Random",
-        "img": "./src/assets/calculator.png",
+        "img": "./src/assets/project.jpg",
         "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/background-random",
         "link": "./Day 2/background-random/index.html",
         "category": "none"
     },
     {
         "name": "Changing Text",
-        "img": "./src/assets/calculator.png",
+        "img": "./src/assets/project.jpg",
         "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%202/changing-text",
         "link": "./Day 2/changing-text/index.html",
         "category": "none"
     },
      {
         "name": "Basic Todo List",
-        "img": "./src/assets/calculator.png",
+        "img": "./src/assets/project.jpg",
         "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/basic-todo-list",
         "link": "./Day 3/basic-todo-list/index.html",
         "category": "none"
     },
     {
         "name": "Password Checker",
-        "img": "./src/assets/calculator.png",
+        "img": "./src/assets/project.jpg",
         "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/password-checker",
         "link": "./Day 3/password-checker/index.html",
         "category": "none"
     },
     {
         "name": "Real-Time Text Analyzer",
-        "img": "./src/assets/calculator.png",
+        "img": "./src/assets/project.jpg",
         "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/real-time-text-analyzer",
         "link": "./Day 3/real-time-text-analyzer/index.html",
         "category": "none"
     },
     {
         "name": "Simple Login (API JSON Dump)",
-        "img": "./src/assets/calculator.png",
+        "img": "./src/assets/project.jpg",
         "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%203/simle-login-dump-api-json",
         "link": "./Day 3/simle-login-dump-api-json/index.html",
         "category": "none"
+    },
+    {
+        "name": "Birthday Count Down",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/birthday-countdown-timer",
+        "link": "./Day 4/birthday-countdown-timer/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Factorial Calculator",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/factorial-calculator",
+        "link": "./Day 4/factorial-calculator/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Math Table Generator",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/math-table-generator",
+        "link": "./Day 4/factorial-calculator/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Number Guessing",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/number-guessing",
+        "link": "./Day 4/number-guessing/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Prime Number Calculator",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/primenum-calculator",
+        "link": "./Day 4/primenum-calculator/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Reverse Text",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/reverse-text",
+        "link": "./Day 4/reverse-text/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Word Repeater",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%204/word-repeater",
+        "link": "./Day 4/word-repeater/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Bato Bato Pick",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%205/bato-bato-pick",
+        "link": "./Day 5/bato-bato-pick/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Fibonacci Sequence",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%205/Fibonacci_Sequence",
+        "link": "./Day 5/Fibonacci_Sequence/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Tic Tac Toe",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%205/flic-flac-flow",
+        "link": "./Day 5/flic-flac-flow/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Student Management (Local Storage)",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%205/student-managament-localStorage",
+        "link": "./Day 5/student-managament-localStorage/index.html",
+        "category": "none"
+    },
+    {
+        "name": "One Piece Animation",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%206/one-piece-game",
+        "link": "./Day 6/one-piece-game/index.html",
+        "category": "none"
+    },
+    {
+        "name": "Pong Game (Tennis)",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%206/pong-tennis",
+        "link": "./Day 6/pong-tennis/index.html",
+        "category": "none"
     }
-
 ]

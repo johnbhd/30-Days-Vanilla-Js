@@ -1,6 +1,7 @@
 import { resizeCanvas, setupCanvas, isMobilePortrait } from "./resize.js";
 import { handleKeyboard, handleTouch } from "./controls.js";
-import { drawPaddle, clearScreen } from "./draw.js";
+import { drawPaddle, clearScreen, lineDivide, gameScore } from "./draw.js";
+import { drawBall, updateBall} from "./ball.js";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -13,6 +14,11 @@ let playerDir = 0;
 let opponentDir = -1;
 let controlsBound = false;
 
+// 
+let playerScore = 0;
+let opponentScore = 0;
+
+// CANVAS
 function setup() {
   const portrait = resizeCanvas(canvas);
   setupCanvas(canvas, portrait);
@@ -43,6 +49,7 @@ function setup() {
 window.addEventListener("resize", setup);
 setup();
 
+// MAIN LOOP OF GAME
 function gameloop() {
   clearScreen(ctx, canvas);
   const portrait = isMobilePortrait(canvas);
@@ -72,6 +79,13 @@ function gameloop() {
   drawPaddle(ctx, playerX, playerY, paddleWidth, paddleHeight);
   drawPaddle(ctx, opponentX, opponentY, paddleWidth, paddleHeight);
 
+  lineDivide(ctx, canvas, portrait);
+  
+  gameScore(ctx, canvas, playerScore, opponentScore, portrait)
+  drawBall(ctx);
+  
+  updateBall(canvas, playerX, playerY, opponentX, opponentY, paddleWidth, paddleHeight, portrait);
+  
   requestAnimationFrame(gameloop);
 }
 
