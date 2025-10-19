@@ -1,7 +1,7 @@
 import { resizeCanvas, setupCanvas, isMobilePortrait } from "./resize.js";
 import { handleKeyboard, handleTouch } from "./controls.js";
 import { drawPaddle, clearScreen, lineDivide, gameScore } from "./draw.js";
-import { drawBall, updateBall} from "./ball.js";
+import { drawBall, updateBall, ball} from "./ball.js";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -49,11 +49,13 @@ function setup() {
 window.addEventListener("resize", setup);
 setup();
 
+ball.x = canvas.width / 2 - ball.width / 2;
+ball.y = canvas.height / 2 - ball.height / 2;
+ball.paused = false;
 // MAIN LOOP OF GAME
-function gameloop() {
-  clearScreen(ctx, canvas);
-  const portrait = isMobilePortrait(canvas);
 
+function gameloop() {
+  const portrait = isMobilePortrait(canvas);
   // Player movement
   if (portrait) {
     playerX += paddleSpeed * playerDir;
@@ -64,7 +66,7 @@ function gameloop() {
     if (playerY < 0) playerDir = 1;
     if (playerY + paddleHeight >= canvas.height) playerDir = -1;
   }
-
+  
   // Opponent movement
   if (portrait) {
     opponentX += paddleSpeed * opponentDir;
@@ -76,17 +78,19 @@ function gameloop() {
     if (opponentY + paddleHeight >= canvas.height) opponentDir = -1;
   }
 
+  updateBall(canvas, playerX, playerY, opponentX, opponentY, paddleWidth, paddleHeight, portrait);
+
+  clearScreen(ctx, canvas);
+
   drawPaddle(ctx, playerX, playerY, paddleWidth, paddleHeight);
   drawPaddle(ctx, opponentX, opponentY, paddleWidth, paddleHeight);
-
   lineDivide(ctx, canvas, portrait);
-  
-  gameScore(ctx, canvas, playerScore, opponentScore, portrait)
+  gameScore(ctx, canvas, playerScore, opponentScore, portrait);
   drawBall(ctx);
   
-  updateBall(canvas, playerX, playerY, opponentX, opponentY, paddleWidth, paddleHeight, portrait);
   
   requestAnimationFrame(gameloop);
+
 }
 
 gameloop();

@@ -1,15 +1,18 @@
 const images = [
-  "../assets/volleyball.png",
-  "../assets/basketball.png",
-  "../assets/au.png",
-  "../assets/tennis.png",
+  "./assets/volleyball.png",
+  "./assets/basketball.png",
+  "./assets/au.png",
+  "./assets/tennis.png",
 ];
 
 let currentImageIndex = 0;
 const img = new Image();
+img.onload = () => console.log("Loaded:", img.src);
+img.onerror = () => console.error("Failed to load:", img.src);
+
 img.src = images[currentImageIndex];
 
-const ball = {
+export const ball = {
   y: 150,
   x: 150,
   width: 40,
