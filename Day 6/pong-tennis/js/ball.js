@@ -26,6 +26,18 @@ export const ball = {
   lastLandscapeDirectionRight: true
 };
 
+// Export hitPaddle variable
+export let hitPaddle = false;
+
+// Add scoring callback functions
+let onPlayerScore = () => {};
+let onOpponentScore = () => {};
+
+export function setScoreCallbacks(onPlayer, onOpponent) {
+  onPlayerScore = onPlayer;
+  onOpponentScore = onOpponent;
+}
+
 export function drawBall(ctx) {
   if (!img.complete) return;
   ctx.save();
@@ -39,8 +51,12 @@ function nextImage() {
   currentImageIndex = (currentImageIndex + 1) % images.length;
   img.src = images[currentImageIndex];
 }
+
 export function updateBall(canvas, playerX, playerY, opponentX, opponentY, paddleWidth, paddleHeight, portrait) {
   if (ball.paused) return;
+
+  // Reset hitPaddle at start of each update
+  hitPaddle = false;
 
   // Move ball
   ball.x += ball.speedX;
@@ -63,8 +79,6 @@ export function updateBall(canvas, playerX, playerY, opponentX, opponentY, paddl
   }
 
   // Paddle collisions
-  let hitPaddle = false;
-
   if (portrait) {
     // Portrait → bounce vertically
     // Player paddle (bottom)
@@ -121,34 +135,74 @@ export function updateBall(canvas, playerX, playerY, opponentX, opponentY, paddl
     }
   }
 
-  // Ball went out of bounds (no paddle hit)
+  // Ball went out of bounds (no paddle hit) - SCORING LOGIC
   if (!hitPaddle) {
-    if (
-      (portrait && (ball.y < 0 || ball.y + ball.height > canvas.height)) ||
-      (!portrait && (ball.x < 0 || ball.x + ball.width > canvas.width))
-    ) {
+    let scored = false;
+    
+    if (portrait) {
+      // Ball went past bottom - Opponent scores
+      if (ball.y + ball.height > canvas.height) {
+        onPlayerScore();
+        scored = true;
+      }
+      // Ball went past top - Player scores
+      else if (ball.y < 0) {
+        onOpponentScore();
+        scored = true;
+      }
+    } else {
+      // Ball went past right - Opponent scores
+      if (ball.x + ball.width > canvas.width) {
+        onPlayerScore();
+        scored = true;
+      }
+      // Ball went past left - Player scores
+      else if (ball.x < 0) {
+        onOpponentScore();
+        scored = true;
+      }
+    }
+
+    if (scored) {
       ball.paused = true;
       ball.speedX = 0;
       ball.speedY = 0;
 
       setTimeout(() => {
-        // Reset to center
-        ball.x = canvas.width / 2 - ball.width / 2;
-        ball.y = canvas.height / 2 - ball.height / 2;
-
-        if (portrait) {
-          ball.speedY = ball.lastPortraitDirectionDown ? 3 : -3;
-          ball.speedX = 3; // keep horizontal speed
-          ball.lastPortraitDirectionDown = !ball.lastPortraitDirectionDown;
-        } else {
-          ball.speedX = ball.lastLandscapeDirectionRight ? 3 : -3;
-          ball.speedY = 3; // keep vertical speed
-          ball.lastLandscapeDirectionRight = !ball.lastLandscapeDirectionRight;
-        }
-
-        ball.paused = false;
+        resetBallPosition(canvas, portrait);
         nextImage();
       }, 1000);
     }
   }
+}
+
+function resetBallPosition(canvas, portrait) {
+  // Reset to center
+  ball.x = canvas.width / 2 - ball.width / 2;
+  ball.y = canvas.height / 2 - ball.height / 2;
+
+  if (portrait) {
+    ball.speedY = ball.lastPortraitDirectionDown ? 3 : -3;
+    ball.speedX = 3; // keep horizontal speed
+    ball.lastPortraitDirectionDown = !ball.lastPortraitDirectionDown;
+  } else {
+    ball.speedX = ball.lastLandscapeDirectionRight ? 3 : -3;
+    ball.speedY = 3; // keep vertical speed
+    ball.lastLandscapeDirectionRight = !ball.lastLandscapeDirectionRight;
+  }
+
+  ball.paused = false;
+}
+
+export function resetBall(canvas, portrait) {
+  resetBallPosition(canvas, portrait);
+  ball.angle = 0;
+}
+
+export function setBallSpeed(speed) {
+  const currentSpeedX = Math.abs(ball.speedX);
+  const currentSpeedY = Math.abs(ball.speedY);
+  
+  ball.speedX = ball.speedX > 0 ? speed : -speed;
+  ball.speedY = ball.speedY > 0 ? speed : -speed;
 }

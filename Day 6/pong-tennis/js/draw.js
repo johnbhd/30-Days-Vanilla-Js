@@ -21,7 +21,7 @@ export function lineDivide(ctx, canvas, portrait) {
   ctx.stroke();
 }
 
-export function gameScore(ctx, canvas, playerScore, opponentScore, portrait) {
+export function drawGameScore(ctx, canvas, playerScore, opponentScore, portrait) {
   ctx.fillStyle = "white";
   
   if (portrait) {

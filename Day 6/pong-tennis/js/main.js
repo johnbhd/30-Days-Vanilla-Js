@@ -1,7 +1,7 @@
 import { resizeCanvas, setupCanvas, isMobilePortrait } from "./resize.js";
 import { handleKeyboard, handleTouch } from "./controls.js";
-import { drawPaddle, clearScreen, lineDivide, gameScore } from "./draw.js";
-import { drawBall, updateBall, ball} from "./ball.js";
+import { drawPaddle, clearScreen, lineDivide, drawGameScore } from "./draw.js";
+import { drawBall, updateBall, ball, setScoreCallbacks } from "./ball.js";
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -14,11 +14,11 @@ let playerDir = 0;
 let opponentDir = -1;
 let controlsBound = false;
 
-// 
+// Scores
 let playerScore = 0;
 let opponentScore = 0;
 
-// CANVAS
+// CANVAS SETUP
 function setup() {
   const portrait = resizeCanvas(canvas);
   setupCanvas(canvas, portrait);
@@ -44,53 +44,59 @@ function setup() {
     handleTouch(canvas, portrait, (dir) => (playerDir = dir));
     controlsBound = true;
   }
+
+  // Reset ball position after canvas setup
+  ball.x = canvas.width / 2 - ball.width / 2;
+  ball.y = canvas.height / 2 - ball.height / 2;
+  ball.paused = false;
 }
 
 window.addEventListener("resize", setup);
 setup();
 
-ball.x = canvas.width / 2 - ball.width / 2;
-ball.y = canvas.height / 2 - ball.height / 2;
-ball.paused = false;
-// MAIN LOOP OF GAME
+// Set up score callbacks
+setScoreCallbacks(
+  () => playerScore++,  // onPlayerScore
+  () => opponentScore++ // onOpponentScore
+);
 
+// MAIN GAME LOOP
 function gameloop() {
   const portrait = isMobilePortrait(canvas);
-  // Player movement
+  
+  // Player movement - FIXED: Better boundary checking
   if (portrait) {
     playerX += paddleSpeed * playerDir;
-    if (playerX < 0) playerDir = 1;
-    if (playerX + paddleWidth > canvas.width) playerDir = -1;
+    playerX = Math.max(0, Math.min(playerX, canvas.width - paddleWidth));
   } else {
     playerY += paddleSpeed * playerDir;
-    if (playerY < 0) playerDir = 1;
-    if (playerY + paddleHeight >= canvas.height) playerDir = -1;
+    playerY = Math.max(0, Math.min(playerY, canvas.height - paddleHeight));
   }
   
-  // Opponent movement
+  // Opponent movement - FIXED: Better boundary checking
   if (portrait) {
     opponentX += paddleSpeed * opponentDir;
     if (opponentX <= 0) opponentDir = 1;
     if (opponentX + paddleWidth >= canvas.width) opponentDir = -1;
+    opponentX = Math.max(0, Math.min(opponentX, canvas.width - paddleWidth));
   } else {
     opponentY += paddleSpeed * opponentDir;
     if (opponentY <= 0) opponentDir = 1;
     if (opponentY + paddleHeight >= canvas.height) opponentDir = -1;
+    opponentY = Math.max(0, Math.min(opponentY, canvas.height - paddleHeight));
   }
 
   updateBall(canvas, playerX, playerY, opponentX, opponentY, paddleWidth, paddleHeight, portrait);
 
+  // Drawing
   clearScreen(ctx, canvas);
-
   drawPaddle(ctx, playerX, playerY, paddleWidth, paddleHeight);
   drawPaddle(ctx, opponentX, opponentY, paddleWidth, paddleHeight);
   lineDivide(ctx, canvas, portrait);
-  gameScore(ctx, canvas, playerScore, opponentScore, portrait);
+  drawGameScore(ctx, canvas, playerScore, opponentScore, portrait);
   drawBall(ctx);
   
-  
   requestAnimationFrame(gameloop);
-
 }
 
 gameloop();
