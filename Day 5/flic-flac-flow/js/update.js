@@ -44,15 +44,10 @@ class FlicFlacFlow {
     this.loadFromLocalStorage()
     this.setupEventListener()
     this.updatePlayer()
-    this.createStar()
     this.createBoard()
     if (this.getDataLocalStorage("Player2") === "Computer") {
       this.ComputerMoves()
     }
-  }
-  // Computer
-  ComputerMoves() {
-
   }
 
   // LOCAL STORAGE
@@ -125,13 +120,6 @@ class FlicFlacFlow {
 
   }
 
-  createStar() {
-    for (let i = 0; i < 20; i++) {
-      const star = document.createElement('div');
-      star.classList.add('star');
-      this.DOM.stars.appendChild(star);
-    }
-  }
 
   // board of the game
   createBoard() {
