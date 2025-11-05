@@ -3,23 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vanilla Js Projects - johnbhd </title>
+    <title>Vanilla Js Projects - johnbhd</title>
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <main>
-    <div>
-       <canvas id="game" width="400" height="400"></canvas>
-    </div>
-    <div class="controls">
-      <button id="up">⬆️</button>
-      <div class="middle">
-        <button id="left">⬅️</button>
-        <button id="down">⬇️</button>
-        <button id="right">➡️</button>
+    <div class="game-wrap">
+      <canvas id="game"></canvas>
+      <div class="score-board">
+        <span>Score: <strong id="score">0</strong></span>
+        <span>High Score: <strong id="highScore">0</strong></span>
       </div>
-  </div>
+    </div>
+
+    <div class="controls">
+      <button id="up">🡹</button>
+      <div class="middle">
+        <button id="left">🡸</button>
+        <button id="down">🡻</button>
+        <button id="right">🡺</button>
+      </div>
+    </div>
   </main>
+
+  <script type="module" src="./main.js"></script>
 </body>
-<script type="module" src="./main.js" ></script>
 </html>

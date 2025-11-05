@@ -1,6 +1,6 @@
 export function titleDraw(ctx, board) {
-  ctx.font = "30px Arial";
-  ctx.fillStyle = "black";
+  ctx.font = "40px Arial";
+  ctx.fillStyle = "white";
   ctx.textAlign = "center";
   ctx.fillText("Snake Game", board.x + board.size / 2, board.y -30);
 }

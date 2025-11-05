@@ -56,15 +56,14 @@ setup();
 
 // Set up score callbacks
 setScoreCallbacks(
-  () => playerScore++,  // onPlayerScore
-  () => opponentScore++ // onOpponentScore
+  () => playerScore++,  
+  () => opponentScore++ 
 );
 
 // MAIN GAME LOOP
 function gameloop() {
   const portrait = isMobilePortrait(canvas);
-  
-  // Player movement - FIXED: Better boundary checking
+
   if (portrait) {
     playerX += paddleSpeed * playerDir;
     playerX = Math.max(0, Math.min(playerX, canvas.width - paddleWidth));
@@ -73,7 +72,7 @@ function gameloop() {
     playerY = Math.max(0, Math.min(playerY, canvas.height - paddleHeight));
   }
   
-  // Opponent movement - FIXED: Better boundary checking
+
   if (portrait) {
     opponentX += paddleSpeed * opponentDir;
     if (opponentX <= 0) opponentDir = 1;

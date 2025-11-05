@@ -10,42 +10,108 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  
-  background: #eee;
+  background-image: url('./forest.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  min-height: 100vh;
 }
 
 main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 100vh;
+  gap: 20px;
+  width: 100%;
+  padding: 10px;
+}
+
+canvas {
+  width: 100%;
+  max-width: 450px;
+  height: auto;
+  border-radius: 10px;
+
 }
 
 .controls {
   display: flex;
-  position: relative;
-  bottom: 10rem;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 12px;
+  position: relative;
+  bottom: 10vh;
 }
 
 .middle {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 button {
-  width: 60px;
-  height: 60px;
-  font-size: 24px;
+  width: 65px;
+  height: 65px;
+  font-size: 26px;
   border: none;
-  border-radius: 10px;
-  background: #4CAF50;
-  color: white;
+  border-radius: 20%;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(6px);
+  color: #a8ffe5;
+  text-shadow: 0 0 6px rgba(168, 255, 229, 0.8);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease-in-out, background 0.15s;
 }
 
 button:active {
-  background: #2E7D32;
+  transform: scale(0.85);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.score-board {
+  position: relative;
+  bottom: 12vh;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  font-size: 1rem;
+  color: #a8ffe5; /* soft neon forest color */
+  font-weight: bold;
+  padding: 8px 0;
+  text-shadow: 0 0 6px rgba(0,255,180,0.6);
+}
+
+@media (max-width: 600px) {
+  canvas {
+    max-width: 300px;
+  }
+  .score-board {
+    position: relative;
+    bottom: 16vh;
+  }
+  .controls {
+    position: relative;
+    bottom: 18vh;
+  }
+  button {
+    width: 70px;
+    height: 70px;
+    font-size: 28px;
+  }
+}
+
+@media (min-width: 600px) {
+  canvas {
+    max-width: 550px;
+  }
+}
+
+@media (min-width: 1024px) {
+  canvas {
+    max-width: 950px;
+  }
 }

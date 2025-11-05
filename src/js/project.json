@@ -138,5 +138,12 @@
         "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%206/pong-tennis",
         "link": "./Day 6/pong-tennis/index.html",
         "category": "none"
+    },
+    {
+        "name": "Snake Game",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%206/snake-game",
+        "link": "./Day 6/snake-game/index.html",
+        "category": "none"
     }
 ]
