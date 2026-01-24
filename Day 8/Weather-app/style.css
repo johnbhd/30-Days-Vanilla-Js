@@ -13,3 +13,8 @@ body {
 input {
   padding: 5px;
 }
+.show-result {
+  display: none;
+  flex-direction: column;
+  margin-top: 20px;
+}
