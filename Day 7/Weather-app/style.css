@@ -15,6 +15,5 @@ input {
 }
 .show-result {
   display: none;
-  flex-direction: column;
   margin-top: 20px;
 }
