@@ -1,5 +1,5 @@
 import weatherApi from "./lib.js";
-import getWeatherData from "./weather.js";
+import { getWeatherData, getWeekData } from "./weather.js";
 
 const inputText = document.getElementById("inputText");
 const btn = document.getElementById("btn");
@@ -10,9 +10,12 @@ btn.addEventListener("click", () => {
   const inputValue = inputText.value.toLowerCase();
   console.log(inputValue);
   
-  const { baseUrl, apiWeekForecast } = weatherApi(inputValue);
+  const { baseUrl, apiForecast } = weatherApi(inputValue);
+  
   getWeatherData(baseUrl);
-  console.log(apiWeekForecast);
+  getWeekData(apiForecast);
+  
+  console.log(apiForecast);
   
   showDiv.style.display = "flex";
 })

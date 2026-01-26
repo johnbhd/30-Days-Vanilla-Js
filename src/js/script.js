@@ -39,7 +39,7 @@ const DisplayProject = async () => {
         const response = await fetch('./src/js/project.json');
         const data = await response.json();
         console.log(data);
-        ConProject(data);
+        ConProject(data.reverse());
 
     } catch (error) {
         console.log(error);

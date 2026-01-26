@@ -145,5 +145,12 @@
         "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%206/snake-game",
         "link": "./Day 6/snake-game/index.html",
         "category": "none"
+    },
+    {
+        "name": "Weather App",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%207/Weather-app",
+        "link": "./Day 7/Weather-app/index.html",
+        "category": "none"
     }
 ]
