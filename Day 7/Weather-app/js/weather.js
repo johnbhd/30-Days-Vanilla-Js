@@ -8,8 +8,8 @@ export async function getWeatherData(baseUrl) {
       throw new Error("Respone status: " + res.status);
     }
     const data = await res.json();
+    console.log(data)
     showResult(data);
-    console.log(data);
   } catch (error) {
     console.error("Error fetching weather data", error);
   }
