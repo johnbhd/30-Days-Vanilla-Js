@@ -1,5 +1,6 @@
 import weatherApi from "./lib.js";
 import { getWeatherData, getWeekData } from "./weather.js";
+import {inputValidation}  from "./view.js";
 
 const inputText = document.getElementById("inputText");
 const btn = document.getElementById("btn");
@@ -19,3 +20,12 @@ btn.addEventListener("click", () => {
   
   showDiv.style.display = "flex";
 })
+
+inputText.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault()
+    btn.click()
+  }
+})
+
+

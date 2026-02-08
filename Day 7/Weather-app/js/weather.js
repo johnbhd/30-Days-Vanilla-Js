@@ -1,4 +1,4 @@
-import showResult from "./view.js"
+import { showResult, inputValidation } from "./view.js"
 
 export async function getWeatherData(baseUrl) {
   try {
@@ -12,6 +12,7 @@ export async function getWeatherData(baseUrl) {
     showResult(data);
   } catch (error) {
     console.error("Error fetching weather data", error);
+    inputValidation("No city weather found...")
   }
 }
 
