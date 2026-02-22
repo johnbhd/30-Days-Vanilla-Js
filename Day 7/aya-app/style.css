@@ -1,0 +1,119 @@
+* {
+  font-family: "Arial";
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+body {
+  display: flex;
+  padding: 30px;
+  height: 100vh;
+}
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #f0efef;
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.header, .header-right, .tab, .money-div, .money-con, .money-wrap, .money, .money-num, .money-text, .money-button-div{
+  display: flex;
+}
+.header {
+  color: green;
+  justify-content: space-between;
+}
+.header-right {
+  gap: 10px;
+}
+.tab {
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 10px;
+}
+.tab-btn {
+  border: none;
+  font-size: 1rem;
+  background: none;
+  outline: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.money-con {
+  flex-direction: column;
+  background-color: #e6e4e4;
+  border-radius: 15px;
+}
+.money-div {
+  flex-direction: column;
+  background-color: #ffff;
+  padding: 15px;
+  border-radius: 15px;
+}
+.money-wrap {
+  flex-direction: column;
+  gap: 5px;
+  padding-bottom: 20px;
+}
+.money {
+  justify-content: space-between;
+}
+.money-num {
+  gap: 10px;
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+.money-text {
+  justify-content: space-between;
+  gap: 2px;
+  padding: 10px;
+  font-size: 1.2rem;
+}
+#text-1 {
+  font-size: 0.9rem;
+}
+#text-cashin {
+  padding-left: 3px;
+  color: green;
+}
+.money-button-div {
+  gap: 10px;
+  width: 100%;
+}
+.money-button {
+  width: 100%;
+  background-color: #bbebbb;
+  outline: none;
+  border: none;
+  border-radius: 15px;
+  color: green;
+  font-size: 1.1rem;
+  padding: 20px;
+}
+.active {
+  background-color: black;
+  color: #ffff;
+  border-radius: 20px;
+  padding: 7px 20px;
+}
+@media screen and (max-width: 768px) {
+  body {
+    padding: 0;
+  }
+  .tab {
+    gap: 5px;
+    padding: 5px;
+  }
+}
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+
+}
+
+/* Desktop: 1024px and above */
+@media screen and (min-width: 1024px) {
+  
+}

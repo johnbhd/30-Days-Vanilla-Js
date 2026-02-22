@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paymaya mod App</title>
+    <link rel="stylesheet" href="./style.css"/>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>P</div>
+      <div class="header-right">
+        <p>M</p>
+        <p>N</p>
+      </div>
+    </div>
+    <div class="tab">
+      <button class="tab-btn active">Wallet</button>
+      <button class="tab-btn">Savings</button>
+      <button class="tab-btn">Credit</button>
+      <button class="tab-btn">Loans</button>
+      <button class="tab-btn">Cards</button>
+    </div>
+
+    <div class="money-con">
+      <div class="money-div">
+        <div class="money-wrap">
+          <div class="money">
+            <div class="money-num">
+              <p>₱</p>
+              <p id="money">0</p>
+            </div>
+            <p>E</p>
+          </div>
+          <p id="text-1">Wallet balance <span id="text-cashin">Auto cash in</span></p>
+        </div>
+        <div class="money-button-div">
+          <button id="addCash" class="money-button">
+            Cash In
+          </button>
+          <button id="reset" class="money-button">
+            Send
+          </button>
+        </div>
+      </div>
+      <div class="money-text">
+        <div>
+          <p style="font-weight: 600;">Easy credit</p>
+          <span style="font-size: 0.7rem; ">Borrow up to 30k</span>
+        </div>
+        <div>
+          <p style="font-size: 1rem;">Get it now</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+const moneyDiv = document.getElementById("money");
+const sendBtn = document.getElementById("reset");
+const addCashBtn = document.getElementById("addCash");
+
+let money = Number(localStorage.getItem("money")) || 0;
+let intervalId = null;
+
+function updateDisplay() {
+  moneyDiv.textContent = money.toFixed(2);
+}
+
+function saveMoney(m) {
+  localStorage.setItem("money", m.toFixed(2));
+}
+
+function moneyPost() {
+  money += 0.1;
+  saveMoney(money); 
+  updateDisplay();  
+}
+
+function sendMoney() {
+  money = 0;
+  saveMoney(money);
+  localStorage.setItem("isNoMoney", "true");
+  updateDisplay();
+
+  if (intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+
+  alert("All money has send to me hehe, cash in to get money again...");
+}
+
+function cashIn() {
+  localStorage.setItem("isNoMoney", "false");
+
+  if (!intervalId) intervalId = setInterval(moneyPost, 100);
+  alert("Aya money here you go...");
+}
+
+updateDisplay();
+
+if (localStorage.getItem("isNoMoney") !== "true") {
+  intervalId = setInterval(moneyPost, 100);
+}
+
+sendBtn.addEventListener("click", sendMoney);
+addCashBtn.addEventListener("click", cashIn);
+
+console.log(localStorage.getItem("isNoMoney"));
+</script>
+</html>
