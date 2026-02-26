@@ -152,5 +152,12 @@
         "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%207/Weather-app",
         "link": "./Day 7/Weather-app/index.html",
         "category": "none"
+    },
+    {
+        "name": "Aya App",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%207/aya-app",
+        "link": "./Day 7/aya-app/index.html",
+        "category": "none"
     }
 ]
