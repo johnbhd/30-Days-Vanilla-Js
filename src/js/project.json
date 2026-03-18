@@ -166,5 +166,12 @@
         "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js",
         "link": "./Playground/smallProject/tortoise.html",
         "category": "none"
+    },
+    {
+        "name": "Baloorun",
+        "img": "./src/assets/project.jpg",
+        "repo": "https://github.com/johnbhd/30-Days-Vanilla-Js/tree/main/Day%207/Baloorun",
+        "link": "./Day 7/Baloorun/index.html",
+        "category": "none"
     }
 ]
