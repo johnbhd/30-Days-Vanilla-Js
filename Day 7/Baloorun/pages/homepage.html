@@ -1,24 +1,337 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baloorun</title>
-    <link rel="icon" href="./img/logo.jpg" type="image/x-icon">
-</head>
-<body>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baloorun - 2 Players with Shooting</title>
+<link rel="icon" href="./img/logo.jpg" type="image/x-icon">
 <style>
+  body {
+      background: linear-gradient(135deg, #1c1c1c, #111111);
+      position: relative;
+      height: 100%;
+      min-height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      touch-action: none;
+  }
 
+  /* Floating neon shapes */
+  body::before,
+  body::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      z-index: 0;
+  }
+
+  body::before {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255, 26, 77, 0.25), transparent 70%);
+      animation: float1 22s infinite linear alternate;
+  }
+
+  body::after {
+      width: 520px;
+      height: 520px;
+      background: radial-gradient(circle, rgba(0, 204, 255, 0.22), transparent 70%);
+      animation: float2 28s infinite linear alternate-reverse;
+  }
+
+  @keyframes float1 { 0% { transform: translate(-180px, -120px) scale(1); } 100% { transform: translate(280px, 220px) scale(1.15); } }
+  @keyframes float2 { 0% { transform: translate(120px, 180px) scale(1); } 100% { transform: translate(-280px, -140px) scale(1.12); } }
+
+  .player {
+      position: absolute;
+      width: 80px;
+      height: 120px;
+      z-index: 10;
+      pointer-events: none;
+      transition: transform 0.15s;
+  }
+
+  #player1 { filter: drop-shadow(0 0 12px #0af); }
+  #player2 { filter: drop-shadow(0 0 12px #ff1a4d); }
+
+  /* Projectiles */
+  .projectile {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      z-index: 5;
+      border-radius: 4px;
+  }
+
+  /* Controls */
+  .controls {
+      position: fixed;
+      bottom: 20px;
+      z-index: 100;
+      display: grid;
+      grid-template-columns: 64px 64px 64px;
+      grid-template-rows: 64px 64px 64px;
+      gap: 10px;
+      touch-action: manipulation;
+  }
+
+  #left-controls  { left: 20px; }
+  #right-controls { right: 20px; }
+
+  .controls button {
+      width: 64px;
+      height: 64px;
+      font-size: 30px;
+      background: rgba(35, 35, 55, 0.75);
+      color: #88f;
+      border: 2px solid;
+      border-radius: 16px;
+      cursor: pointer;
+      user-select: none;
+      backdrop-filter: blur(4px);
+      transition: all 0.1s;
+  }
+
+  #left-controls  button { border-color: #0af; }
+  #right-controls button { border-color: #ff1a4d; color: #ff4d80; }
+
+  button:active {
+      transform: scale(0.9);
+      opacity: 0.85;
+  }
+
+  .fire-btn {
+      grid-column: 2;
+      grid-row: 4;
+      font-size: 24px !important;
+      background: rgba(80, 200, 80, 0.4) !important;
+  }
+
+  .fire-btn:active { background: rgba(100, 255, 100, 0.6) !important; }
+
+  .up    { grid-column: 2; grid-row: 1; }
+  .left  { grid-column: 1; grid-row: 2; }
+  .right { grid-column: 3; grid-row: 2; }
+  .down  { grid-column: 2; grid-row: 3; }
+
+  @media (max-width: 500px) {
+      .controls {
+          bottom: 10px;
+      }
+      .controls button {
+          width: 56px;
+          height: 56px;
+          font-size: 26px;
+      }
+  }
 </style>
 </head>
 <body>
-  <div class="container">
-    fa
-  </div>
-</body>
-</html>
-</body>
+
+<img id="player1" class="player" src="../img/soldiner.png" alt="Player 1">
+<img id="player2" class="player" src="../img/soldiner2.png" alt="Player 2">
+
+<div id="left-controls" class="controls">
+    <button class="up">↑</button>
+    <button class="left">←</button>
+    <button class="right">→</button>
+    <button class="down">↓</button>
+    <button class="fire-btn">Fire</button>
+</div>
+
+<div id="right-controls" class="controls">
+    <button class="up">↑</button>
+    <button class="left">←</button>
+    <button class="right">→</button>
+    <button class="down">↓</button>
+    <button class="fire-btn">Fire</button>
+</div>
+
 <script>
-  
+const p1 = document.getElementById('player1');
+const p2 = document.getElementById('player2');
+
+let w = window.innerWidth;
+let h = window.innerHeight;
+
+// Starting positions
+let p1x = w * 0.25 - 40;
+let p1y = h * 0.5  - 60;
+let p2x = w * 0.75 - 40;
+let p2y = h * 0.5  - 60;
+
+p1.style.left = p1x + 'px'; p1.style.top = p1y + 'px';
+p2.style.left = p2x + 'px'; p2.style.top = p2y + 'px';
+
+const speed = 5;
+const bulletSpeed = 12;
+
+// Last direction (for shooting) - default right
+let p1Dir = { x: 1, y: 0 };
+let p2Dir = { x: 1, y: 0 };
+
+// Movement states
+const keys1 = { up: false, down: false, left: false, right: false, fire: false };
+const keys2 = { up: false, down: false, left: false, right: false, fire: false };
+
+const projectiles = [];
+
+function createProjectile(playerId, x, y, dirX, dirY) {
+    const bullet = document.createElement('div');
+    bullet.className = 'projectile';
+    bullet.style.left = (x + 32) + 'px';          // center-ish of player
+    bullet.style.top  = (y + 50) + 'px';
+    bullet.style.background = playerId === 1 ? '#0af' : '#ff1a4d';
+    bullet.dataset.dirX = dirX;
+    bullet.dataset.dirY = dirY;
+    bullet.dataset.player = playerId;
+    document.body.appendChild(bullet);
+    projectiles.push(bullet);
+}
+
+function updateProjectiles() {
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const b = projectiles[i];
+        let dx = parseFloat(b.dataset.dirX) * bulletSpeed;
+        let dy = parseFloat(b.dataset.dirY) * bulletSpeed;
+
+        let bx = parseFloat(b.style.left) + dx;
+        let by = parseFloat(b.style.top) + dy;
+
+        b.style.left = bx + 'px';
+        b.style.top  = by + 'px';
+
+        // Remove if out of bounds
+        if (bx < -20 || bx > w + 20 || by < -20 || by > h + 20) {
+            b.remove();
+            projectiles.splice(i, 1);
+        }
+    }
+}
+
+function update() {
+    // Player 1 movement + direction update
+    let dx1 = 0, dy1 = 0;
+    if (keys1.up)    { dy1 -= speed; p1Dir = {x:0, y:-1}; }
+    if (keys1.down)  { dy1 += speed; p1Dir = {x:0, y:1};  }
+    if (keys1.left)  { dx1 -= speed; p1Dir = {x:-1,y:0};  }
+    if (keys1.right) { dx1 += speed; p1Dir = {x:1, y:0};  }
+
+    // Diagonal direction normalization (optional - keeps last cardinal dir)
+    p1x += dx1;
+    p1y += dy1;
+    p1x = Math.max(0, Math.min(w - 80, p1x));
+    p1y = Math.max(0, Math.min(h - 120, p1y));
+    p1.style.left = p1x + 'px';
+    p1.style.top  = p1y + 'px';
+
+    // Player 2
+    let dx2 = 0, dy2 = 0;
+    if (keys2.up)    { dy2 -= speed; p2Dir = {x:0, y:-1}; }
+    if (keys2.down)  { dy2 += speed; p2Dir = {x:0, y:1};  }
+    if (keys2.left)  { dx2 -= speed; p2Dir = {x:-1,y:0};  }
+    if (keys2.right) { dx2 += speed; p2Dir = {x:1, y:0};  }
+
+    p2x += dx2;
+    p2y += dy2;
+    p2x = Math.max(0, Math.min(w - 80, p2x));
+    p2y = Math.max(0, Math.min(h - 120, p2y));
+    p2.style.left = p2x + 'px';
+    p2.style.top  = p2y + 'px';
+
+    // Shooting (fires once per press - not hold)
+    if (keys1.fire) {
+        createProjectile(1, p1x, p1y, p1Dir.x, p1Dir.y);
+        keys1.fire = false; // one shot per press
+    }
+    if (keys2.fire) {
+        createProjectile(2, p2x, p2y, p2Dir.x, p2Dir.y);
+        keys2.fire = false;
+    }
+
+    updateProjectiles();
+
+    requestAnimationFrame(update);
+}
+
+update();
+
+// Resize
+window.addEventListener('resize', () => {
+    w = window.innerWidth;
+    h = window.innerHeight;
+});
+
+// Controls setup
+const leftBtns = document.querySelectorAll('#left-controls button');
+const rightBtns = document.querySelectorAll('#right-controls button');
+
+function setupControls(buttons, state, isLeft) {
+    buttons.forEach(btn => {
+        const cls = btn.className;
+        let dir;
+
+        if (cls.includes('up'))    dir = 'up';
+        else if (cls.includes('down'))  dir = 'down';
+        else if (cls.includes('left'))  dir = 'left';
+        else if (cls.includes('right')) dir = 'right';
+        else if (cls.includes('fire'))  dir = 'fire';
+
+        if (!dir) return;
+
+        const start = (e) => { e.preventDefault(); state[dir] = true; };
+        const end   = (e) => { e.preventDefault(); state[dir] = false; };
+
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('touchstart', start);
+
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('mouseleave', end);
+        btn.addEventListener('touchend', end);
+        btn.addEventListener('touchcancel', end);
+    });
+}
+
+setupControls(leftBtns,  keys1);
+setupControls(rightBtns, keys2);
+
+// Keyboard (WASD + Fire = Space for p1, Arrows + Enter for p2)
+window.addEventListener('keydown', e => {
+    if (!e.repeat) {
+        switch(e.key.toLowerCase()) {
+            case 'w': case 'arrowup':    keys1.up   = true; break;
+            case 's': case 'arrowdown':  keys1.down = true; break;
+            case 'a': case 'arrowleft':  keys1.left = true; break;
+            case 'd': case 'arrowright': keys1.right= true; break;
+            case ' ':                    keys1.fire = true; break;
+        }
+        switch(e.key) {
+            case 'ArrowUp':    keys2.up    = true; break;
+            case 'ArrowDown':  keys2.down  = true; break;
+            case 'ArrowLeft':  keys2.left  = true; break;
+            case 'ArrowRight': keys2.right = true; break;
+            case 'Enter':      keys2.fire  = true; break;
+        }
+    }
+});
+
+window.addEventListener('keyup', e => {
+    switch(e.key.toLowerCase()) {
+        case 'w': case 'arrowup':    keys1.up    = false; break;
+        case 's': case 'arrowdown':  keys1.down  = false; break;
+        case 'a': case 'arrowleft':  keys1.left  = false; break;
+        case 'd': case 'arrowright': keys1.right = false; break;
+        case ' ':                    keys1.fire  = false; break;
+    }
+    switch(e.key) {
+        case 'ArrowUp':    keys2.up    = false; break;
+        case 'ArrowDown':  keys2.down  = false; break;
+        case 'ArrowLeft':  keys2.left  = false; break;
+        case 'ArrowRight': keys2.right = false; break;
+        case 'Enter':      keys2.fire  = false; break;
+    }
+});
 </script>
+</body>
 </html>
