@@ -42,8 +42,8 @@
     color: white;
   }
   .container img {
-    widows: 100px;
-    height: 100px;
+    widows: 150px;
+    height: 150px;
     border-radius: 5px;
     padding-bottom: 20px;
   }
@@ -134,19 +134,17 @@
 <body>
   <div class="container">
     <img src="./img/logo.jpg">
-    <h1>Baloorun</h1>
     <p>2D game where you can't rant but you can run, everything feels 2D until bullets fly!</p>
     <button class="launch-btn">Launch Game</button>
   </div>
 </body>
-</html>
-</body>
+
 <script>
   document.addEventListener("click", (e) => {
     const launchBtn = e.target.closest(".launch-btn");
     
     if (launchBtn) {
-      window.location.href = "./pages/homepage.html";
+      window.location.href = "./pages/chooseMap.html";
     }
 
   })
