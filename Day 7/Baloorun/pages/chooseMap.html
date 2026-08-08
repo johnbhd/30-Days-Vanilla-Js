@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baloorun</title>
+<link rel="icon" href="../img/logo.jpg" type="image/x-icon">
+
+<style>
+* {
+  font-family: Arial;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-image: url("../img/bg.jpeg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  padding: 2rem;
+  width: 90%;
+  max-width: 700px;
+  background-color: rgba(28, 28, 28, 0.75);
+  border-radius: 15px;
+  color: white;
+  text-align: center;
+}
+.container img {
+    widows: 150px;
+    height: 150px;
+    border-radius: 5px;
+    padding-bottom: 20px;
+}
+
+.logo {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 15px;
+}
+
+.map-selection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.map-card {
+  cursor: pointer;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 3px solid transparent;
+  transition: 0.25s;
+}
+
+.map-card img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+}
+
+.map-card span {
+  display: block;
+  padding: 6px;
+  background: rgba(0,0,0,0.6);
+}
+
+.map-card:hover {
+  transform: scale(1.08);
+  border: 3px solid #ff3366;
+}
+
+.launch-btn {
+  margin-top: 10px;
+  padding: 1rem 2.5rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+  background: #ff3366;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  h1 {
+    font-size: 1.8rem;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <img src="../img/logo.jpg" class="logo">
+  <h1>Select Map</h1>
+
+  <div class="map-selection">
+    <div class="map-card" data-map="forest">
+      <img src="../img/maps/map1.jpg">
+      <span>Battlefield Ruins</span>
+    </div>
+
+    <div class="map-card" data-map="desert">
+      <img src="../img/maps/map2.jpg">
+      <span>Cyber Street</span>
+    </div>
+
+    <div class="map-card" data-map="city">
+      <img src="../img/maps/map3.jpg">
+      <span>Teahouse Quarter</span>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("click", (e) => {
+  const card = e.target.closest(".map-card");
+
+  if (card) {
+    const map = card.dataset.map;
+    window.location.href = `./2player.html`;
+  }
+});
+</script>
+</body>
+</html>
