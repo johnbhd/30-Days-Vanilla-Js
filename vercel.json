@@ -1,14 +1,17 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "outputDirectory": ".",
   "redirects": [
     {
-      "source": "/download",
-      "destination": "/download/CalConverter.apk",
+      "source": "/download/CalConverter",
+      "destination": "/public/download/CalConverter.apk",
       "permanent": false
     }
   ],
   "headers": [
     {
-      "source": "/download/CalConverter.apk",
+      "source": "/public/download/CalConverter.apk",
       "headers": [
         {
           "key": "Content-Disposition",
