@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>GEO DASH — geo.html</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#0a0e1a;color:#fff;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden}
+#wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px}
+#hud{width:min(960px,100%);display:flex;justify-content:space-between;align-items:center;font-weight:700}
+#hud .pill{background:#151b30;border:1px solid #2a3560;border-radius:100px;padding:6px 14px;font-size:13px}
+#score{color:#00e5ff}
+button{background:linear-gradient(135deg,#00e5ff,#7c5cff);border:0;color:#000;font-weight:800;padding:9px 18px;border-radius:10px;cursor:pointer}
+button.ghost{background:#151b30;color:#fff;border:1px solid #2a3560}
+canvas{width:min(960px,100%);aspect-ratio:16/9;background:#05070f;border:2px solid #2a3560;border-radius:14px;touch-action:none;box-shadow:0 0 60px rgba(0,229,255,.15)}
+#help{font-size:12px;color:#8b96b3}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <div class="pill">SCORE <span id="score">0</span> &nbsp;•&nbsp; BEST <span id="best">0</span> &nbsp;•&nbsp; ATTEMPT <span id="att">1</span></div>
+    <div style="display:flex;gap:8px">
+      <button id="pauseBtn" class="ghost">Pause</button>
+      <button id="restartBtn">Restart</button>
+    </div>
+  </div>
+  <canvas id="game" width="960" height="540"></canvas>
+  <div id="help">SPACE / CLICK / TAP to jump — avoid spikes, hold for longer jump. Press R to restart.</div>
+</div>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const attEl = document.getElementById('att');
+
+const W = 960, H = 540, GROUND = 460, GRAV = 3400, JUMP_V = 1080;
+let best = +(localStorage.getItem('geo-best')||0);
+bestEl.textContent = best;
+
+let player, obstacles, particles, camX, speed, score, dead, started, paused, attempt=1, rot=0, coyote=0, jumpBuf=0;
+
+function reset(){
+  player = {x:140, y:GROUND-40, w:40, h:40, vy:0, onGround:true};
+  obstacles=[]; particles=[]; camX=0; score=0; dead=false; started=false; paused=false; rot=0;
+  scoreEl.textContent='0'; attEl.textContent=attempt;
+  buildLevel();
+}
+function spike(x,w=36,h=56){ return {type:'spike',x,w,h}; }
+function block(x,w=50,h=80,y=GROUND-h){ return {type:'block',x,w,h,y}; }
+function buildLevel(){
+  let x=600;
+  const patterns=[
+    ()=>{ obstacles.push(spike(x)); x+=220; },
+    ()=>{ obstacles.push(spike(x),spike(x+40)); x+=300; },
+    ()=>{ obstacles.push(block(x)); x+=260; },
+    ()=>{ obstacles.push(block(x,50,120)); obstacles.push(spike(x+160)); x+=340; },
+    ()=>{ obstacles.push(spike(x),spike(x+40),spike(x+80)); x+=360; },
+    ()=>{ obstacles.push(block(x,50,60)); obstacles.push(block(x+120,50,110)); x+=360; },
+    ()=>{ obstacles.push(block(x,120,50)); obstacles.push(spike(x+220)); x+=380; },
+  ];
+  for(let i=0;i<120;i++){ patterns[(Math.random()*patterns.length)|0](); x+= 60+Math.random()*140; }
+}
+function jump(){
+  if(paused) return;
+  if(!started){ started=true; }
+  if(dead){ attempt++; reset(); started=true; return; }
+  jumpBuf=0.12;
+}
+function doJump(){
+  player.vy=-JUMP_V; player.onGround=false; coyote=0; jumpBuf=0;
+  burst(player.x+20,player.y+40,8,'#00e5ff');
+}
+function burst(x,y,n,color){
+  for(let i=0;i<n;i++) particles.push({x,y,vx:(Math.random()-.5)*400,vy:-Math.random()*500,life:.5+Math.random()*.4,t:0,color});
+}
+function collide(p,o){
+  // AABB with forgiveness for spikes (triangle)
+  if(o.type==='block'){
+    return p.x < o.x+o.w-4 && p.x+p.w > o.x+4 && p.y < o.y+o.h && p.y+p.h > o.y+2;
+  } else {
+    // spike hitbox: smaller centered trapezoid
+    const sx=o.x+8, sw=o.w-16;
+    const pCx=p.x+p.w/2;
+    if(pCx < sx || pCx > sx+sw) return false;
+    const spikeTop = GROUND-o.h;
+    // height of spike at player center x (triangle)
+    const midX=o.x+o.w/2;
+    const dx=Math.abs(pCx-midX)/(o.w/2); // 0 center, 1 edge
+    const topAtX = GROUND - o.h*(1-dx);
+    return (p.y+p.h) > topAtX+6;
+  }
+}
+let last=performance.now();
+function loop(t){
+  const dt=Math.min((t-last)/1000,0.033); last=t;
+  if(!paused) update(dt);
+  draw(t/1000);
+  requestAnimationFrame(loop);
+}
+function update(dt){
+  speed = 380 + Math.min(score/40, 260);
+  if(started && !dead){
+    camX += speed*dt; score += speed*dt/10;
+    scoreEl.textContent = Math.floor(score);
+    // physics
+    player.vy += GRAV*dt;
+    player.y += player.vy*dt;
+    if(player.y >= GROUND-player.h){ player.y=GROUND-player.h; player.vy=0; player.onGround=true; coyote=0.1; } else { coyote-=dt; }
+    jumpBuf-=dt;
+    if(jumpBuf>0 && (player.onGround||coyote>0)) doJump();
+    if(!player.onGround) rot += dt*10; else { // snap rotation
+      rot = Math.round(rot/(Math.PI/2))*(Math.PI/2);
+    }
+    // side collision with blocks (landing on top allowed)
+    for(const o of obstacles){
+      if(o.x+o.w < camX-100 || o.x > camX+W+100) continue;
+      const sx=o.x-camX+0; // world->screen handled in collide via offset below
+      const po={x:player.x-camX+camX, y:player.y, w:player.w, h:player.h};
+      // convert to world coords for test
+      const pw={x:player.x+camX, y:player.y, w:player.w, h:player.h};
+      if(collide(pw,o)){
+        if(o.type==='block'){
+          const prevBottom = pw.y+pw.h - player.vy*dt;
+          if(player.vy>=0 && prevBottom <= o.y+14){ // land
+            player.y=o.y-player.h; player.vy=0; player.onGround=true;
+          } else { die(); break; }
+        } else { die(); break; }
+      }
+    }
+    if(player.y>H+100) die();
+  }
+  // particles
+  for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.t+=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=1200*dt; if(p.t>p.life) particles.splice(i,1); }
+  if(started && !dead && Math.random()<0.3) particles.push({x:player.x+10+Math.random()*10,y:GROUND-2,vx:-speed*0.4,vy:-Math.random()*80,life:.5,t:0,color:'#7c5cff'});
+}
+function die(){
+  if(dead) return; dead=true;
+  burst(player.x+20,player.y+20,26,'#ff2b6a');
+  burst(player.x+20,player.y+20,16,'#ffffff');
+  const s=Math.floor(score);
+  if(s>best){ best=s; localStorage.setItem('geo-best',best); bestEl.textContent=best; }
+}
+function draw(time){
+  // bg
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#0a1030'); g.addColorStop(.7,'#0a0e22'); g.addColorStop(1,'#05070f');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // parallax grid + hills
+  ctx.strokeStyle='rgba(0,229,255,.12)'; ctx.lineWidth=1;
+  const off=camX*0.4%80;
+  for(let x=-off;x<W;x+=80){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,GROUND); ctx.stroke(); }
+  for(let y=0;y<GROUND;y+=60){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  // distant blocks silhouette
+  ctx.fillStyle='rgba(124,92,255,.12)';
+  for(let i=0;i<8;i++){ const bx=((i*340 - camX*0.2)%(W+340)+W+340)%(W+340)-170; ctx.fillRect(bx,GROUND-120-(i%3)*40,90,200); }
+  // ground
+  ctx.fillStyle='#0d1330'; ctx.fillRect(0,GROUND,W,H-GROUND);
+  ctx.fillStyle='#00e5ff'; ctx.fillRect(0,GROUND,W,3);
+  ctx.fillStyle='rgba(0,229,255,.15)'; ctx.fillRect(0,GROUND+3,W,14);
+  // obstacles
+  for(const o of obstacles){
+    const sx=o.x-camX; if(sx<-120||sx>W+120) continue;
+    if(o.type==='block'){
+      ctx.fillStyle='#151b3d'; ctx.fillRect(sx,o.y,o.w,o.h);
+      ctx.strokeStyle='#00e5ff'; ctx.lineWidth=3; ctx.strokeRect(sx+1.5,o.y+1.5,o.w-3,o.h-3);
+      ctx.fillStyle='rgba(0,229,255,.15)'; ctx.fillRect(sx+6,o.y+6,o.w-12,8);
+    } else {
+      const topY=GROUND-o.h;
+      ctx.beginPath(); ctx.moveTo(sx, GROUND); ctx.lineTo(sx+o.w/2, topY); ctx.lineTo(sx+o.w, GROUND); ctx.closePath();
+      ctx.fillStyle='#151b3d'; ctx.fill();
+      ctx.strokeStyle='#ff2b6a'; ctx.lineWidth=3; ctx.stroke();
+      ctx.fillStyle='rgba(255,43,106,.25)'; ctx.beginPath(); ctx.moveTo(sx+12,GROUND); ctx.lineTo(sx+o.w/2,topY+16); ctx.lineTo(sx+o.w-12,GROUND); ctx.closePath(); ctx.fill();
+    }
+  }
+  // particles
+  for(const p of particles){ ctx.globalAlpha=1-p.t/p.life; ctx.fillStyle=p.color; ctx.fillRect(p.x + (p===particles[0]?0:0), p.y, 5,5); }
+  ctx.globalAlpha=1;
+  // player cube (screen x fixed)
+  const px=140, py=player.y;
+  ctx.save(); ctx.translate(px+20,py+20); ctx.rotate(rot);
+  ctx.fillStyle='#000'; ctx.fillRect(-22,-22,44,44);
+  const pg=ctx.createLinearGradient(-20,-20,20,20); pg.addColorStop(0,'#00e5ff'); pg.addColorStop(1,'#ff2bd6');
+  ctx.fillStyle=pg; ctx.fillRect(-18,-18,36,36);
+  ctx.fillStyle='#05070f'; ctx.fillRect(-9,-9,18,18);
+  ctx.fillStyle='#fff'; ctx.fillRect(-4,-4,8,8);
+  ctx.restore();
+  // trail
+  // overlays
+  if(!started){
+    overlay('GEO DASH','Press SPACE / TAP to start');
+  } else if(dead){
+    overlay('GAME OVER','Score '+Math.floor(score)+'  •  SPACE / TAP to retry');
+  } else if(paused){
+    overlay('PAUSED','Press P to resume');
+  }
+  // progress bar = speed lines
+  if(started && !dead){
+    ctx.strokeStyle='rgba(255,255,255,.08)';
+    for(let i=0;i<5;i++){ const y=Math.random()*GROUND; const x=Math.random()*W; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+60+speed*0.05,y); ctx.stroke(); }
+  }
+}
+function overlay(title,sub){
+  ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center';
+  ctx.fillStyle='#fff'; ctx.font='800 64px Segoe UI,sans-serif';
+  ctx.shadowColor='#00e5ff'; ctx.shadowBlur=30; ctx.fillText(title,W/2,H/2-20); ctx.shadowBlur=0;
+  ctx.fillStyle='#8b96b3'; ctx.font='500 20px Segoe UI,sans-serif'; ctx.fillText(sub,W/2,H/2+30);
+  // fix particle x drift: particles stored in screen coords, keep simple
+}
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.code==='ArrowUp'){ e.preventDefault(); jump(); }
+  if(e.code==='KeyR'){ attempt++; reset(); started=true; }
+  if(e.code==='KeyP'){ paused=!paused; }
+});
+canvas.addEventListener('pointerdown',e=>{ e.preventDefault(); jump(); });
+document.getElementById('restartBtn').onclick=()=>{ attempt++; reset(); started=true; };
+document.getElementById('pauseBtn').onclick=function(){ paused=!paused; this.textContent=paused?'Resume':'Pause'; };
+// fix: particles use screen coords — store correctly
+const _burst=burst;
+reset();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
