@@ -195,5 +195,48 @@ clickCanvas(cellX(7), cellY(3));
 A(state.grid[3][7] && state.grid[3][7].type === 'peashooter', 'peashooter plants on any empty tile');
 A(state.sun === sunAfterPlace - 100, 'peashooter charged exactly 100');
 
+// --- 11. centralized costs for all five plants ---
+const { PLANT_TYPES } = await import(new URL('../js/config.js', import.meta.url).href);
+A(PLANT_TYPES.sunflower.cost === 50 && PLANT_TYPES.peashooter.cost === 100 &&
+  PLANT_TYPES.wallnut.cost === 50 && PLANT_TYPES.snowpea.cost === 175 &&
+  PLANT_TYPES.repeater.cost === 200,
+  'config costs exactly 50 / 100 / 50 / 175 / 200');
+A(PLANT_TYPES.wallnut.role === 'defense' && PLANT_TYPES.wallnut.hp === 400,
+  'wall-nut: role=defense, hp=400');
+A(PLANT_TYPES.wallnut.hp >= 4 * PLANT_TYPES.peashooter.hp,
+  'wall-nut HP >= 4x peashooter');
+
+// --- 12. Wall-nut blocking / high HP / no attack / no sun ---
+const { createPlant } = await import(new URL('../js/plants.js', import.meta.url).href);
+// Controlled scenario: stop waves, clear the board, place only the Wall-nut.
+state.waveInterval = 1e9;
+state.zombies = [];
+state.suns = [];
+state.peas = [];
+for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
+state.grid[2][1] = createPlant('wallnut', 2, 1, nowValue());
+// One zombie parked at the Wall-nut's cell, in eating range.
+state.zombies.push({
+  row: 2, x: (1 + 0.7) * (600 / 9) - 2,
+  speed: 0.3, hp: 100, maxHp: 100, eating: false,
+});
+const zStartX = state.zombies[0].x;
+step(625); // ~10 seconds of continuous biting
+const wall = state.grid[2][1];
+A(!!wall, 'wall-nut survives 10s of continuous biting (a 100-HP plant would be long dead)');
+A(wall && wall.hp <= 400 - 8 * 9 && wall.hp >= 400 - 8 * 11,
+  'wall-nut lost only bite damage (~80 over 10s at 8 dps)');
+A(Math.abs(state.zombies[0].x - zStartX) < 1 && state.zombies[0].eating === true,
+  'zombie stops at wall-nut and eats (shared eating system, no pass-through)');
+A(state.suns.length === 0, 'wall-nut generates no sun');
+A(state.peas.length === 0, 'wall-nut fires no projectile');
+// Same removal rule as every plant: hp <= 0 => removed from grid.
+state.grid[2][1].hp = 0.1; // one more bite pushes it under 0
+step(1);
+A(state.grid[2][1] === null, 'wall-nut removed from grid at 0 HP');
+step(3);
+A(state.zombies[0].eating === false && state.zombies[0].x < zStartX,
+  'zombie resumes walking once wall-nut is gone');
+
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
