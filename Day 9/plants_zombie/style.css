@@ -1,122 +1,236 @@
 /* Plants vs Zombies - Simple Edition Styles */
 
 :root {
-  --primary-green: #2c5f2d;
-  --light-green: #4c8f4d;
-  --zombie-green: #667733;
-  --pea-orange: #ff5500;
-  --sun-yellow: #ffdd44;
-  --background: #e2f4e2;
-  --grid-line: #8b6914;
+  --grass-light: #69B83D;
+  --grass-mid: #5FAE35;
+  --grass-dark: #589F30;
+  --garden-green: #285F2C;
+  --garden-green-2: #356F35;
+  --soil: #986A17;
+  --soil-dark: #795414;
+  --wood: #60421F;
+  --wood-light: #79582B;
+  --cream: #F5E8C8;
+  --sun: #FFD747;
+  --panel-bg: #1e3d1f;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  padding: clamp(8px, 2.5vw, 24px);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: var(--background);
-  color: #333;
+  color: var(--cream);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #2a5a2c 0%, transparent 60%),
+    linear-gradient(180deg, #23491f 0%, var(--panel-bg) 55%, #17301a 100%);
 }
 
+/* --- Main game panel: one wood-framed cabinet --- */
 .game-container {
-  max-width: 700px;
-  margin: 20px auto;
-  background: #fff;
-  border-radius: 8px;
+  width: 100%;
+  max-width: min(760px, 100%);
+  background: var(--cream);
+  border: clamp(4px, 0.8vw, 7px) solid var(--wood);
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.15);
 }
 
-.ui-panel {
-  background: #2c5f2d;
-  color: white;
-  padding: 10px 15px;
+/* --- HUD: compact garden bar --- */
+.hud {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
-}
-
-.ui-panel .ui-section {
-  display: flex;
-  align-items: center;
   gap: 8px;
+  padding: clamp(6px, 1.4vw, 10px) clamp(10px, 2.5vw, 20px);
+  background: linear-gradient(180deg, var(--garden-green-2) 0%, var(--garden-green) 100%);
+  border-bottom: 3px solid var(--wood);
 }
 
-.ui-label {
-  font-weight: 500;
-}
-
-.plant-selector {
-  background: #f5f5f5;
-  padding: 10px 15px;
+.hud-item {
   display: flex;
-  gap: 10px;
+  align-items: baseline;
+  gap: clamp(4px, 1vw, 7px);
+  padding: 2px clamp(8px, 1.8vw, 14px);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.hud-icon {
+  color: var(--sun);
+  font-size: clamp(14px, 2.4vw, 18px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.hud-health .hud-icon {
+  color: #ff8a80;
+}
+
+.hud-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: clamp(10px, 1.7vw, 12px);
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.hud-value {
+  font-size: clamp(15px, 2.8vw, 20px);
+  font-weight: 700;
+  color: var(--cream);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.hud-sun .hud-value {
+  color: var(--sun);
+}
+
+/* --- Seed bank: wooden tray holding paper seed packets --- */
+.seed-bank {
+  display: flex;
+  gap: clamp(8px, 1.8vw, 14px);
+  padding: clamp(8px, 1.6vw, 12px) clamp(10px, 2.5vw, 18px);
+  background:
+    linear-gradient(180deg, var(--wood-light) 0%, var(--wood) 100%);
+  border-bottom: 3px solid rgba(0, 0, 0, 0.25);
   overflow-x: auto;
   scrollbar-width: none;
 }
 
-.plant-selector::-webkit-scrollbar {
+.seed-bank::-webkit-scrollbar {
   display: none;
 }
 
 .plant-slot {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 70px;
-  height: 80px;
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
+  justify-content: flex-start;
+  gap: 2px;
+  width: clamp(76px, 12vw, 92px);
+  padding: 6px 4px 5px;
+  background: linear-gradient(180deg, #fdf3d7 0%, var(--cream) 100%);
+  border: 2px solid var(--soil-dark);
+  border-radius: 7px;
   cursor: pointer;
-  transition: transform 0.1s, border-color 0.1s;
+  user-select: none;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.28);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
 
-.plant-slot:hover {
-  border-color: #4caf50;
-  transform: translateY(-2px);
-}
-
-.plant-slot.selected {
-  border-color: #4caf50;
-  box-shadow: 0 0 0 2px #4caf50;
+.plant-img {
+  width: clamp(34px, 6vw, 44px);
+  height: clamp(30px, 5.5vw, 40px);
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+  pointer-events: none;
 }
 
 .plant-name {
-  font-size: 12px;
-  margin-top: 4px;
+  font-size: clamp(9px, 1.6vw, 11px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--wood);
   text-align: center;
-  width: 100%;
+  line-height: 1.1;
 }
 
 .plant-cost {
-  font-weight: bold;
-  color: #2c5f2d;
-  font-size: 14px;
+  font-size: clamp(11px, 1.9vw, 13px);
+  font-weight: 700;
+  color: var(--garden-green);
 }
 
+.plant-slot:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.28);
+  border-color: var(--soil);
+}
+
+.plant-slot.selected {
+  transform: translateY(-3px);
+  border-color: var(--sun);
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.28),
+    0 0 0 2px var(--sun),
+    0 0 12px rgba(255, 215, 71, 0.55);
+}
+
+/* presentation-only state toggled by updateUI() when sun < cost */
+.plant-slot.unaffordable {
+  filter: grayscale(60%) brightness(0.82);
+  cursor: not-allowed;
+}
+
+.plant-slot.unaffordable:hover {
+  transform: none;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.28);
+}
+
+/* --- Game board: canvas fills the panel, no gaps --- */
 .game-area {
   position: relative;
-  background: #8b6914;
+  line-height: 0;
+  background: var(--grass-dark);
 }
 
 #game-canvas {
   display: block;
-  background: #5d4037;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  cursor: pointer;
 }
 
-/* Zombie and plant overlays will be drawn via canvas */
-
+/* --- Credits --- */
 .credits {
-  background: #f5f5f5;
-  color: #777;
-  font-size: 11px;
-  padding: 8px 15px;
-  border-top: 1px solid #e0e0e0;
+  background: var(--wood);
+  color: rgba(245, 232, 200, 0.75);
+  font-size: 10px;
+  padding: 6px 12px;
   line-height: 1.5;
+  text-align: center;
 }
 
 .credits a {
-  color: #2c5f2d;
+  color: var(--sun);
+  text-decoration: none;
+}
+
+.credits a:hover {
+  text-decoration: underline;
+}
+
+/* --- Responsive: portrait tablet / mobile --- */
+@media (max-width: 520px) {
+  .hud {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 6px;
+  }
+}
+
+/* --- Respect reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+  .plant-slot {
+    transition: none;
+  }
+
+  .plant-slot:hover,
+  .plant-slot.selected {
+    transform: none;
+  }
 }

@@ -8,28 +8,35 @@
 </head>
 <body>
   <div class="game-container">
-    <!-- Game UI -->
-    <div class="ui-panel">
-      <div class="ui-section">
-        <span class="ui-label">Sun: <span id="sun-count">200</span></span>
+    <!-- Game HUD -->
+    <div class="hud">
+      <div class="hud-item hud-sun">
+        <span class="hud-icon">☀</span>
+        <span class="hud-label">Sun</span>
+        <span id="sun-count" class="hud-value">200</span>
       </div>
-      <div class="ui-section">
-        <span class="ui-label">Health: <span id="health-count">1</span></span>
+      <div class="hud-item hud-health">
+        <span class="hud-icon">♥</span>
+        <span class="hud-label">Health</span>
+        <span id="health-count" class="hud-value">1</span>
       </div>
-      <div class="ui-section">
-        <span class="ui-label">Level: <span id="level-count">1</span></span>
+      <div class="hud-item hud-level">
+        <span class="hud-label">Level</span>
+        <span id="level-count" class="hud-value">1</span>
       </div>
     </div>
 
-    <!-- Plant Selection -->
-    <div class="plant-selector">
+    <!-- Seed Bank -->
+    <div class="seed-bank">
       <div class="plant-slot" data-plant="sunflower">
+        <img class="plant-img" src="images/sunflower.png" alt="">
         <span class="plant-name">Sunflower</span>
-        <span class="plant-cost">50</span>
+        <span class="plant-cost">☀ 50</span>
       </div>
       <div class="plant-slot" data-plant="peashooter">
+        <img class="plant-img" src="images/peashooter_cut.png" alt="">
         <span class="plant-name">Pea Shooter</span>
-        <span class="plant-cost">100</span>
+        <span class="plant-cost">☀ 100</span>
       </div>
     </div>
 

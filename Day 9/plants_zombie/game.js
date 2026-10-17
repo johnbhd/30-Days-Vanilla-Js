@@ -2,6 +2,21 @@
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
+// Logical game-space size. All gameplay coordinates, grid math, spawning and
+// collisions use these constants (NOT the canvas backing-store size, which may
+// be scaled up by devicePixelRatio below for crisp rendering on hi-DPI screens).
+const LOGICAL_W = 600;
+const LOGICAL_H = 400;
+{
+  // Optional polish: scale only the backing store; CSS still sizes the canvas.
+  // dpr = 1 when window/devicePixelRatio is unavailable (e.g. headless tests).
+  const dpr = (typeof window !== 'undefined' && window.devicePixelRatio)
+    ? Math.min(window.devicePixelRatio, 2) : 1;
+  canvas.width = LOGICAL_W * dpr;
+  canvas.height = LOGICAL_H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
 // --- Sprites (OpenGameArt: zombie by Clint Bellanger CC-BY 3.0,
 //     sunflower by Robyn CC0/CC-BY, man-eating plant by bevouliin.com CC-BY 4.0) ---
 const SPRITE_SRC = {
@@ -24,8 +39,8 @@ function spriteReady(key) {
 
 const COLS = 9;
 const ROWS = 5;
-const CELL_W = canvas.width / COLS;
-const CELL_H = canvas.height / ROWS;
+const CELL_W = LOGICAL_W / COLS;
+const CELL_H = LOGICAL_H / ROWS;
 
 // --- Game state ---
 const state = {
@@ -63,6 +78,12 @@ function updateUI() {
   sunCountEl.textContent = state.sun;
   healthEl.textContent = state.health;
   levelEl.textContent = state.level;
+  // Presentation only: reflect the existing purchase rule (sun >= cost) on the
+  // seed packets. Selection/planting logic itself is unchanged.
+  document.querySelectorAll('.plant-slot').forEach(slot => {
+    const def = PLANTS[slot.dataset.plant];
+    if (def) slot.classList.toggle('unaffordable', state.sun < def.cost);
+  });
 }
 
 // --- Plant selection ---
@@ -83,8 +104,10 @@ document.querySelectorAll('.plant-slot').forEach(slot => {
 canvas.addEventListener('click', (e) => {
   if (gameOver) return; // restart listener handles game-over clicks
   const rect = canvas.getBoundingClientRect();
-  const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
-  const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+  // Map client (CSS) coordinates to logical game space, independent of the
+  // hi-DPI backing-store scale and of how the canvas is displayed.
+  const mx = (e.clientX - rect.left) * (LOGICAL_W / rect.width);
+  const my = (e.clientY - rect.top) * (LOGICAL_H / rect.height);
 
   // Try collecting sun first
   for (let i = state.suns.length - 1; i >= 0; i--) {
@@ -125,7 +148,7 @@ function spawnZombie() {
   const difficulty = 1 + (state.level - 1) * 0.15;
   state.zombies.push({
     row,
-    x: canvas.width + 30,
+    x: LOGICAL_W + 30,
     hp: 100 * difficulty,
     maxHp: 100 * difficulty,
     speed: (0.25 + Math.random() * 0.15) * difficulty,
@@ -181,8 +204,8 @@ function update(now) {
 
   // --- Random sky sun ---
   if (Math.random() < dt / 6000) {
-    const x = 50 + Math.random() * (canvas.width - 100);
-    spawnSun(x, -20, 80 + Math.random() * (canvas.height - 160));
+    const x = 50 + Math.random() * (LOGICAL_W - 100);
+    spawnSun(x, -20, 80 + Math.random() * (LOGICAL_H - 160));
   }
 
   // --- Update suns ---
@@ -199,7 +222,7 @@ function update(now) {
   for (let i = state.peas.length - 1; i >= 0; i--) {
     const p = state.peas[i];
     p.x += 4 * (dt / 16);
-    if (p.x > canvas.width + 20) { state.peas.splice(i, 1); continue; }
+    if (p.x > LOGICAL_W + 20) { state.peas.splice(i, 1); continue; }
     // Hit zombie?
     for (let j = state.zombies.length - 1; j >= 0; j--) {
       const z = state.zombies[j];
@@ -267,43 +290,107 @@ function update(now) {
 
 // --- Drawing ---
 function drawGrid() {
-  // Lawn background
+  const W = LOGICAL_W;
+  const H = LOGICAL_H;
+
+  // Lawn: alternating lane tones (strips, not a checkerboard) with a subtle
+  // vertical gradient per lane for depth, plus faint mowing-stripe columns so
+  // placement stays readable without hard "spreadsheet" cell boxes.
   for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      ctx.fillStyle = (r + c) % 2 === 0 ? '#6aad3a' : '#5c9e32';
-      ctx.fillRect(c * CELL_W, r * CELL_H, CELL_W, CELL_H);
+    const y = r * CELL_H;
+    const g = ctx.createLinearGradient(0, y, 0, y + CELL_H);
+    if (r % 2 === 0) {
+      g.addColorStop(0, '#69B83D');
+      g.addColorStop(1, '#5FAE35');
+    } else {
+      g.addColorStop(0, '#5FAE35');
+      g.addColorStop(1, '#589F30');
+    }
+    ctx.fillStyle = g;
+    ctx.fillRect(0, y, W, CELL_H);
+    // very subtle alternating column shade (mowing stripes)
+    ctx.fillStyle = 'rgba(0,0,0,0.03)';
+    for (let c = 0; c < COLS; c += 2) {
+      ctx.fillRect(c * CELL_W, y, CELL_W, CELL_H);
+    }
+    // soft lane separator instead of hard grid lines
+    if (r > 0) {
+      ctx.fillStyle = 'rgba(0,0,0,0.07)';
+      ctx.fillRect(0, y, W, 1);
     }
   }
-  // Grid lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-  ctx.lineWidth = 1;
-  for (let r = 0; r <= ROWS; r++) {
-    ctx.beginPath();
-    ctx.moveTo(0, r * CELL_H);
-    ctx.lineTo(canvas.width, r * CELL_H);
-    ctx.stroke();
+
+  // Left edge: home / garden boundary — dark hedge over a thin soil line
+  const homeW = 14;
+  const hg = ctx.createLinearGradient(0, 0, homeW, 0);
+  hg.addColorStop(0, '#1d4520');
+  hg.addColorStop(1, '#285F2C');
+  ctx.fillStyle = hg;
+  ctx.fillRect(0, 0, homeW, H);
+  ctx.fillStyle = '#795414';
+  ctx.fillRect(homeW, 0, 2, H);
+
+  // Right edge: dirt zombie-entrance strip, fading softly into the grass
+  const dirtW = 26;
+  const dg = ctx.createLinearGradient(W - dirtW, 0, W, 0);
+  dg.addColorStop(0, 'rgba(152,106,23,0)');
+  dg.addColorStop(0.45, '#986A17');
+  dg.addColorStop(1, '#795414');
+  ctx.fillStyle = dg;
+  ctx.fillRect(W - dirtW, 0, dirtW, H);
+  // deterministic clods/pebbles so the dirt reads as soil (no per-frame flicker)
+  ctx.fillStyle = 'rgba(96,66,31,0.5)';
+  for (let i = 0; i < 12; i++) {
+    ctx.fillRect(W - dirtW + ((i * 37) % (dirtW - 6)) + 2, (i * 83) % (H - 6), 3, 2);
   }
-  // House area on left
-  ctx.fillStyle = '#8d6e3a';
-  ctx.fillRect(0, 0, 8, canvas.height);
+
+  // Soft inner edge shadow so the lawn sits in a frame
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.fillRect(0, 0, W, 1);
+  ctx.fillRect(0, H - 1, W, 1);
+}
+
+// Plant sprite content bounds (opaque pixels), measured from the PNGs:
+//   sunflower.png  244x525, body spans x 31..204, y 27..507 (transparent padding)
+//   peashooter_cut.png 575x584, full-bleed (no padding)
+// We scale each plant by its VISIBLE content so sunflower and peashooter look
+// consistent (~72% of lane height), anchor the content bottom just above the
+// lane bottom, and center the content horizontally in the cell. Purely visual:
+// grid coordinates and collisions are untouched.
+const PLANT_SPRITE = {
+  sunflower: { cw: 174, ch: 481, cx: 117.5, bottom: 507 },
+  peashooter: { cw: 575, ch: 584, cx: 287.5, bottom: 584 },
+};
+const PLANT_VISUAL_FRAC = 0.72; // visible content = 72% of lane height
+const PLANT_FOOT_INSET = 3;     // content bottom sits this far above lane bottom
+
+function plantSpriteBox(type, img, row, col) {
+  const meta = PLANT_SPRITE[type];
+  const scale = (CELL_H * PLANT_VISUAL_FRAC) / meta.ch;
+  const cLeft = meta.cx - meta.cw / 2;
+  return {
+    scale,
+    dx: col * CELL_W + CELL_W / 2 - meta.cx * scale,
+    dy: (row + 1) * CELL_H - PLANT_FOOT_INSET - meta.bottom * scale,
+    cLeft,
+    top: (row + 1) * CELL_H - PLANT_FOOT_INSET - meta.ch * scale,
+  };
 }
 
 function drawPlant(p) {
   const cx = p.col * CELL_W + CELL_W / 2;
   const cy = p.row * CELL_H + CELL_H / 2;
   const r = Math.min(CELL_W, CELL_H) * 0.32;
+  let barY; // top of visible plant, for HP bar placement
 
   if (spriteReady(p.type)) {
-    // Sprite image, anchored to the bottom of its cell
+    // Sprite image, content-anchored to the bottom of its cell
     const img = sprites[p.type];
-    const scale = Math.min(
-      (CELL_W * 0.9) / img.naturalWidth,
-      (CELL_H * 0.95) / img.naturalHeight
-    );
-    const dw = img.naturalWidth * scale;
-    const dh = img.naturalHeight * scale;
-    const bottom = (p.row + 1) * CELL_H - CELL_H * 0.06;
-    ctx.drawImage(img, cx - dw / 2, bottom - dh, dw, dh);
+    const box = plantSpriteBox(p.type, img, p.row, p.col);
+    const dw = img.naturalWidth * box.scale;
+    const dh = img.naturalHeight * box.scale;
+    ctx.drawImage(img, box.dx, box.dy, dw, dh);
+    barY = box.top;
   } else if (p.type === 'sunflower') {
     // Petals
     ctx.fillStyle = '#ffd700';
@@ -329,6 +416,7 @@ function drawPlant(p) {
     ctx.beginPath();
     ctx.arc(cx, cy + r * 0.05, r * 0.2, 0.2, Math.PI - 0.2);
     ctx.stroke();
+    barY = cy - r * 1.15; // top of outermost petals
   } else if (p.type === 'peashooter') {
     // Stem
     ctx.fillStyle = '#388e3c';
@@ -354,14 +442,15 @@ function drawPlant(p) {
     ctx.beginPath();
     ctx.arc(cx + r * 0.2, cy - r * 0.3, r * 0.09, 0, Math.PI * 2);
     ctx.fill();
+    barY = cy - r * 0.8; // top of the head
   }
 
-  // HP bar if damaged
+  // HP bar if damaged, above the visible plant
   if (p.hp < p.maxHp) {
     const bw = CELL_W * 0.6;
     const bh = 4;
     const bx = cx - bw / 2;
-    const by = cy - r - 8;
+    const by = barY - bh - 4;
     ctx.fillStyle = '#333';
     ctx.fillRect(bx, by, bw, bh);
     ctx.fillStyle = '#76ff03';
@@ -369,77 +458,119 @@ function drawPlant(p) {
   }
 }
 
+// Zombie sprite content bounds (row 0, left-facing walk/bite frames), measured
+// from zombie.png: the opaque body spans tile-y 47..102 (foot line ~102.5) and
+// tile-x 38..84 (horizontal center 61.5) of each 128px tile. We anchor the draw
+// on the visible body, not the raw tile, so the sprite's large transparent
+// padding does not shrink the zombie on the lawn. Purely visual: z.x/z.row and
+// all collision/game logic use unchanged game coordinates.
+const Z_TILE = 128;
+const Z_BODY_TOP = 47;      // first opaque row of the body within a tile
+const Z_BODY_FOOT = 102.5;  // foot line within a tile
+const Z_BODY_CX = 61.5;     // horizontal center of the body within a tile
+const Z_VISUAL_FRAC = 0.8;  // visible body = 80% of lane height (target 70-85%)
+const Z_FOOT_INSET = 4;     // feet sit this far above the lane bottom line
+
+function zombieSpriteBox(z) {
+  const tile = CELL_H * Z_VISUAL_FRAC * Z_TILE / (Z_BODY_FOOT - Z_BODY_TOP);
+  return {
+    tile,
+    dx: z.x - (Z_BODY_CX / Z_TILE) * tile,
+    dy: (z.row + 1) * CELL_H - Z_FOOT_INSET - (Z_BODY_FOOT / Z_TILE) * tile,
+  };
+}
+
 function drawZombie(z) {
   const cx = z.x;
-  const cy = z.row * CELL_H + CELL_H / 2;
-  const r = Math.min(CELL_W, CELL_H) * 0.35;
+  let barTop; // top of the visible head, for HP bar placement
 
   if (spriteReady('zombie')) {
     // Sprite sheet: 36 cols x 8 rows of 128px tiles.
     // Row 0 = left-facing profile; frames 4-11 = lurch walk, 16-19 = bite.
-    const T = 128;
+    const T = Z_TILE;
     let frame;
     if (z.eating) {
       frame = 16 + (Math.floor(performance.now() / 150) % 4);
     } else {
       frame = 4 + (Math.floor(performance.now() / 140) % 8);
     }
-    const size = CELL_H * 1.25;
+    const box = zombieSpriteBox(z);
     ctx.drawImage(
       sprites.zombie,
       frame * T, 0, T, T,
-      cx - size / 2, cy - size / 2, size, size
+      box.dx, box.dy, box.tile, box.tile
     );
+    barTop = box.dy + (Z_BODY_TOP / Z_TILE) * box.tile;
   } else {
+    // Fallback vector zombie — same visible size and anchor as the sprite:
+    // body ~80% of lane height, feet near lane bottom, centered on z.x.
+    const bodyH = CELL_H * Z_VISUAL_FRAC;
+    const r = bodyH * 0.35;
+    const feetY = (z.row + 1) * CELL_H - Z_FOOT_INSET;
+    const fcy = feetY - bodyH / 2; // shape is roughly symmetric about this
     // Body
     ctx.fillStyle = '#7e9c5e';
-    ctx.fillRect(cx - r * 0.5, cy - r * 0.3, r, r * 1.1);
+    ctx.fillRect(cx - r * 0.5, fcy - r * 0.3, r, r * 1.1);
     // Head
     ctx.fillStyle = '#9ccc65';
     ctx.beginPath();
-    ctx.arc(cx, cy - r * 0.6, r * 0.5, 0, Math.PI * 2);
+    ctx.arc(cx, fcy - r * 0.6, r * 0.5, 0, Math.PI * 2);
     ctx.fill();
     // Eyes
     ctx.fillStyle = '#fff';
     ctx.beginPath();
-    ctx.arc(cx - r * 0.15, cy - r * 0.7, r * 0.12, 0, Math.PI * 2);
-    ctx.arc(cx + r * 0.15, cy - r * 0.7, r * 0.12, 0, Math.PI * 2);
+    ctx.arc(cx - r * 0.15, fcy - r * 0.7, r * 0.12, 0, Math.PI * 2);
+    ctx.arc(cx + r * 0.15, fcy - r * 0.7, r * 0.12, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#000';
     ctx.beginPath();
-    ctx.arc(cx - r * 0.12, cy - r * 0.7, r * 0.06, 0, Math.PI * 2);
-    ctx.arc(cx + r * 0.18, cy - r * 0.7, r * 0.06, 0, Math.PI * 2);
+    ctx.arc(cx - r * 0.12, fcy - r * 0.7, r * 0.06, 0, Math.PI * 2);
+    ctx.arc(cx + r * 0.18, fcy - r * 0.7, r * 0.06, 0, Math.PI * 2);
     ctx.fill();
     // Mouth
     ctx.fillStyle = '#4a148c';
-    ctx.fillRect(cx - r * 0.2, cy - r * 0.35, r * 0.4, r * 0.15);
+    ctx.fillRect(cx - r * 0.2, fcy - r * 0.35, r * 0.4, r * 0.15);
     // Arms reaching forward
     ctx.fillStyle = '#7e9c5e';
-    ctx.fillRect(cx - r * 0.9, cy - r * 0.2, r * 0.5, r * 0.2);
-    ctx.fillRect(cx - r * 0.9, cy + r * 0.1, r * 0.5, r * 0.2);
+    ctx.fillRect(cx - r * 0.9, fcy - r * 0.2, r * 0.5, r * 0.2);
+    ctx.fillRect(cx - r * 0.9, fcy + r * 0.1, r * 0.5, r * 0.2);
     // Torn shirt
     ctx.fillStyle = '#5d4037';
-    ctx.fillRect(cx - r * 0.5, cy + r * 0.1, r, r * 0.3);
+    ctx.fillRect(cx - r * 0.5, fcy + r * 0.1, r, r * 0.3);
+    barTop = fcy - r * 1.1;
   }
 
-  // HP bar
-  const bw = CELL_W * 0.7;
+  // HP bar, floating just above the head and following the zombie
+  const bw = CELL_W * 0.6;
   const bh = 5;
   const bx = cx - bw / 2;
-  const by = cy - r - 12;
-  ctx.fillStyle = '#333';
+  const by = barTop - bh - 4;
+  ctx.fillStyle = 'rgba(20,15,10,0.85)';
+  ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
   ctx.fillRect(bx, by, bw, bh);
-  ctx.fillStyle = '#f44336';
-  ctx.fillRect(bx, by, bw * Math.max(0, z.hp / z.maxHp), bh);
+  const ratio = Math.max(0, z.hp / z.maxHp);
+  ctx.fillStyle = ratio > 0.5 ? '#6fce4a' : ratio > 0.25 ? '#e5c93c' : '#f44336';
+  ctx.fillRect(bx, by, bw * ratio, bh);
 }
 
 function drawPea(p) {
-  ctx.fillStyle = '#76ff03';
+  // Slightly larger, gradient-filled pea with outline and soft shadow
+  const R = 6.5; // ~13px diameter
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.35)';
+  ctx.shadowBlur = 3;
+  ctx.shadowOffsetY = 2;
+  const g = ctx.createRadialGradient(p.x - R * 0.3, p.y - R * 0.3, R * 0.2, p.x, p.y, R);
+  g.addColorStop(0, '#b9f27c');
+  g.addColorStop(1, '#66bb2a');
+  ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+  ctx.arc(p.x, p.y, R, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = '#33691e';
-  ctx.lineWidth = 1;
+  ctx.restore();
+  ctx.strokeStyle = '#2e5d15';
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 }
 
@@ -448,6 +579,10 @@ function drawSun(s) {
     ? 0.4 + 0.6 * Math.abs(Math.sin(performance.now() / 200))
     : 1;
   ctx.globalAlpha = alpha;
+  // Soft glow behind the sun
+  ctx.save();
+  ctx.shadowColor = 'rgba(255,215,71,0.8)';
+  ctx.shadowBlur = 10;
   // Rays
   ctx.fillStyle = '#ffee58';
   for (let a = 0; a < 8; a++) {
@@ -461,11 +596,16 @@ function drawSun(s) {
     ctx.fill();
   }
   // Core
-  ctx.fillStyle = '#fdd835';
+  const cg = ctx.createRadialGradient(s.x - 3, s.y - 3, 2, s.x, s.y, 12);
+  cg.addColorStop(0, '#ffe88a');
+  cg.addColorStop(1, '#fdd835');
+  ctx.fillStyle = cg;
   ctx.beginPath();
   ctx.arc(s.x, s.y, 12, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#fff59d';
+  ctx.restore();
+  // Specular highlight
+  ctx.fillStyle = 'rgba(255,245,157,0.9)';
   ctx.beginPath();
   ctx.arc(s.x - 3, s.y - 3, 5, 0, Math.PI * 2);
   ctx.fill();
@@ -512,15 +652,30 @@ function draw() {
 
   // Game over overlay
   if (gameOver) {
+    const W = LOGICAL_W, H = LOGICAL_H;
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#f44336';
-    ctx.font = 'bold 40px Segoe UI';
+    ctx.fillRect(0, 0, W, H);
+    // Wood panel
+    const pw = Math.min(360, W * 0.72), ph = 150;
+    const px = (W - pw) / 2, py = (H - ph) / 2;
+    ctx.fillStyle = '#3a2a12';
+    ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
+    ctx.fillStyle = '#60421F';
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeStyle = 'rgba(245,232,200,0.25)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px + 6, py + 6, pw - 12, ph - 12);
+    // Text
     ctx.textAlign = 'center';
-    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 20);
-    ctx.fillStyle = '#fff';
-    ctx.font = '20px Segoe UI';
-    ctx.fillText('Click to restart', canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillStyle = '#ff5252';
+    ctx.font = 'bold 38px Segoe UI, sans-serif';
+    ctx.fillText('GAME OVER', W / 2, py + 58);
+    ctx.fillStyle = '#F5E8C8';
+    ctx.font = '17px Segoe UI, sans-serif';
+    ctx.fillText('The lawn was lost', W / 2, py + 92);
+    ctx.fillStyle = '#FFD747';
+    ctx.font = 'italic 15px Segoe UI, sans-serif';
+    ctx.fillText('Click to Try Again', W / 2, py + 122);
   }
 }
 
@@ -532,6 +687,19 @@ function showGameOver() {
 
 canvas.addEventListener('click', () => {
   if (gameOver) restartGame();
+});
+
+// Presentation only: pointer cursor when hovering a collectible sun
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (LOGICAL_W / rect.width);
+  const my = (e.clientY - rect.top) * (LOGICAL_H / rect.height);
+  let over = false;
+  for (const s of state.suns) {
+    const dx = mx - s.x, dy = my - s.y;
+    if (dx * dx + dy * dy < 30 * 30) { over = true; break; }
+  }
+  canvas.style.cursor = over ? 'pointer' : '';
 });
 
 function restartGame() {
