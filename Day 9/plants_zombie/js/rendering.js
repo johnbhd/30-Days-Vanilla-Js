@@ -21,6 +21,9 @@ export function setupRenderer(canvas) {
 const PLANT_SPRITE = {
   sunflower: { cw: 174, ch: 481, cx: 117.5, bottom: 507 },
   peashooter: { cw: 575, ch: 584, cx: 287.5, bottom: 584 },
+  wallnut: { cw: 186, ch: 224, cx: 127.5, bottom: 247 }, // original 256x256 art
+  snowpea: { cw: 575, ch: 584, cx: 287.5, bottom: 584 }, // recolor of peashooter_cut
+  repeater: { cw: 575, ch: 584, cx: 287.5, bottom: 584 }, // peashooter_cut + second jaw
 };
 const PLANT_VISUAL_FRAC = 0.72; // visible content = 72% of lane height
 const PLANT_FOOT_INSET = 3;     // content bottom sits this far above lane bottom
@@ -94,6 +97,86 @@ function drawPlant(p) {
     ctx.beginPath();
     ctx.ellipse(cx + r * 0.7, cy - r * 0.1, r * 0.4, r * 0.3, 0, 0, Math.PI * 2);
     ctx.fill();
+    // Eye
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx + r * 0.15, cy - r * 0.3, r * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(cx + r * 0.2, cy - r * 0.3, r * 0.09, 0, Math.PI * 2);
+    ctx.fill();
+    barY = cy - r * 0.8; // top of the head
+  } else if (p.type === 'wallnut') {
+    // Shell (original fallback art, palette matches images/wallnut.png)
+    ctx.fillStyle = '#c8945a';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 1.05, 0, Math.PI * 2);
+    ctx.fill();
+    // Dark hull cap on top
+    ctx.fillStyle = '#7a4f2b';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - r * 0.55, r * 0.92, r * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Center seam
+    ctx.strokeStyle = 'rgba(94,62,32,0.85)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r * 1.0);
+    ctx.lineTo(cx, cy + r * 1.0);
+    ctx.stroke();
+    // Determined face
+    ctx.fillStyle = '#fff8ec';
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.3, cy - r * 0.05, r * 0.17, 0, Math.PI * 2);
+    ctx.arc(cx + r * 0.3, cy - r * 0.05, r * 0.17, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#20160c';
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.27, cy, r * 0.09, 0, Math.PI * 2);
+    ctx.arc(cx + r * 0.33, cy, r * 0.09, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#4a3016';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.5, cy - r * 0.35);
+    ctx.lineTo(cx - r * 0.12, cy - r * 0.2);
+    ctx.moveTo(cx + r * 0.5, cy - r * 0.35);
+    ctx.lineTo(cx + r * 0.12, cy - r * 0.2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.28, cy + r * 0.45);
+    ctx.lineTo(cx, cy + r * 0.4);
+    ctx.lineTo(cx + r * 0.28, cy + r * 0.45);
+    ctx.stroke();
+    barY = cy - r * 1.05;
+  } else if (p.type === 'snowpea' || p.type === 'repeater') {
+    // Same geometry as the peashooter fallback; palette distinguishes them:
+    // Snow Pea = icy blue, Repeater = deeper green + stacked second barrel.
+    const ice = p.type === 'snowpea';
+    const headC = ice ? '#7cc4e8' : '#3d8f42';
+    const stemC = ice ? '#5a9fb8' : '#2f7033';
+    const barC = ice ? '#3f7fa8' : '#256b2b';
+    // Stem
+    ctx.fillStyle = stemC;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + r * 0.5, r * 0.3, r * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Head
+    ctx.fillStyle = headC;
+    ctx.beginPath();
+    ctx.arc(cx, cy - r * 0.1, r * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    // Mouth (barrel pointing right); Repeater gets a second stacked barrel
+    ctx.fillStyle = barC;
+    ctx.beginPath();
+    ctx.ellipse(cx + r * 0.7, cy - r * 0.1, r * 0.4, r * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    if (p.type === 'repeater') {
+      ctx.beginPath();
+      ctx.ellipse(cx + r * 0.6, cy - r * 0.6, r * 0.34, r * 0.26, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     // Eye
     ctx.fillStyle = '#fff';
     ctx.beginPath();

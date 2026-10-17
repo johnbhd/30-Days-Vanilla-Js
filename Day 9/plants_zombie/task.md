@@ -179,21 +179,52 @@ Baseline: zombie 100 HP, pea 25 dmg (4 peas kill), bite 8 dps, zombie speed 15�
 
 ## 9. Acceptance criteria
 
-- [ ] Existing game still works (all pre-existing assertions pass).
-- [ ] JavaScript split into multiple sensible ES modules; `game.js` removed.
-- [ ] Browser uses `type="module"`; no bundler added; no circular imports.
-- [ ] Plant stats centralized in config; no scattered magic numbers.
-- [ ] Sunflower plantable on ANY empty lawn tile (test-locked).
-- [ ] Peashooter remains functional (1 normal pea).
-- [ ] Wall-nut added: high-HP defense, cost 50, no attack, no sun.
-- [ ] Snow Pea added: cost 175, ice projectile, temporary slow, expiry works, no exponential stacking.
-- [ ] Repeater added: cost 200, two separate peas with short delay, both hit.
-- [ ] Five seed cards; costs exactly 50 / 100 / 50 / 175 / 200.
-- [ ] Health remains strictly 1 → 0 → immediate Game Over.
-- [ ] Existing zombie size/lawn/HUD/UI polish intact; responsive layout kept.
-- [ ] New sprites: original or CC-BY 4.0 derivatives; no official PvZ assets; credits preserved/updated.
-- [ ] Existing + new automated tests pass (procedural and sprite modes).
+- [x] Existing game still works (all pre-existing assertions pass).
+- [x] JavaScript split into multiple sensible ES modules; `game.js` removed.
+- [x] Browser uses `type="module"`; no bundler added; no circular imports.
+- [x] Plant stats centralized in config; no scattered magic numbers.
+- [x] Sunflower plantable on ANY empty lawn tile (test-locked).
+- [x] Peashooter remains functional (1 normal pea).
+- [x] Wall-nut added: high-HP defense, cost 50, no attack, no sun.
+- [x] Snow Pea added: cost 175, ice projectile, temporary slow, expiry works, no exponential stacking.
+- [x] Repeater added: cost 200, two separate peas with short delay, both hit.
+- [x] Five seed cards; costs exactly 50 / 100 / 50 / 175 / 200.
+- [x] Health remains strictly 1 → 0 → immediate Game Over.
+- [x] Existing zombie size/lawn/HUD/UI polish intact; responsive layout kept.
+- [x] New sprites: original or CC-BY 4.0 derivatives; no official PvZ assets; credits preserved/updated.
+- [x] Existing + new automated tests pass (procedural and sprite modes).
 
 ## 10. Final report must include
 
 Module structure before/after · files created/changed · asset sources + licenses · plant stats · wallnut/snowpea/slow/repeater implementations · placement rule status · whether existing gameplay changed · automated results · manual/visual verification · tablet/responsive check · confirmation Health remains exactly 1 → 0 → Game Over.
+
+---
+
+## 11. Implementation results (2026-10-17)
+
+All steps completed in the approved order. Milestones committed individually
+(modularize-parity → config+placement → wall-nut → projectile types+snow pea →
+repeater → cards+assets+credits).
+
+**Verification:** 73 assertions × 2 modes (procedural + sprite) all pass; HTTP
+smoke of index.html, all 11 JS modules, and all 6 images → 200; full-board
+pngjs mock render of the final scene (all 5 plants, ice aura, typed peas)
+visually verified. Browser tool unavailable in this environment — live
+play-testing remains on the user's side.
+
+**Corrections vs. the original design notes (verified against the real PNGs):**
+- `peashooter_cut.png` (bevouliin.com "Shadow Man-Eating Plant") is a
+  **dark-gray** chomper with transparent background — not green. The Snow Pea
+  recolor is therefore an **ice-blue luminance remap** (black outlines and
+  white teeth preserved), not a green hue-shift.
+- The Repeater's "second barrel" is a **drawn second jaw strip** (gray gum +
+  black teeth) composited into the mouth gape below the existing upper jaw,
+  plus the promised darker body tint.
+- Wall-nut sprite is original project art: analytic tan walnut with dark hull
+  cap, seam groove, determined face, and green sprout (256×256 PNG,
+  content bounds cw 186 × ch 224, bottom 247).
+
+**Health confirmation:** the only breach path is `zombies.js`
+`state.health -= 1` → `state.health <= 0` → `state.gameOver = true`; tests
+assert health is exactly 0 at game over and 1 after restart. No maxHealth,
+lives, hearts, or healing exist anywhere.

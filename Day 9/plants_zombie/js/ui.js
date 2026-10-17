@@ -30,6 +30,17 @@ export function updateUI(state) {
 }
 
 export function wireInput(state, canvas, onRestart) {
+  // Sync seed-card labels from config so PLANT_TYPES stays the single source
+  // of truth for names and costs.
+  document.querySelectorAll('.plant-slot').forEach(slot => {
+    const def = PLANT_TYPES[slot.dataset.plant];
+    if (!def) return;
+    const nameEl = slot.querySelector('.plant-name');
+    const costEl = slot.querySelector('.plant-cost');
+    if (nameEl) nameEl.textContent = def.name;
+    if (costEl) costEl.textContent = '☀ ' + def.cost;
+  });
+
   // --- Plant selection ---
   document.querySelectorAll('.plant-slot').forEach(slot => {
     slot.addEventListener('click', () => {

@@ -5,6 +5,9 @@
 export const SPRITE_SRC = {
   sunflower: 'images/sunflower.png',
   peashooter: 'images/peashooter_cut.png',
+  wallnut: 'images/wallnut.png',    // original art created for this project
+  snowpea: 'images/snowpea.png',    // CC-BY 4.0 derivative of peashooter_cut (bevouliin.com)
+  repeater: 'images/repeater.png',  // CC-BY 4.0 derivative of peashooter_cut (bevouliin.com)
   zombie: 'images/zombie.png',
 };
 

@@ -35,9 +35,18 @@ const elements = {
 function makeSlot(plant) {
   const h = {};
   const classes = new Set();
+  const nameEl = { textContent: '' };
+  const costEl = { textContent: '' };
   return {
     dataset: { plant },
     classes,
+    nameEl,
+    costEl,
+    querySelector(sel) {
+      if (sel === '.plant-name') return nameEl;
+      if (sel === '.plant-cost') return costEl;
+      return null;
+    },
     classList: {
       add(c) { classes.add(c); },
       remove(c) { classes.delete(c); },
@@ -51,7 +60,13 @@ function makeSlot(plant) {
     fire(ev) { h[ev] && h[ev]({}); },
   };
 }
-export const slots = [makeSlot('sunflower'), makeSlot('peashooter')];
+export const slots = [
+  makeSlot('sunflower'),
+  makeSlot('peashooter'),
+  makeSlot('wallnut'),
+  makeSlot('snowpea'),
+  makeSlot('repeater'),
+];
 
 // --- globalThis stubs (installed BEFORE importing the modules) ---
 Object.defineProperty(globalThis, 'performance', {
@@ -324,6 +339,49 @@ A(tRepHit1 > 0 && tRepHit2 > 0, 'both repeater shots hit the zombie (hp 100 -> 7
 const repGap = tRepHit2 - tRepHit1;
 A(repGap >= 192 && repGap <= 240, `shots ~200ms apart (hits ${repGap}ms apart, expected ~208)`);
 A(repZ.hp === 50, 'each projectile dealt normal 25 damage (two 25s, not one 50)');
+
+// --- 15. five seed cards, exact costs, new plants through the real click path ---
+A(slots.length === 5, 'seed bank has exactly 5 plant slots');
+const expectedCards = [
+  ['sunflower', 'Sunflower', '☀ 50'],
+  ['peashooter', 'Pea Shooter', '☀ 100'],
+  ['wallnut', 'Wall-nut', '☀ 50'],
+  ['snowpea', 'Snow Pea', '☀ 175'],
+  ['repeater', 'Repeater', '☀ 200'],
+];
+for (let i = 0; i < expectedCards.length; i++) {
+  const [key, name, cost] = expectedCards[i];
+  A(slots[i].dataset.plant === key && slots[i].nameEl.textContent === name &&
+    slots[i].costEl.textContent === cost,
+    `card ${i + 1}: ${name}, cost ${cost} (labels synced from PLANT_TYPES)`);
+}
+// Plant the three new types through the actual select-and-click UI path.
+for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
+state.zombies = [];
+state.projectiles = [];
+state.suns = [];
+state.sun = 1000;
+updateUI(state);
+slots[2].fire('click'); // wallnut
+clickCanvas(cellX(0), cellY(0));
+A(state.grid[0][0] && state.grid[0][0].type === 'wallnut' && state.sun === 950,
+  'wallnut plants via UI, charged 50');
+slots[3].fire('click'); // snowpea
+clickCanvas(cellX(4), cellY(2));
+A(state.grid[2][4] && state.grid[2][4].type === 'snowpea' && state.sun === 775,
+  'snowpea plants via UI, charged 175');
+slots[4].fire('click'); // repeater
+clickCanvas(cellX(8), cellY(4));
+A(state.grid[4][8] && state.grid[4][8].type === 'repeater' && state.sun === 575,
+  'repeater plants via UI, charged 200');
+A(slots[4].classes.has('selected') && !slots[2].classes.has('selected'),
+  'selected state toggles correctly across the new cards');
+// Occupied-cell rejection is the same shared rule for the new types.
+const sunBeforeReject = state.sun;
+slots[3].fire('click');
+clickCanvas(cellX(4), cellY(2)); // already has the snowpea
+A(state.grid[2][4].type === 'snowpea' && state.sun === sunBeforeReject,
+  'occupied cell rejects snowpea (same empty-tile rule for all five types)');
 
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
