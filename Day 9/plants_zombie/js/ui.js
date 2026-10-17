@@ -1,6 +1,6 @@
 // Seed-bank UI + all user input (select seed, collect sun, plant, restart).
 // Owns DOM reads/writes; receives `state` as a parameter — no window.* state.
-import { PLANTS, COLS, ROWS, CELL_W, CELL_H, LOGICAL_W, LOGICAL_H } from './config.js';
+import { PLANT_TYPES, COLS, ROWS, CELL_W, CELL_H, LOGICAL_W, LOGICAL_H } from './config.js';
 import { createPlant } from './plants.js';
 
 // --- UI references (resolved on first use so importing this module has no
@@ -24,7 +24,7 @@ export function updateUI(state) {
   // Presentation only: reflect the existing purchase rule (sun >= cost) on the
   // seed packets. Selection/planting logic itself is unchanged.
   document.querySelectorAll('.plant-slot').forEach(slot => {
-    const def = PLANTS[slot.dataset.plant];
+    const def = PLANT_TYPES[slot.dataset.plant];
     if (def) slot.classList.toggle('unaffordable', state.sun < def.cost);
   });
 }
@@ -70,7 +70,7 @@ export function wireInput(state, canvas, onRestart) {
       const col = Math.floor(mx / CELL_W);
       const row = Math.floor(my / CELL_H);
       if (col >= 0 && col < COLS && row >= 0 && row < ROWS && !state.grid[row][col]) {
-        const def = PLANTS[state.selectedPlant];
+        const def = PLANT_TYPES[state.selectedPlant];
         if (state.sun >= def.cost) {
           state.sun -= def.cost;
           state.grid[row][col] = createPlant(state.selectedPlant, row, col, performance.now());

@@ -1,16 +1,16 @@
 // Zombie spawning, walking, eating, house breach (health 1 -> 0 lives here),
 // and wave scheduling.
-import { COLS, ROWS, CELL_W, LOGICAL_W } from './config.js';
+import { COLS, ROWS, CELL_W, LOGICAL_W, BALANCE } from './config.js';
 
 // --- Spawn a zombie ---
 export function spawnZombie(state) {
   const row = Math.floor(Math.random() * ROWS);
-  const difficulty = 1 + (state.level - 1) * 0.15;
+  const difficulty = 1 + (state.level - 1) * BALANCE.ZOMBIE_DIFFICULTY_STEP;
   state.zombies.push({
     row,
     x: LOGICAL_W + 30,
-    hp: 100 * difficulty,
-    maxHp: 100 * difficulty,
+    hp: BALANCE.ZOMBIE_BASE_HP * difficulty,
+    maxHp: BALANCE.ZOMBIE_BASE_HP * difficulty,
     speed: (0.25 + Math.random() * 0.15) * difficulty,
     eating: false,
   });
@@ -28,7 +28,7 @@ export function updateZombies(state, dt) {
       const plant = state.grid[z.row][col];
       if (plant && z.x <= (col + 0.7) * CELL_W) {
         z.eating = true;
-        plant.hp -= 8 * (dt / 1000);
+        plant.hp -= BALANCE.EAT_DPS * (dt / 1000);
         if (plant.hp <= 0) {
           state.grid[z.row][col] = null;
         }
@@ -40,7 +40,7 @@ export function updateZombies(state, dt) {
     }
 
     // Reached the house: health 1 -> 0 => immediate Game Over.
-    if (z.x < 10) {
+    if (z.x < BALANCE.HOUSE_X) {
       state.zombies.splice(i, 1);
       state.health -= 1;
       if (state.health <= 0) {
@@ -60,7 +60,7 @@ export function updateWaves(state, dt) {
     // Level up every 8 zombies, speed up the wave
     if (state.spawned % 8 === 0) {
       state.level += 1;
-      state.waveInterval = Math.max(2500, state.waveInterval - 800);
+      state.waveInterval = Math.max(BALANCE.WAVE_INTERVAL_MIN, state.waveInterval - BALANCE.WAVE_INTERVAL_STEP);
     }
   }
 }

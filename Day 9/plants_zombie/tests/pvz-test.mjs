@@ -175,5 +175,25 @@ updateUI(state);
 A(slots[0].classes.has('unaffordable') && slots[1].classes.has('unaffordable'),
   'both unaffordable at sun=25');
 
+// --- 10. any-empty-tile placement rule (all plant types share one code path) ---
+state.sun = 500;
+updateUI(state);
+slots[0].fire('click'); // sunflower selected
+clickCanvas(cellX(0), cellY(1));   // left column
+clickCanvas(cellX(4), cellY(0));   // center column
+clickCanvas(cellX(8), cellY(4));   // right column
+A(state.grid[1][0] && state.grid[1][0].type === 'sunflower', 'sunflower plants in left column (col0)');
+A(state.grid[0][4] && state.grid[0][4].type === 'sunflower', 'sunflower plants in center column (col4)');
+A(state.grid[4][8] && state.grid[4][8].type === 'sunflower', 'sunflower plants in right column (col8)');
+A(state.sun === 500 - 50 * 3, 'three sunflowers charged exactly 50 each');
+const sunAfterPlace = state.sun;
+clickCanvas(cellX(0), cellY(1)); // same occupied cell again
+A(state.grid[1][0].type === 'sunflower' && state.sun === sunAfterPlace,
+  'occupied cell rejects a second plant (no double charge)');
+slots[1].fire('click'); // peashooter selected
+clickCanvas(cellX(7), cellY(3));
+A(state.grid[3][7] && state.grid[3][7].type === 'peashooter', 'peashooter plants on any empty tile');
+A(state.sun === sunAfterPlace - 100, 'peashooter charged exactly 100');
+
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);

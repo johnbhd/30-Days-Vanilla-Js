@@ -5,7 +5,7 @@
 // => nothing auto-starts). Tests call initializeGame() explicitly and then
 // step update()/draw() manually. The browser calls initializeGame() + startGame()
 // via the guarded entry at the bottom of this file.
-import { LOGICAL_W, LOGICAL_H } from './config.js';
+import { LOGICAL_W, LOGICAL_H, BALANCE } from './config.js';
 import { createState } from './state.js';
 import { loadSprites } from './assets.js';
 import { updatePlants } from './plants.js';
@@ -57,7 +57,7 @@ export function draw() {
 }
 
 export function restartGame() {
-  state.sun = 200;
+  state.sun = BALANCE.START_SUN;
   state.health = 1;
   state.level = 1;
   state.selectedPlant = null;
@@ -65,7 +65,7 @@ export function restartGame() {
   state.peas = [];
   state.suns = [];
   state.waveTimer = 0;
-  state.waveInterval = 8000;
+  state.waveInterval = BALANCE.WAVE_INTERVAL;
   state.spawned = 0;
   for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
   document.querySelectorAll('.plant-slot').forEach(s => s.classList.remove('selected'));

@@ -1,5 +1,5 @@
 // Sun spawning and falling (sunflower suns, random sky suns, TTL expiry).
-import { LOGICAL_W, LOGICAL_H } from './config.js';
+import { LOGICAL_W, LOGICAL_H, BALANCE } from './config.js';
 
 // --- Spawn a sun from sky or sunflower ---
 export function spawnSun(state, x, y, targetY) {
@@ -7,7 +7,7 @@ export function spawnSun(state, x, y, targetY) {
     x, y,
     targetY: targetY !== undefined ? targetY : y + 60 + Math.random() * 80,
     value: 25,
-    ttl: 8000,
+    ttl: BALANCE.SUN_TTL,
     falling: true,
     createdAt: performance.now(),
   });
@@ -15,7 +15,7 @@ export function spawnSun(state, x, y, targetY) {
 
 export function updateSuns(state, now, dt) {
   // --- Random sky sun ---
-  if (Math.random() < dt / 6000) {
+  if (Math.random() < dt / BALANCE.SKY_SUN_EVERY_MS) {
     const x = 50 + Math.random() * (LOGICAL_W - 100);
     spawnSun(state, x, -20, 80 + Math.random() * (LOGICAL_H - 160));
   }
