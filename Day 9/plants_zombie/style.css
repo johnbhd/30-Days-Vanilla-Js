@@ -1,0 +1,122 @@
+/* Plants vs Zombies - Simple Edition Styles */
+
+:root {
+  --primary-green: #2c5f2d;
+  --light-green: #4c8f4d;
+  --zombie-green: #667733;
+  --pea-orange: #ff5500;
+  --sun-yellow: #ffdd44;
+  --background: #e2f4e2;
+  --grid-line: #8b6914;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--background);
+  color: #333;
+}
+
+.game-container {
+  max-width: 700px;
+  margin: 20px auto;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.ui-panel {
+  background: #2c5f2d;
+  color: white;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.ui-panel .ui-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ui-label {
+  font-weight: 500;
+}
+
+.plant-selector {
+  background: #f5f5f5;
+  padding: 10px 15px;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.plant-selector::-webkit-scrollbar {
+  display: none;
+}
+
+.plant-slot {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 80px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.1s;
+}
+
+.plant-slot:hover {
+  border-color: #4caf50;
+  transform: translateY(-2px);
+}
+
+.plant-slot.selected {
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px #4caf50;
+}
+
+.plant-name {
+  font-size: 12px;
+  margin-top: 4px;
+  text-align: center;
+  width: 100%;
+}
+
+.plant-cost {
+  font-weight: bold;
+  color: #2c5f2d;
+  font-size: 14px;
+}
+
+.game-area {
+  position: relative;
+  background: #8b6914;
+}
+
+#game-canvas {
+  display: block;
+  background: #5d4037;
+}
+
+/* Zombie and plant overlays will be drawn via canvas */
+
+.credits {
+  background: #f5f5f5;
+  color: #777;
+  font-size: 11px;
+  padding: 8px 15px;
+  border-top: 1px solid #e0e0e0;
+  line-height: 1.5;
+}
+
+.credits a {
+  color: #2c5f2d;
+}
