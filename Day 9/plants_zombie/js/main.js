@@ -61,6 +61,9 @@ export function restartGame() {
   state.health = 1;
   state.level = 1;
   state.selectedPlant = null;
+  state.selectedTool = null; // shovel must not survive a restart (§32)
+  state.hoverCell = null;
+  state.floatTexts = [];
   state.zombies = [];
   state.projectiles = [];
   state.suns = [];
@@ -69,6 +72,7 @@ export function restartGame() {
   state.spawned = 0;
   for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
   document.querySelectorAll('.plant-slot').forEach(s => s.classList.remove('selected'));
+  document.querySelectorAll('.tool-slot').forEach(s => s.classList.remove('selected'));
   state.gameOver = false;
   updateUI(state);
   lastTime = performance.now();

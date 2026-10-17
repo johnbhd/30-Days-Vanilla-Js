@@ -30,6 +30,13 @@ export function updateUI(state) {
 }
 
 export function wireInput(state, canvas, onRestart) {
+  // Selection-state helper: clearing shovel mode is needed from three places
+  // (shovel toggle, seed pick, Escape) — one definition keeps them identical.
+  const clearShovelSelection = () => {
+    state.selectedTool = null;
+    document.querySelectorAll('.tool-slot').forEach(t => t.classList.remove('selected'));
+  };
+
   // Sync seed-card labels from config so PLANT_TYPES stays the single source
   // of truth for names and costs.
   document.querySelectorAll('.plant-slot').forEach(slot => {
@@ -45,6 +52,7 @@ export function wireInput(state, canvas, onRestart) {
   document.querySelectorAll('.plant-slot').forEach(slot => {
     slot.addEventListener('click', () => {
       const plant = slot.dataset.plant;
+      clearShovelSelection(); // seed and shovel selection are mutually exclusive
       document.querySelectorAll('.plant-slot').forEach(s => s.classList.remove('selected'));
       if (state.selectedPlant === plant) {
         state.selectedPlant = null;
@@ -53,6 +61,26 @@ export function wireInput(state, canvas, onRestart) {
         slot.classList.add('selected');
       }
     });
+  });
+
+  // --- Shovel selection (one-use tool: dig one plant, then it deselects) ---
+  document.querySelectorAll('.tool-slot').forEach(tool => {
+    tool.addEventListener('click', () => {
+      if (state.gameOver) return; // Game Over takes priority (§31)
+      if (state.selectedTool === 'shovel') {
+        clearShovelSelection(); // clicking again toggles it off
+      } else {
+        state.selectedTool = 'shovel';
+        state.selectedPlant = null; // never both selected at once
+        document.querySelectorAll('.plant-slot').forEach(s => s.classList.remove('selected'));
+        tool.classList.add('selected');
+      }
+    });
+  });
+
+  // Optional desktop nicety: Escape cancels shovel mode.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && state.selectedTool) clearShovelSelection();
   });
 
   // --- Click to plant / collect sun ---

@@ -180,6 +180,60 @@ body {
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.28);
 }
 
+/* --- Shovel: a TOOL, not a seed packet. Same tray footprint for a comfortable
+   tap target, but steel palette + a divider so it reads as separate. --- */
+.tool-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  width: clamp(76px, 12vw, 92px);
+  margin-left: auto;            /* push to the far end of the tray */
+  padding: 6px 4px 5px;
+  background: linear-gradient(180deg, #e8edf1 0%, #c3ccd2 100%);
+  border: 2px solid #3c4650;
+  border-left: 3px solid rgba(0, 0, 0, 0.35); /* divider from the seed packets */
+  border-radius: 7px;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.28);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.tool-img {
+  width: clamp(34px, 6vw, 44px);
+  height: clamp(30px, 5.5vw, 40px);
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+  pointer-events: none;
+}
+
+.tool-name {
+  font-size: clamp(9px, 1.6vw, 11px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #3c4650;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.tool-slot:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.28);
+  border-color: var(--soil);
+}
+
+.tool-slot.selected {
+  transform: translateY(-3px);
+  border-color: var(--sun);
+  box-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.28),
+    0 0 0 2px var(--sun),
+    0 0 12px rgba(255, 215, 71, 0.55);
+}
+
 /* --- Game board: canvas fills the panel, no gaps --- */
 .game-area {
   position: relative;
@@ -225,12 +279,15 @@ body {
 
 /* --- Respect reduced motion --- */
 @media (prefers-reduced-motion: reduce) {
-  .plant-slot {
+  .plant-slot,
+  .tool-slot {
     transition: none;
   }
 
   .plant-slot:hover,
-  .plant-slot.selected {
+  .plant-slot.selected,
+  .tool-slot:hover,
+  .tool-slot.selected {
     transform: none;
   }
 }

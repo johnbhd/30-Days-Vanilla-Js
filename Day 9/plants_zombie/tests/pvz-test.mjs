@@ -68,6 +68,33 @@ export const slots = [
   makeSlot('repeater'),
 ];
 
+// Shovel is a TOOL slot (class .tool-slot, not .plant-slot) so the seed-card
+// loops and cost logic never touch it. Its label lives in the markup, so the
+// stub is pre-set with the name (no cost element at all).
+function makeTool(tool, label) {
+  const h = {};
+  const classes = new Set();
+  const nameEl = { textContent: label };
+  return {
+    dataset: { tool },
+    classes,
+    nameEl,
+    querySelector(sel) { return sel === '.tool-name' ? nameEl : null; },
+    classList: {
+      add(c) { classes.add(c); },
+      remove(c) { classes.delete(c); },
+      toggle(c, on) {
+        if (on === undefined) on = !classes.has(c);
+        if (on) classes.add(c); else classes.delete(c);
+        return on;
+      },
+    },
+    addEventListener(ev, fn) { h[ev] = fn; },
+    fire(ev) { h[ev] && h[ev]({}); },
+  };
+}
+export const tools = [makeTool('shovel', 'Shovel')];
+
 // --- globalThis stubs (installed BEFORE importing the modules) ---
 Object.defineProperty(globalThis, 'performance', {
   value: { now: () => now },
@@ -76,7 +103,11 @@ Object.defineProperty(globalThis, 'performance', {
 globalThis.requestAnimationFrame = () => 1; // captured, never loops in tests
 globalThis.document = {
   getElementById: id => elements[id],
-  querySelectorAll: sel => (sel === '.plant-slot' ? slots : []),
+  querySelectorAll: sel =>
+    sel === '.plant-slot' ? slots : sel === '.tool-slot' ? tools : [],
+  // keydown listeners (Escape cancels the shovel) — fired by the tests only
+  _listeners: {},
+  addEventListener(ev, fn) { (this._listeners[ev] ||= []).push(fn); },
 };
 if (process.env.SPRITE_STUB) {
   // simulate fully-loaded sprite images to exercise the sprite draw path
@@ -103,6 +134,7 @@ export { A, failures };
 const cellX = c => c * (600 / 9) + (600 / 9) / 2;
 const cellY = r => r * (400 / 5) + (400 / 5) / 2;
 const clickCanvas = (x, y) => canvas.listeners.click.forEach(fn => fn({ clientX: x, clientY: y }));
+const fireDocument = (ev, e = {}) => (globalThis.document._listeners[ev] || []).forEach(fn => fn(e));
 
 export function step(n) {
   for (let i = 0; i < n; i++) { now += 16; update(now); draw(); }
@@ -389,6 +421,38 @@ A(state.selectedTool === null, 'fresh state: selectedTool is null');
 A(Array.isArray(state.floatTexts) && state.floatTexts.length === 0,
   'fresh state: floatTexts is an empty array');
 A(state.hoverCell === null, 'fresh state: hoverCell is null');
+
+// --- 17. shovel selection vs seed selection (mutual exclusion, toggle, Escape) ---
+A(tools.length === 1 && tools[0].nameEl.textContent === 'Shovel',
+  'seed bank has exactly one tool slot, labeled Shovel');
+A(tools[0].querySelector('.plant-cost') === null,
+  'shovel slot has no sun cost element');
+slots[3].fire('click'); // leave a seed selected first (snowpea from §15)
+tools[0].fire('click'); // then select the shovel
+A(state.selectedTool === 'shovel', 'shovel click selects the shovel');
+A(state.selectedPlant === null, 'selecting the shovel clears the seed selection');
+A(tools[0].classes.has('selected'), 'shovel shows the selected class');
+A(slots.every(s => !s.classes.has('selected')), 'no seed card remains selected');
+slots[1].fire('click'); // now pick a seed
+A(state.selectedPlant === 'peashooter' && state.selectedTool === null,
+  'selecting a seed cancels shovel mode');
+A(!tools[0].classes.has('selected'), 'shovel selected class cleared by seed pick');
+tools[0].fire('click'); // re-arming the shovel after a seed took over
+tools[0].fire('click');
+A(state.selectedTool === null, 'clicking the shovel again toggles it off');
+A(!tools[0].classes.has('selected'), 'toggled-off shovel drops the selected class');
+tools[0].fire('click');
+fireDocument('keydown', { key: 'Escape' });
+A(state.selectedTool === null, 'Escape key cancels shovel mode');
+A(!tools[0].classes.has('selected'), 'Escape also clears the shovel selected class');
+tools[0].fire('click'); // leave shovel selected for the restart-reset check
+restartGame();
+A(state.selectedTool === null, 'restart resets selectedTool to null');
+A(!tools[0].classes.has('selected'), 'restart clears the shovel selected class');
+A(state.floatTexts.length === 0, 'restart clears pending float texts');
+slots[0].fire('click'); // restore a clean selection baseline for later sections
+slots[0].fire('click');
+A(state.selectedPlant === null, 'baseline restored: no seed selected');
 
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
