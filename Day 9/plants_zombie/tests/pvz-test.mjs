@@ -670,5 +670,30 @@ mousemove(cellX(5), cellY(2));
 A(canvas.style.cursor === '', 'disarmed shovel => default cursor');
 state.hoverCell = null;
 
+// --- 20. acceptance: seed-armed tap on a planted tile never removes a plant ---
+state.waveInterval = 1e9;
+state.zombies = []; state.suns = []; state.projectiles = [];
+for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
+state.selectedPlant = null; state.selectedTool = null;
+state.floatTexts = [];
+state.sun = 500;
+updateUI(state);
+plantAt('peashooter', 0, 0);   // place a peashooter at (0,0)
+tools[0].fire('click');        // arm the shovel...
+slots[1].fire('click');        // ...then pick the peashooter seed instead
+A(state.selectedPlant === 'peashooter' && state.selectedTool === null,
+  'real click flow: picking a seed after the shovel leaves only the seed armed');
+const sunSeedMode = state.sun;
+clickCanvas(cellX(0), cellY(0)); // tap the PLANTED tile while only a seed is armed
+A(state.grid[0][0] && state.grid[0][0].type === 'peashooter',
+  'seed mode tapping a planted tile does NOT remove the plant');
+A(state.sun === sunSeedMode && state.floatTexts.length === 0,
+  'seed mode tapping a planted tile: no refund and no float text');
+tools[0].fire('click'); // arm the shovel for contrast
+const sunShovelMode = state.sun;
+clickCanvas(cellX(0), cellY(0)); // now the SAME tap digs it
+A(!state.grid[0][0] && state.sun === sunShovelMode + 50,
+  'the same tap digs only when the shovel is armed (refunds 50)');
+
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
