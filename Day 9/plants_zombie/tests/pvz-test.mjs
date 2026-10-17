@@ -5,6 +5,7 @@
 // Strategy: install DOM/canvas/performance stubs on globalThis, then import the
 // real modules. main.js does NOT auto-start (guarded by `typeof window`), so the
 // test steps update()/draw() explicitly — deterministic and loop-free.
+import { readFileSync, existsSync } from 'node:fs';
 
 let now = 0;
 
@@ -694,6 +695,30 @@ const sunShovelMode = state.sun;
 clickCanvas(cellX(0), cellY(0)); // now the SAME tap digs it
 A(!state.grid[0][0] && state.sun === sunShovelMode + 50,
   'the same tap digs only when the shovel is armed (refunds 50)');
+
+// --- 21. the REAL index.html carries the shovel entry point ---
+// Regression guard: §17's tool-slot assertions only exercised the test stub,
+// so deleting the .tool-slot div (or breaking its label/cost structure) from
+// the actual markup would leave every test green while the feature becomes
+// unreachable in the game. Read the shipped file and assert it directly.
+const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+A((html.match(/class="plant-slot"/g) || []).length === 5,
+  'index.html declares exactly 5 .plant-slot seed cards');
+A((html.match(/class="tool-slot"/g) || []).length === 1,
+  'index.html declares exactly one .tool-slot element');
+A(/class="tool-slot"[^>]*data-tool="shovel"/s.test(html),
+  'the tool slot declares data-tool="shovel"');
+A(/id="shovel-slot"/.test(html), 'the tool slot has id="shovel-slot"');
+A(/class="tool-name">Shovel</.test(html), 'the tool slot is labeled "Shovel"');
+const toolBlock = html.match(/<div class="tool-slot"[\s\S]*?<\/div>/);
+A(!!toolBlock && !/plant-cost/.test(toolBlock[0]),
+  'the shovel slot contains NO sun cost element');
+A(/class="tool-img" src="images\/shovel.png"/.test(html),
+  'the shovel slot uses the local images/shovel.png (no hotlink)');
+A(existsSync(new URL('../images/shovel.png', import.meta.url)),
+  'images/shovel.png exists on disk');
+A(/Shovel artwork: original project asset/.test(html),
+  'credits include the original shovel artwork line (existing credits kept)');
 
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
