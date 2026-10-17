@@ -8,6 +8,9 @@ export function createState() {
     health: 1,          // 1 = alive, 0 = immediate Game Over (never maxHealth/lives)
     level: 1,
     selectedPlant: null,
+    selectedTool: null,    // one-use tool selection ('shovel'); mutually exclusive with selectedPlant
+    hoverCell: null,       // presentation pointer target {row,col} or null (not gameplay)
+    floatTexts: [],        // transient refund feedback entries (not gameplay)
     grid: [],           // grid[row][col] = plant object or null
     zombies: [],        // {row, x, hp, speed, eating}
     projectiles: [],     // {row, x, y, type: 'pea'|'icePea'}

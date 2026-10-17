@@ -15,6 +15,8 @@ export const BALANCE = {
   START_SUN: 200,          // starting sun; restart resets to this
   KILL_SUN_REWARD: 10,     // sun granted per zombie kill
 
+  SHOVEL_REFUND_RATE: 0.5, // shovel refund = floor(cost * rate), e.g. Snow Pea 175 -> 87
+
   PEA_DAMAGE: 25,          // damage per pea / ice pea
   PEA_SPEED: 4,            // projectile px per (dt/16) tick
 

@@ -217,7 +217,7 @@ A(state.grid[3][7] && state.grid[3][7].type === 'peashooter', 'peashooter plants
 A(state.sun === sunAfterPlace - 100, 'peashooter charged exactly 100');
 
 // --- 11. centralized costs for all five plants ---
-const { PLANT_TYPES } = await import(new URL('../js/config.js', import.meta.url).href);
+const { PLANT_TYPES, BALANCE } = await import(new URL('../js/config.js', import.meta.url).href);
 A(PLANT_TYPES.sunflower.cost === 50 && PLANT_TYPES.peashooter.cost === 100 &&
   PLANT_TYPES.wallnut.cost === 50 && PLANT_TYPES.snowpea.cost === 175 &&
   PLANT_TYPES.repeater.cost === 200,
@@ -382,6 +382,13 @@ slots[3].fire('click');
 clickCanvas(cellX(4), cellY(2)); // already has the snowpea
 A(state.grid[2][4].type === 'snowpea' && state.sun === sunBeforeReject,
   'occupied cell rejects snowpea (same empty-tile rule for all five types)');
+
+// --- 16. shovel tool: config constant + fresh-state fields ---
+A(BALANCE.SHOVEL_REFUND_RATE === 0.5, 'config: BALANCE.SHOVEL_REFUND_RATE is 0.5');
+A(state.selectedTool === null, 'fresh state: selectedTool is null');
+A(Array.isArray(state.floatTexts) && state.floatTexts.length === 0,
+  'fresh state: floatTexts is an empty array');
+A(state.hoverCell === null, 'fresh state: hoverCell is null');
 
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
