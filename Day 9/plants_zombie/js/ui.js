@@ -149,7 +149,9 @@ export function wireInput(state, canvas, onRestart) {
     if (state.gameOver) onRestart();
   });
 
-  // Presentation only: pointer cursor when hovering a collectible sun
+  // Presentation only: pointer cursor when hovering a collectible sun, plus
+  // the shovel's target cell + crosshair while the shovel is armed (desktop;
+  // touch never fires mousemove, which is fine — the outline is optional).
   canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
     const mx = (e.clientX - rect.left) * (LOGICAL_W / rect.width);
@@ -159,6 +161,12 @@ export function wireInput(state, canvas, onRestart) {
       const dx = mx - s.x, dy = my - s.y;
       if (dx * dx + dy * dy < 30 * 30) { over = true; break; }
     }
-    canvas.style.cursor = over ? 'pointer' : '';
+    // Track the targeted cell (null outside the lawn) for the shovel outline.
+    const col = Math.floor(mx / CELL_W);
+    const row = Math.floor(my / CELL_H);
+    state.hoverCell = (col >= 0 && col < COLS && row >= 0 && row < ROWS)
+      ? { row, col } : null;
+    canvas.style.cursor = over ? 'pointer'
+      : state.selectedTool === 'shovel' ? 'crosshair' : '';
   });
 }

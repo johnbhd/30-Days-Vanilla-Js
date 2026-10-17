@@ -395,6 +395,46 @@ function drawPlantingPreview(state) {
   ctx.globalAlpha = 1;
 }
 
+// Shovel mode: outline ONLY the plant under the pointer (never a permanent
+// tint on every plant). Desktop nicety — hoverCell is set by the mousemove
+// handler, so touch simply never sees this.
+function drawShovelTarget(state) {
+  if (state.selectedTool !== 'shovel' || !state.hoverCell) return;
+  const { row, col } = state.hoverCell;
+  if (!state.grid[row] || !state.grid[row][col]) return;
+  const x = col * CELL_W, y = row * CELL_H;
+  ctx.fillStyle = 'rgba(255, 179, 0, 0.14)';   // subtle translucent overlay
+  ctx.fillRect(x, y, CELL_W, CELL_H);
+  ctx.strokeStyle = '#ffb300';                  // amber outline
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x + 2, y + 2, CELL_W - 4, CELL_H - 4);
+}
+
+// Lightweight refund feedback: a "+N SUN" label that rises and fades.
+// Rendering owns the effect's lifetime: stale entries are removed here, so
+// there is no separate cleanup bookkeeping anywhere else.
+const FLOAT_TEXT_MS = 1200;
+function drawFloatTexts(state) {
+  if (!state.floatTexts.length) return;
+  const now = performance.now();
+  for (let i = state.floatTexts.length - 1; i >= 0; i--) {
+    const ft = state.floatTexts[i];
+    const age = now - ft.at;
+    if (age >= FLOAT_TEXT_MS) { state.floatTexts.splice(i, 1); continue; }
+    const t = age / FLOAT_TEXT_MS;
+    ctx.globalAlpha = 1 - t;                    // fade out over the lifetime
+    ctx.font = 'bold 15px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(42, 28, 16, 0.85)'; // dark outline for legibility
+    ctx.fillStyle = '#ffd740';                  // sun-yellow text
+    const y = ft.y - 26 * t;                    // rise 26px
+    ctx.strokeText(ft.text, ft.x, y);
+    ctx.fillText(ft.text, ft.x, y);
+  }
+  ctx.globalAlpha = 1;
+}
+
 function drawGameOverOverlay() {
   const W = LOGICAL_W, H = LOGICAL_H;
   ctx.fillStyle = 'rgba(0,0,0,0.7)';
@@ -443,6 +483,10 @@ export function draw(state) {
 
   // Planting preview
   drawPlantingPreview(state);
+
+  // Shovel target highlight + refund float text
+  drawShovelTarget(state);
+  drawFloatTexts(state);
 
   // Game over overlay
   if (state.gameOver) drawGameOverOverlay();

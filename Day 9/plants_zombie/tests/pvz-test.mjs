@@ -9,11 +9,16 @@
 let now = 0;
 
 // --- Stub 2D context: every method no-ops and returns a self-stub so chained
-//     calls like createLinearGradient().addColorStop() work; props settable ---
+//     calls like createLinearGradient().addColorStop() work; props settable.
+//     Calls are also RECORDED (fn name + args) so tests can assert what was
+//     actually drawn — e.g. that the shovel target outline or a float text
+//     was emitted — without a real canvas.
+const drawCalls = [];
+let lastCtxProp = null;
 const ctx2d = new Proxy(function () {}, {
-  get: () => ctx2d,
+  get: (t, prop) => { if (prop !== 'then') lastCtxProp = prop; return ctx2d; },
   set: () => true,
-  apply: () => ctx2d,
+  apply: (t, thisArg, args) => { drawCalls.push({ fn: lastCtxProp, args }); return ctx2d; },
 });
 
 const canvas = {
@@ -139,7 +144,7 @@ const fireDocument = (ev, e = {}) => (globalThis.document._listeners[ev] || []).
 export function step(n) {
   for (let i = 0; i < n; i++) { now += 16; update(now); draw(); }
 }
-export { canvas, cellX, cellY, clickCanvas, game };
+export { canvas, cellX, cellY, clickCanvas, game, drawCalls };
 export function nowValue() { return now; }
 
 // --- 1. initial state ---
@@ -597,6 +602,73 @@ A(state.gameOver === false && state.sun === 200,
   'game-over canvas click RESTARTS instead of digging (no refund leaked)');
 A(state.selectedTool === null && state.health === 1,
   'restart clears the forced shovel selection and restores health=1');
+
+// --- 19. shovel visual feedback: float text, hover highlight, cursor ---
+state.waveInterval = 1e9;
+state.zombies = [];
+state.suns = [];
+state.projectiles = [];
+for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
+state.floatTexts = [];
+state.hoverCell = null;
+state.sun = 500;
+updateUI(state);
+const mousemove = (x, y) => canvas.listeners.mousemove.forEach(fn => fn({ clientX: x, clientY: y }));
+
+// A dig pushes a float text at the dug tile, carrying the exact refund.
+plantAt('sunflower', 2, 3);
+dig(2, 3);
+A(state.floatTexts.length === 1 && state.floatTexts[0].text === '+25 SUN',
+  'dig pushes a float text reading "+25 SUN"');
+A(Math.abs(state.floatTexts[0].x - cellX(3)) < 0.01 && Math.abs(state.floatTexts[0].y - cellY(2)) < 0.01,
+  'float text is positioned at the dug tile center');
+A(state.floatTexts[0].at === nowValue(), 'float text is stamped with the current time');
+// Snow Pea proves the FLOORED refund reaches the player: 175 -> 87.
+state.suns = []; // no pickup to intercept the tap
+plantAt('snowpea', 2, 5);
+dig(2, 5);
+A(state.floatTexts.length === 2 && state.floatTexts[1].text === '+87 SUN',
+  'snow pea dig pushes "+87 SUN" (floored refund shown to the player)');
+
+// Rendering: draw() emits the float text, and cleans up stale entries.
+drawCalls.length = 0;
+draw();
+A(drawCalls.some(c => c.fn === 'fillText' && String(c.args[0]).includes('+25 SUN')),
+  'draw() renders the float text on the canvas');
+state.floatTexts.push({ x: 100, y: 100, text: '+999 SUN', at: nowValue() - 1300 }); // older than 1200ms
+draw();
+A(state.floatTexts.every(ft => ft.text !== '+999 SUN'),
+  'float text older than FLOAT_TEXT_MS (1200) is cleaned up by draw()');
+A(state.floatTexts.some(ft => ft.text === '+25 SUN'),
+  'a fresh float text survives the cleanup');
+
+// Hover highlight: mousemove records the targeted cell for the outline.
+plantAt('wallnut', 2, 5); // a planted tile to target
+tools[0].fire('click');   // arm the shovel
+mousemove(cellX(5), cellY(2));
+A(state.hoverCell && state.hoverCell.row === 2 && state.hoverCell.col === 5,
+  'mousemove sets hoverCell to the targeted {row,col}');
+drawCalls.length = 0;
+draw();
+const hoverX = cellX(5), hoverY = cellY(2);
+A(drawCalls.some(c => c.fn === 'strokeRect' &&
+    c.args[0] > hoverX - 40 && c.args[0] < hoverX &&
+    c.args[1] > hoverY - 50 && c.args[1] < hoverY),
+  'draw() strokes an outline anchored to the hovered PLANTED tile');
+mousemove(-50, -50); // outside the lawn
+A(state.hoverCell === null, 'mousemove outside the lawn clears hoverCell');
+
+// Cursor: crosshair when armed, pointer over a collectible sun, '' when off.
+mousemove(cellX(5), cellY(2));
+A(canvas.style.cursor === 'crosshair', 'armed shovel over the lawn => crosshair cursor');
+state.suns.push({ x: cellX(5), y: cellY(2), value: 25, ttl: 8000, falling: false, targetY: cellY(2) });
+mousemove(cellX(5), cellY(2));
+A(canvas.style.cursor === 'pointer', 'a collectible sun still wins => pointer cursor');
+state.suns = [];
+tools[0].fire('click'); // disarm
+mousemove(cellX(5), cellY(2));
+A(canvas.style.cursor === '', 'disarmed shovel => default cursor');
+state.hoverCell = null;
 
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
