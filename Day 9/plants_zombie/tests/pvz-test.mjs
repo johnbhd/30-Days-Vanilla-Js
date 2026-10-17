@@ -296,5 +296,34 @@ const dxFull = (x2 - slowZ.x) / 10;
 A(Math.abs(dxFull - 0.25) < 0.01,
   `speed fully restored after expiry (measured ${dxFull.toFixed(4)}/frame, base 0.25)`);
 
+// --- 14. Repeater: two real projectiles ~200ms apart, both hit, silent when empty ---
+A(PLANT_TYPES.repeater.cost === 200 && PLANT_TYPES.repeater.shotsPerAttack === 2 &&
+  PLANT_TYPES.repeater.shotDelay === 200 && PLANT_TYPES.repeater.projectile === 'pea',
+  'repeater config: cost 200, 2 shots, 200ms delay, normal pea');
+for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
+state.zombies = [];
+state.suns = [];
+state.projectiles = [];
+state.grid[2][4] = createPlant('repeater', 2, 4, nowValue());
+// Empty lane: repeater must stay silent across two attack-cooldown windows.
+step(300); // 4.8s > 1.8s shootInterval, twice over
+A(state.projectiles.length === 0, 'repeater fires NO projectile when its lane is empty');
+A(state.suns.length === 0, 'repeater generates no sun');
+// Static zombie in lane: watch both hits land.
+const repZ = { row: 2, x: 400, speed: 0, hp: 100, maxHp: 100, eating: false };
+state.zombies.push(repZ);
+let maxConcurrent = 0, tRepHit1 = -1, tRepHit2 = -1;
+for (let f = 0; f < 600 && tRepHit2 < 0; f++) {
+  step(1);
+  if (state.projectiles.length > maxConcurrent) maxConcurrent = state.projectiles.length;
+  if (repZ.hp === 75 && tRepHit1 < 0) tRepHit1 = nowValue();
+  else if (repZ.hp === 50 && tRepHit2 < 0) tRepHit2 = nowValue();
+}
+A(maxConcurrent >= 2, 'two REAL projectiles in flight simultaneously (not one double-damage shot)');
+A(tRepHit1 > 0 && tRepHit2 > 0, 'both repeater shots hit the zombie (hp 100 -> 75 -> 50)');
+const repGap = tRepHit2 - tRepHit1;
+A(repGap >= 192 && repGap <= 240, `shots ~200ms apart (hits ${repGap}ms apart, expected ~208)`);
+A(repZ.hp === 50, 'each projectile dealt normal 25 damage (two 25s, not one 50)');
+
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
