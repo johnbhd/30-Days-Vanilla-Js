@@ -1,128 +1,199 @@
-# Task: UI/Visual Polish — Plants vs Zombies (existing game)
+# Task: Add 3 New Plants (Wall-nut, Snow Pea, Repeater) + Modularize JavaScript
 
-**Status:** Approved design — implemented and verified (all automated tests pass; visual checks done via rendered mock, since the desktop browser is not connected for live screenshots).
-**Type:** UI/UX only. No gameplay changes. Health stays strictly `1 = alive`, `0 = game over`.
+**Status:** Design proposed — awaiting approval before implementation.
+**Type:** Architectural. Preserve all existing game logic and UI polish. Health stays strictly `1 = alive`, `0 = immediate Game Over`.
 
 ---
 
-## 1. Current-state inspection findings
+## 1. Asset research findings (verification report)
 
-Working tree clean at commit `91d9725`. Game served at `http://localhost:8765`.
+Searched OpenGameArt (direct + keyword searches: *pea shooter, ice/frost plant shooter, nut, acorn, cactus, plant tower defense*), Kenney, and itch.io listings; opened the actual asset/license pages.
 
-### File responsibilities
+**Result: no openly-licensed cartoon side-view "plant shooter" or "wall-nut" sprite exists that matches the current bevouliin.com art style.** Candidates found and rejected:
 
-| File | Responsibility |
-|---|---|
-| `index.html` | HUD (sun/health/level), seed selection, canvas, credits footer |
-| `style.css` | All styling: container, HUD, seed slots, responsive |
-| `game.js` | Canvas rendering + all game logic (grid/lawn, plants, zombies, peas, suns, game over) |
-| `images/` | Sprites: `sunflower.png`, `peashooter_cut.png`, `zombie.png` (OpenGameArt, credited) |
-
-### Sprite padding measurements (cause of "tiny zombie")
-
-| Sprite | Asset size | Visible content | Notes |
+| Candidate | Source | License | Why rejected |
 |---|---|---|---|
-| Zombie (row 0, walk frames 4–11) | 128×128 tile | 47w × 56h px (44% of tile) | feet at tile-y 102, content center x = 61 |
-| Zombie (bite frames 16–19) | 128×128 | 45w × 52h | feet at tile-y ~101 (same foot line) |
-| Sunflower | 244×525 | 174×481 (bbox 31–204 × 27–507) | minor padding |
-| Peashooter | 575×584 | full-bleed | none |
+| CC0 Food Icons (AntumDeluge) | OpenGameArt node/114088 | **CC0** ✓ | 32×32 pixel-art icons — style mismatch with cartoon vector plants |
+| Kenney Tower Defense (Top-Down) | OpenGameArt | **CC0** ✓ | Top-down tiles, wrong perspective/style |
+| LPC Plant Repack / cactus packs | OpenGameArt | CC-BY-SA etc. | Pixel-art, wrong style; SA would infect the project |
 
-**Why zombies look tiny today:** tile drawn at `CELL_H × 1.25 = 100px` → visible body = 56/128 × 100 ≈ **44px in an 80px lane (~55%)**.
+### Selected approach (allowed fallback: original/closest-open-licensed art)
 
-**Brown rectangle on the right:** `.game-area` has background `#8b6914`; canvas renders at fixed 600px, so on wider screens ~100px of bare brown shows beside the lawn.
+Derive new art from the project's **already-licensed** sprite — `peashooter_cut.png` by **bevouliin.com, CC-BY 4.0** (page verified: OGA "Shadow Man-Eating Plant Sprites", CC-BY 4.0 — same artist as the current peashooter):
 
-**Collision safety:** pure-canvas game. Hits, eating, and home boundary all use game-space coordinates (`z.x`, grid math), independent of draw size → enlarging sprites changes **zero** gameplay.
+| New plant | Asset plan | License basis |
+|---|---|---|
+| **Wall-nut** | **Original cartoon walnut PNG generated for this project** (pngjs, supersampled anti-aliasing: body + cap + seam + highlight, matched palette) | Original work — no third-party rights; credited as such |
+| **Snow Pea** | Recolor (hue-shift green → ice blue) of `peashooter_cut.png` | CC-BY 4.0 permits adaptations; attribution kept + noted as recolor |
+| **Repeater** | Same sprite + programmatically drawn **second barrel** + deeper-green tint | CC-BY 4.0 derivative, attributed |
 
----
-
-## 2. Design / implementation plan (by priority)
-
-### P1 — Make zombies much larger
-- Anchor by sprite **content**, not tile: draw tile at `CELL_H × 1.46` (≈117px).
-- Position: feet (tile-y `102/128`) at lane bottom − 4px; visible body center (`61/128` horizontally) centered on `z.x`.
-- Result: body ≈ **64px ≈ 80% of lane height** (target 70–85%), inside lane, no clipping, aspect ratio preserved.
-- Hardcode measured constants in `game.js` (no runtime image analysis, no asset edits).
-
-### P2 — Lawn redesign (canvas `drawGrid()`)
-- 5 lanes alternating `#69B83D` / `#589F30` (lane readability preserved).
-- Very subtle column shading for placement readability; remove hard grid boxes.
-- Left edge: hedge/soil home boundary strip.
-- Right edge: ~28px dirt gradient strip (`#986A17 → #795414`) as zombie entrance (zombies spawn at x=630, walk out of it). No new gameplay there.
-
-### P3 — Container / remove white space
-- Canvas → `width: 100%; aspect-ratio: 3/2` (no more brown gap).
-- Whole game = one wood-framed panel (`#60421F` border + shadow) on dark garden backdrop; HUD, seed bank, lawn stacked flush.
-- Credits footer kept, small, inside frame.
-
-### P4 — Seed cards (seed packets)
-- Restructure markup: sprite thumbnail (existing PNGs) + name + "☀ cost".
-- States: hover lift, golden **selected** state, desaturated + `not-allowed` cursor when sun < cost.
-- One tiny supporting JS line in `updateUI()` to toggle the unaffordable class. **No purchasing/mechanics change.**
-
-### P5 — HUD
-- Dark garden-green bar with wood trim, cream (`#F5E8C8`) text: `☀ SUN n  ♥ HEALTH n  LEVEL n`.
-- **Single heart, single digit — never hearts row / HP bar.** Health display reads `1` or `0` only.
-
-### P6 — Zombie entrance (covered in P2 right strip)
-
-### P7 — Small details
-- Peas: ~13px, radial gradient + dark outline + soft shadow (no damage/speed change).
-- Suns: subtle glow + pointer cursor on hover (generation/value unchanged).
-- Zombie HP bar: above head, follows zombie, 40×5px, dark rounded bg, red fill, thin border, doesn't cover sprite.
-- Game Over: restyle canvas overlay as wood panel — "GAME OVER / The lawn was lost / Click to try Again". Uses existing click-to-restart; logic untouched.
-- DPR-aware canvas for crisp tablet sprites (backing store × devicePixelRatio; matching 1-line click-mapping update).
-
-### Responsive
-- `max-width` panel, `clamp()` sizing, seed bank horizontal scroll on narrow screens, CSS-only (no JS viewport math). Landscape tablet is the priority viewport.
-
-### Visual depth / animation
-- Subtle gradients, inset shadows, `filter: drop-shadow(...)` on sprites, card hover `translateY(-2px)`.
-- Lightweight CSS only; respect `prefers-reduced-motion`.
+- All attributions preserved in footer; new lines added (e.g. *Snow Pea / Repeater recolors derived from bevouliin.com peashooter — CC-BY 4.0; Wall-nut original art for this project*).
+- **No official PvZ artwork anywhere.**
+- Repeater fallback if the drawn second barrel fails visual verification: reuse plain peashooter sprite (behavior distinguishes it) — will be reported.
 
 ---
 
-## 3. Files to modify
+## 2. Module structure (after)
 
-1. **`style.css`** — container frame, HUD, seed packets, colors, responsive, reduced-motion.
-2. **`index.html`** — HUD markup, seed-card markup (with images), credits preserved.
-3. **`game.js`** — rendering only: zombie/plant draw anchoring constants, `drawGrid()` redesign, pea/sun visuals, DPR setup + click-map line, affordability class toggle in `updateUI()`.
+Flat, ~11 files, no bundler, native `<script type="module">` (served over HTTP as today; `file://` does not work with ES modules — already required the local server):
 
-## 4. Strictly NOT changed
+```
+js/
+  main.js         — canvas + DPR setup, game loop, restart, init
+  config.js       — LOGICAL_W/H, COLS/ROWS/CELL sizes, BALANCE, PLANT_TYPES (all 5)
+  state.js        — createState() + grid init
+  assets.js       — SPRITE_SRC, one-time image loading, spriteReady(), sprite content-bounds metadata
+  plants.js       — createPlant(), updatePlants(state, now): sun production + shared shooter behavior (multi-shot queue)
+  zombies.js      — spawnZombie(), updateZombies(state, now, dt): movement w/ slow, eating, house breach (health 1→0 lives here, verbatim)
+  projectiles.js  — spawnProjectile(), updateProjectiles(state): movement, hits, slow application, kill reward
+  suns.js         — spawnSun(), updateSuns(), sky-sun spawn
+  ui.js           — updateUI(), seed-card wiring, canvas click (collect/plant/restart), hover cursor
+  rendering.js    — draw(state): orchestrator + entities + preview + Game Over overlay
+  lawn.js         — drawLawn() (current drawGrid, unchanged visually)
+```
 
-- Health system: starts at **1**, reaching 0 = **immediate Game Over** (logic untouched).
-- Sun generation, plant costs (50 / 100), zombie HP, damage, attack interval, projectile speed, zombie speed, spawn rules, level progression, placement rules, win/loss logic.
-- No frameworks, engines, UI libraries, or dependencies. No official PvZ assets. Existing sprites and credits kept.
+### Code mapping (current game.js → module)
+
+| Current game.js content | Destination |
+|---|---|
+| DPR/canvas setup, gameLoop, restartGame, gameOver flag | `main.js` (flag moves to `state.gameOver`, logic unchanged) |
+| LOGICAL_W/H, COLS/ROWS, CELL_W/H, PLANTS defs | `config.js` (generalized → PLANT_TYPES + BALANCE) |
+| state object + grid init | `state.js` |
+| SPRITE_SRC, sprite loading, spriteReady, PLANT_SPRITE bounds | `assets.js` |
+| sunflower/shooter logic inside update() | `plants.js` (config-driven) |
+| spawnZombie + zombie update/eat/breach block | `zombies.js` |
+| pea update/hit block + spawn of peas | `projectiles.js` (`state.peas` → `state.projectiles`, type field added) |
+| spawnSun + sun update + sky-sun block | `suns.js` |
+| updateUI, seed-card listeners, canvas click, mousemove | `ui.js` |
+| draw(), drawPlant, drawZombie, drawPea, drawSun, preview, Game Over overlay | `rendering.js` |
+| drawGrid | `lawn.js` |
+
+**Dependency direction is one-way** (config ← everything; plants → suns/projectiles; rendering → assets/lawn; ui → config/state) — **no circular imports**; systems receive `state` as an argument; no `window.*` globals.
 
 ---
 
-## 5. Acceptance criteria
+## 3. Config-driven plants (no if/else forests)
 
-- [x] Health starts at exactly 1; UI shows `HEALTH 1`; no multi-point health implied.
-- [x] Health 0 still immediately triggers Game Over (existing logic).
-- [x] Zombies much larger: ~70–85% of lane height; not stretched/clipped; stay in lane.
-- [x] Zombie HP bars aligned above head, follow movement.
-- [x] Plants consistent (~65–80% lane height), centered, bottom-anchored, padding compensated.
-- [x] Lawn reads as continuous lawn with 5 clear lanes (not a spreadsheet).
-- [x] Seed cards look like game seed packets; cost visible; selected obvious; unaffordable state shown.
-- [x] HUD feels game-like; sun/health/level readable.
-- [x] No excessive white space; no brown gap beside canvas.
-- [x] Right side looks like an intentional dirt zombie entrance.
-- [x] Peas and suns clearly visible.
-- [ ] Desktop + landscape tablet layouts look good; no page overflow. (CSS reviewed; live-browser check pending — desktop browser not connected)
-- [x] All existing mechanics still work (placement, shooting, collision, death, sun economy, levels, restart).
-- [x] No new dependencies; no official PvZ artwork copied.
+```js
+PLANT_TYPES = {
+  sunflower: { name:'Sunflower', cost:50,  hp:60,  role:'sun',     sunInterval:7000 },
+  peashooter:{ name:'Peashooter',cost:100, hp:100, role:'shooter', shotsPerAttack:1, projectile:'pea' },
+  wallnut:   { name:'Wall-nut', cost:50,  hp:400, role:'defense' },
+  snowpea:   { name:'Snow Pea', cost:175, hp:100, role:'shooter', shotsPerAttack:1, projectile:'icePea' },
+  repeater:  { name:'Repeater', cost:200, hp:100, role:'shooter', shotsPerAttack:2, shotDelay:200, projectile:'pea' },
+}
+```
 
-## 6. Required testing (after implementation)
+All balance centralized here plus `BALANCE = { PEA_DAMAGE:25, PEA_SPEED:4, EAT_DPS:8, SLOW_MULT:0.65, SLOW_MS:3000, REPEATER_DELAY:200, ... }` — no scattered magic numbers.
 
-1. **HUD** — sun/health/level update correctly; health shows 1.
-2. **Plant selection** — selected state visible for both cards.
-3. **Placement** — plant centered, correct size.
-4. **Sun spend** — counter updates; unaffordable state appears when broke.
-5. **Zombie spawn** — significantly larger, inside its lane.
-6. **Shooting** — pea aligned, hits register.
-7. **Zombie HP bar** — shrinks with damage.
-8. **Zombie death** — removal + sun reward still work.
-9. **Player failure** — zombie reaches home → Health 1 → 0 → **GAME OVER** immediately.
-10. **Restart** — returns to initial state with Health 1.
+### Shared shooter behavior (one code path for all 3 shooters)
 
-Verification tooling available: headless Node test suite (22 assertions, procedural + sprite modes), sprite-scale render previews via pngjs, HTTP smoke checks.
+On cooldown + zombie in lane → `p.shotsLeft = shotsPerAttack`, `p.nextShotAt = now`; each frame while `shotsLeft > 0 && now >= nextShotAt`: `spawnProjectile(plant, type)`, `shotsLeft--`, `nextShotAt += shotDelay`.
+- Peashooter / Snow Pea: 1 shot
+- Repeater: 2 shots 200ms apart (PEA → PEA feel, two real projectiles, not double damage)
+
+### Wall-nut
+
+Same eating path as every plant (zombie stops, deals EAT_DPS, resumes at 0 HP) — only `hp: 400` differs. No projectile, no sun. Optional visual: simple canvas crack overlay at ≤50% / ≤25% HP (no extra sprite states).
+
+### Snow Pea slow state
+
+Zombie gains `slowUntil` timestamp; `z.speed` (base) never overwritten.
+Movement: `speed = now < z.slowUntil ? z.speed * SLOW_MULT : z.speed` — auto-reverts on expiry.
+Ice hit: `z.slowUntil = now + SLOW_MS` (refresh; multiplier is a fixed constant → structurally impossible to stack exponentially).
+Projectile: `{ row, x, y, damage, speed, type: 'pea'|'icePea' }` — one engine, render switches on type.
+Visual: soft cyan aura ellipse + 2 frost specks while slowed (lightweight, no filters, sprite not obscured).
+
+### Placement rule
+
+Current code **already allows any plant on any empty tile** (no column restriction exists — verified in click handler). §9 requires **no logic change** — only new tests locking the rule in.
+
+---
+
+## 4. Balance (derived from current baseline)
+
+Baseline: zombie 100 HP, pea 25 dmg (4 peas kill), bite 8 dps, zombie speed 15–24 px/s, peashooter 1 shot/1.8s.
+
+| Plant | Cost | HP | Behavior |
+|---|---|---|---|
+| Sunflower | 50 | 60 | unchanged (sun every 7s) |
+| Peashooter | 100 | 100 | unchanged (25 dmg/1.8s) |
+| **Wall-nut** | 50 | **400** | 4× peashooter HP → ~50s solo / ~17s vs 3 zombies at 8 dps |
+| **Snow Pea** | 175 | 100 | same DPS as peashooter + 35% slow, 3s, refresh-on-hit |
+| **Repeater** | 200 | 100 | 50 dmg/1.8s ≈ 2× peashooter DPS for 2× cost |
+
+---
+
+## 5. Seed bank & credits
+
+- 3 new static cards appended in `index.html` (sprite/name/cost; existing seed-packet styles; tray already scrolls horizontally on narrow screens — 5 cards stay readable, landscape tablet priority).
+- `ui.js` syncs card name + cost text from `PLANT_TYPES` at init → config is the single source of truth for numbers.
+- Footer gains the new attribution lines; existing credits untouched.
+
+---
+
+## 6. Testing
+
+- **Harness rewrite required:** current test `vm`-concatenates one file. New approach: install DOM/canvas/performance stubs on `globalThis`, then `await import('js/main.js')` — real ES modules, same assertions adapted to `state.gameOver` / `state.projectiles`; run in both procedural + sprite modes.
+- **Existing assertions must keep passing** (health 1→0→Game Over, restart, economy, waves, placement, affordability classes…).
+- **New assertions:**
+  - Sunflower: any empty column (left/center/right), still makes sun, no overlap.
+  - Peashooter: 1 normal pea, unchanged.
+  - Wall-nut: placed, correct cost (50), no shoot, no sun, blocks zombie, survives ≫ normal plant, removed at 0 HP.
+  - Snow Pea: cost 175, ice projectile, damages zombie, zombie slows, expiry restores speed, re-hit refreshes (no multiplication).
+  - Repeater: cost 200, two separate peas with delay, both hit, silent when lane empty.
+  - Health: 1 → zombie home → 0 → Game Over immediately.
+  - Restart: arrays/health/selection reset; all new mechanics work after restart.
+  - Seed bank: 5 cards, exact costs (50/100/50/175/200).
+- **Manual:** headless env limits verification to headless simulation + pngjs render mocks + HTTP smoke checks; live play-testing (all 5 plants, unusual layouts, slow timing, two-shot feel) stays on your side.
+
+---
+
+## 7. Strictly NOT changed
+
+- Health: **1 = alive, 0 = immediate Game Over** — logic untouched (moves verbatim into `zombies.js`).
+- Existing balance numbers (costs 50/100, HP 60/100, pea 25, bite 8 dps, intervals, speeds, wave/level rules, +10 kill reward, starting sun 200).
+- Lawn / HUD / zombie size / seed-packet / Game Over visual polish.
+- Existing assets and their credits. No frameworks, bundlers, or dependencies. No official PvZ artwork.
+
+---
+
+## 8. Implementation order (after approval)
+
+1. Modularize current game without behavior change → prove parity (tests + HTTP smoke).
+2. Centralized plant configuration (PLANT_TYPES + BALANCE).
+3. Any-tile placement rule tests (no logic change expected).
+4. Wall-nut.
+5. Shared projectile types.
+6. Snow Pea + zombie slow state.
+7. Shared multi-shot behavior.
+8. Repeater.
+9. Three new seed cards (+ config-synced labels).
+10. Integrate generated/derived sprites.
+11. Update credits.
+12. Responsive seed-bank check.
+13. Full automated suite (both modes).
+14. Headless/manual verification + render mocks.
+
+---
+
+## 9. Acceptance criteria
+
+- [ ] Existing game still works (all pre-existing assertions pass).
+- [ ] JavaScript split into multiple sensible ES modules; `game.js` removed.
+- [ ] Browser uses `type="module"`; no bundler added; no circular imports.
+- [ ] Plant stats centralized in config; no scattered magic numbers.
+- [ ] Sunflower plantable on ANY empty lawn tile (test-locked).
+- [ ] Peashooter remains functional (1 normal pea).
+- [ ] Wall-nut added: high-HP defense, cost 50, no attack, no sun.
+- [ ] Snow Pea added: cost 175, ice projectile, temporary slow, expiry works, no exponential stacking.
+- [ ] Repeater added: cost 200, two separate peas with short delay, both hit.
+- [ ] Five seed cards; costs exactly 50 / 100 / 50 / 175 / 200.
+- [ ] Health remains strictly 1 → 0 → immediate Game Over.
+- [ ] Existing zombie size/lawn/HUD/UI polish intact; responsive layout kept.
+- [ ] New sprites: original or CC-BY 4.0 derivatives; no official PvZ assets; credits preserved/updated.
+- [ ] Existing + new automated tests pass (procedural and sprite modes).
+
+## 10. Final report must include
+
+Module structure before/after · files created/changed · asset sources + licenses · plant stats · wallnut/snowpea/slow/repeater implementations · placement rule status · whether existing gameplay changed · automated results · manual/visual verification · tablet/responsive check · confirmation Health remains exactly 1 → 0 → Game Over.

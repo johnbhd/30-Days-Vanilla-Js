@@ -1,0 +1,343 @@
+// All canvas drawing: entities, planting preview, Game Over overlay.
+// ctx is set once via setupRenderer(canvas) — held in module scope, never on window.
+import { LOGICAL_W, LOGICAL_H, COLS, ROWS, CELL_W, CELL_H } from './config.js';
+import { getSprite, spriteReady } from './assets.js';
+import { drawLawn } from './lawn.js';
+
+let ctx = null;
+
+export function setupRenderer(canvas) {
+  ctx = canvas.getContext('2d');
+  return ctx;
+}
+
+// Plant sprite content bounds (opaque pixels), measured from the PNGs:
+//   sunflower.png  244x525, body spans x 31..204, y 27..507 (transparent padding)
+//   peashooter_cut.png 575x584, full-bleed (no padding)
+// We scale each plant by its VISIBLE content so sunflower and peashooter look
+// consistent (~72% of lane height), anchor the content bottom just above the
+// lane bottom, and center the content horizontally in the cell. Purely visual:
+// grid coordinates and collisions are untouched.
+const PLANT_SPRITE = {
+  sunflower: { cw: 174, ch: 481, cx: 117.5, bottom: 507 },
+  peashooter: { cw: 575, ch: 584, cx: 287.5, bottom: 584 },
+};
+const PLANT_VISUAL_FRAC = 0.72; // visible content = 72% of lane height
+const PLANT_FOOT_INSET = 3;     // content bottom sits this far above lane bottom
+
+function plantSpriteBox(type, img, row, col) {
+  const meta = PLANT_SPRITE[type];
+  const scale = (CELL_H * PLANT_VISUAL_FRAC) / meta.ch;
+  const cLeft = meta.cx - meta.cw / 2;
+  return {
+    scale,
+    dx: col * CELL_W + CELL_W / 2 - meta.cx * scale,
+    dy: (row + 1) * CELL_H - PLANT_FOOT_INSET - meta.bottom * scale,
+    cLeft,
+    top: (row + 1) * CELL_H - PLANT_FOOT_INSET - meta.ch * scale,
+  };
+}
+
+function drawPlant(p) {
+  const cx = p.col * CELL_W + CELL_W / 2;
+  const cy = p.row * CELL_H + CELL_H / 2;
+  const r = Math.min(CELL_W, CELL_H) * 0.32;
+  let barY; // top of visible plant, for HP bar placement
+
+  if (spriteReady(p.type)) {
+    // Sprite image, content-anchored to the bottom of its cell
+    const img = getSprite(p.type);
+    const box = plantSpriteBox(p.type, img, p.row, p.col);
+    const dw = img.naturalWidth * box.scale;
+    const dh = img.naturalHeight * box.scale;
+    ctx.drawImage(img, box.dx, box.dy, dw, dh);
+    barY = box.top;
+  } else if (p.type === 'sunflower') {
+    // Petals
+    ctx.fillStyle = '#ffd700';
+    for (let a = 0; a < 8; a++) {
+      const angle = (a / 8) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(angle) * r * 0.7, cy + Math.sin(angle) * r * 0.7, r * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Center
+    ctx.fillStyle = '#8b5a2b';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    // Face
+    ctx.fillStyle = '#3e2723';
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.15, cy - r * 0.1, r * 0.08, 0, Math.PI * 2);
+    ctx.arc(cx + r * 0.15, cy - r * 0.1, r * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#3e2723';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy + r * 0.05, r * 0.2, 0.2, Math.PI - 0.2);
+    ctx.stroke();
+    barY = cy - r * 1.15; // top of outermost petals
+  } else if (p.type === 'peashooter') {
+    // Stem
+    ctx.fillStyle = '#388e3c';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + r * 0.5, r * 0.3, r * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Head
+    ctx.fillStyle = '#4caf50';
+    ctx.beginPath();
+    ctx.arc(cx, cy - r * 0.1, r * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    // Mouth (barrel pointing right)
+    ctx.fillStyle = '#2e7d32';
+    ctx.beginPath();
+    ctx.ellipse(cx + r * 0.7, cy - r * 0.1, r * 0.4, r * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Eye
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx + r * 0.15, cy - r * 0.3, r * 0.18, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(cx + r * 0.2, cy - r * 0.3, r * 0.09, 0, Math.PI * 2);
+    ctx.fill();
+    barY = cy - r * 0.8; // top of the head
+  }
+
+  // HP bar if damaged, above the visible plant
+  if (p.hp < p.maxHp) {
+    const bw = CELL_W * 0.6;
+    const bh = 4;
+    const bx = cx - bw / 2;
+    const by = barY - bh - 4;
+    ctx.fillStyle = '#333';
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.fillStyle = '#76ff03';
+    ctx.fillRect(bx, by, bw * (p.hp / p.maxHp), bh);
+  }
+}
+
+// Zombie sprite content bounds (row 0, left-facing walk/bite frames), measured
+// from zombie.png: the opaque body spans tile-y 47..102 (foot line ~102.5) and
+// tile-x 38..84 (horizontal center 61.5) of each 128px tile. We anchor the draw
+// on the visible body, not the raw tile, so the sprite's large transparent
+// padding does not shrink the zombie on the lawn. Purely visual: z.x/z.row and
+// all collision/game logic use unchanged game coordinates.
+const Z_TILE = 128;
+const Z_BODY_TOP = 47;      // first opaque row of the body within a tile
+const Z_BODY_FOOT = 102.5;  // foot line within a tile
+const Z_BODY_CX = 61.5;     // horizontal center of the body within a tile
+const Z_VISUAL_FRAC = 0.8;  // visible body = 80% of lane height (target 70-85%)
+const Z_FOOT_INSET = 4;     // feet sit this far above the lane bottom line
+
+function zombieSpriteBox(z) {
+  const tile = CELL_H * Z_VISUAL_FRAC * Z_TILE / (Z_BODY_FOOT - Z_BODY_TOP);
+  return {
+    tile,
+    dx: z.x - (Z_BODY_CX / Z_TILE) * tile,
+    dy: (z.row + 1) * CELL_H - Z_FOOT_INSET - (Z_BODY_FOOT / Z_TILE) * tile,
+  };
+}
+
+function drawZombie(z) {
+  const cx = z.x;
+  let barTop; // top of the visible head, for HP bar placement
+
+  if (spriteReady('zombie')) {
+    // Sprite sheet: 36 cols x 8 rows of 128px tiles.
+    // Row 0 = left-facing profile; frames 4-11 = lurch walk, 16-19 = bite.
+    const T = Z_TILE;
+    let frame;
+    if (z.eating) {
+      frame = 16 + (Math.floor(performance.now() / 150) % 4);
+    } else {
+      frame = 4 + (Math.floor(performance.now() / 140) % 8);
+    }
+    const box = zombieSpriteBox(z);
+    ctx.drawImage(
+      getSprite('zombie'),
+      frame * T, 0, T, T,
+      box.dx, box.dy, box.tile, box.tile
+    );
+    barTop = box.dy + (Z_BODY_TOP / Z_TILE) * box.tile;
+  } else {
+    // Fallback vector zombie — same visible size and anchor as the sprite:
+    // body ~80% of lane height, feet near lane bottom, centered on z.x.
+    const bodyH = CELL_H * Z_VISUAL_FRAC;
+    const r = bodyH * 0.35;
+    const feetY = (z.row + 1) * CELL_H - Z_FOOT_INSET;
+    const fcy = feetY - bodyH / 2; // shape is roughly symmetric about this
+    // Body
+    ctx.fillStyle = '#7e9c5e';
+    ctx.fillRect(cx - r * 0.5, fcy - r * 0.3, r, r * 1.1);
+    // Head
+    ctx.fillStyle = '#9ccc65';
+    ctx.beginPath();
+    ctx.arc(cx, fcy - r * 0.6, r * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.15, fcy - r * 0.7, r * 0.12, 0, Math.PI * 2);
+    ctx.arc(cx + r * 0.15, fcy - r * 0.7, r * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(cx - r * 0.12, fcy - r * 0.7, r * 0.06, 0, Math.PI * 2);
+    ctx.arc(cx + r * 0.18, fcy - r * 0.7, r * 0.06, 0, Math.PI * 2);
+    ctx.fill();
+    // Mouth
+    ctx.fillStyle = '#4a148c';
+    ctx.fillRect(cx - r * 0.2, fcy - r * 0.35, r * 0.4, r * 0.15);
+    // Arms reaching forward
+    ctx.fillStyle = '#7e9c5e';
+    ctx.fillRect(cx - r * 0.9, fcy - r * 0.2, r * 0.5, r * 0.2);
+    ctx.fillRect(cx - r * 0.9, fcy + r * 0.1, r * 0.5, r * 0.2);
+    // Torn shirt
+    ctx.fillStyle = '#5d4037';
+    ctx.fillRect(cx - r * 0.5, fcy + r * 0.1, r, r * 0.3);
+    barTop = fcy - r * 1.1;
+  }
+
+  // HP bar, floating just above the head and following the zombie
+  const bw = CELL_W * 0.6;
+  const bh = 5;
+  const bx = cx - bw / 2;
+  const by = barTop - bh - 4;
+  ctx.fillStyle = 'rgba(20,15,10,0.85)';
+  ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(bx, by, bw, bh);
+  const ratio = Math.max(0, z.hp / z.maxHp);
+  ctx.fillStyle = ratio > 0.5 ? '#6fce4a' : ratio > 0.25 ? '#e5c93c' : '#f44336';
+  ctx.fillRect(bx, by, bw * ratio, bh);
+}
+
+function drawPea(p) {
+  // Slightly larger, gradient-filled pea with outline and soft shadow
+  const R = 6.5; // ~13px diameter
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.35)';
+  ctx.shadowBlur = 3;
+  ctx.shadowOffsetY = 2;
+  const g = ctx.createRadialGradient(p.x - R * 0.3, p.y - R * 0.3, R * 0.2, p.x, p.y, R);
+  g.addColorStop(0, '#b9f27c');
+  g.addColorStop(1, '#66bb2a');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, R, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = '#2e5d15';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+function drawSun(s) {
+  const alpha = s.ttl - (performance.now() - s.createdAt) < 2000
+    ? 0.4 + 0.6 * Math.abs(Math.sin(performance.now() / 200))
+    : 1;
+  ctx.globalAlpha = alpha;
+  // Soft glow behind the sun
+  ctx.save();
+  ctx.shadowColor = 'rgba(255,215,71,0.8)';
+  ctx.shadowBlur = 10;
+  // Rays
+  ctx.fillStyle = '#ffee58';
+  for (let a = 0; a < 8; a++) {
+    const angle = (a / 8) * Math.PI * 2 + performance.now() / 500;
+    ctx.beginPath();
+    ctx.ellipse(
+      s.x + Math.cos(angle) * 14,
+      s.y + Math.sin(angle) * 14,
+      7, 7, 0, 0, Math.PI * 2
+    );
+    ctx.fill();
+  }
+  // Core
+  const cg = ctx.createRadialGradient(s.x - 3, s.y - 3, 2, s.x, s.y, 12);
+  cg.addColorStop(0, '#ffe88a');
+  cg.addColorStop(1, '#fdd835');
+  ctx.fillStyle = cg;
+  ctx.beginPath();
+  ctx.arc(s.x, s.y, 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  // Specular highlight
+  ctx.fillStyle = 'rgba(255,245,157,0.9)';
+  ctx.beginPath();
+  ctx.arc(s.x - 3, s.y - 3, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+function drawPlantingPreview(state) {
+  if (!state.selectedPlant) return;
+  ctx.globalAlpha = 0.5;
+  // Highlight empty cells
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (!state.grid[r][c]) {
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(c * CELL_W + 2, r * CELL_H + 2, CELL_W - 4, CELL_H - 4);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawGameOverOverlay() {
+  const W = LOGICAL_W, H = LOGICAL_H;
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(0, 0, W, H);
+  // Wood panel
+  const pw = Math.min(360, W * 0.72), ph = 150;
+  const px = (W - pw) / 2, py = (H - ph) / 2;
+  ctx.fillStyle = '#3a2a12';
+  ctx.fillRect(px - 4, py - 4, pw + 8, ph + 8);
+  ctx.fillStyle = '#60421F';
+  ctx.fillRect(px, py, pw, ph);
+  ctx.strokeStyle = 'rgba(245,232,200,0.25)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(px + 6, py + 6, pw - 12, ph - 12);
+  // Text
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ff5252';
+  ctx.font = 'bold 38px Segoe UI, sans-serif';
+  ctx.fillText('GAME OVER', W / 2, py + 58);
+  ctx.fillStyle = '#F5E8C8';
+  ctx.font = '17px Segoe UI, sans-serif';
+  ctx.fillText('The lawn was lost', W / 2, py + 92);
+  ctx.fillStyle = '#FFD747';
+  ctx.font = 'italic 15px Segoe UI, sans-serif';
+  ctx.fillText('Click to Try Again', W / 2, py + 122);
+}
+
+export function draw(state) {
+  drawLawn(ctx);
+
+  // Plants
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (state.grid[r][c]) drawPlant(state.grid[r][c]);
+    }
+  }
+
+  // Peas
+  state.peas.forEach(drawPea);
+
+  // Zombies (sorted by row for consistent overlap)
+  state.zombies.forEach(drawZombie);
+
+  // Suns
+  state.suns.forEach(drawSun);
+
+  // Planting preview
+  drawPlantingPreview(state);
+
+  // Game over overlay
+  if (state.gameOver) drawGameOverOverlay();
+}
