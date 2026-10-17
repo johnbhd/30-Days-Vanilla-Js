@@ -16,7 +16,7 @@ export function spawnZombie(state) {
   });
 }
 
-export function updateZombies(state, dt) {
+export function updateZombies(state, now, dt) {
   // --- Update zombies ---
   for (let i = state.zombies.length - 1; i >= 0; i--) {
     const z = state.zombies[i];
@@ -36,7 +36,12 @@ export function updateZombies(state, dt) {
     }
 
     if (!z.eating) {
-      z.x -= z.speed * (dt / 16);
+      // Snow Pea slow: derived from the slowUntil timestamp — the base speed
+      // z.speed is NEVER mutated. Expired slow reverts automatically; a fresh
+      // ice hit just moves the deadline (constant multiplier => no stacking).
+      const slowed = z.slowUntil !== undefined && now < z.slowUntil;
+      const slowMult = slowed ? BALANCE.SLOW_MULT : 1;
+      z.x -= z.speed * slowMult * (dt / 16);
     }
 
     // Reached the house: health 1 -> 0 => immediate Game Over.

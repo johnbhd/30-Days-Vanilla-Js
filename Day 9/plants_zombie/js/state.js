@@ -10,7 +10,7 @@ export function createState() {
     selectedPlant: null,
     grid: [],           // grid[row][col] = plant object or null
     zombies: [],        // {row, x, hp, speed, eating}
-    peas: [],           // {row, x, y}
+    projectiles: [],     // {row, x, y, type: 'pea'|'icePea'}
     suns: [],           // {x, y, value, ttl, falling, targetY}
     waveTimer: 0,
     waveInterval: BALANCE.WAVE_INTERVAL, // ms between spawns

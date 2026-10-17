@@ -46,8 +46,8 @@ export function update(now) {
 
   updatePlants(state, now);   // sunflowers produce sun, shooters shoot
   updateSuns(state, now, dt); // random sky sun + falling/expiring suns
-  updateProjectiles(state, dt); // peas move and hit
-  updateZombies(state, dt);   // eating, walking, house breach (health 1 -> 0)
+  updateProjectiles(state, now, dt); // projectiles move, hit, apply slow
+  updateZombies(state, now, dt);   // eating, walking, house breach (health 1 -> 0)
   updateWaves(state, dt);     // spawn zombies, level up
   updateUI(state);            // presentation sync (once per frame)
 }
@@ -62,7 +62,7 @@ export function restartGame() {
   state.level = 1;
   state.selectedPlant = null;
   state.zombies = [];
-  state.peas = [];
+  state.projectiles = [];
   state.suns = [];
   state.waveTimer = 0;
   state.waveInterval = BALANCE.WAVE_INTERVAL;

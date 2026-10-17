@@ -127,16 +127,21 @@ A(state.sun === sunPrePea - 100, 'peashooter cost deducted (100)');
 
 // --- 5. wave: zombie spawns, peashooter shoots, zombie dies ---
 let maxZombies = 0, sawPea = false, minZombieHp = Infinity, killObserved = false;
+const projTypes = new Set();
 for (let f = 0; f < 3000; f++) {
   step(1);
   const z = state.zombies;
   if (z.length > maxZombies) maxZombies = z.length;
-  if (state.peas.length > 0) sawPea = true;
+  if (state.projectiles.length > 0) {
+    sawPea = true;
+    state.projectiles.forEach(p => projTypes.add(p.type));
+  }
   if (z.length > 0) minZombieHp = Math.min(minZombieHp, z[0].hp);
   if (maxZombies >= 1 && z.length === 0 && state.grid[2][2]) { killObserved = true; break; }
 }
 A(maxZombies >= 1, 'zombie spawned in wave');
 A(sawPea, 'peashooter fired peas');
+A(projTypes.size === 1 && projTypes.has('pea'), "peashooter projectiles are typed 'pea'");
 A(minZombieHp < 100, 'peas damaged the zombie (hp dropped from 100)');
 A(killObserved, 'zombie was killed by peashooter');
 A(state.sun === sunPrePea - 100 + 10, 'kill reward +10 sun credited (25 + 10 = 35)');
@@ -147,6 +152,7 @@ state.grid[0][0] = null;
 state.health = 1;
 for (let f = 0; f < 60000 && !state.gameOver; f++) step(1);
 A(state.gameOver === true, 'zombie reaching house with health=1 triggers game over');
+A(state.health === 0, 'health is exactly 0 at game over (strict 1 -> 0, no lives system)');
 
 // --- 7. restart via canvas click ---
 const sunAfterDeath = state.sun;
@@ -212,7 +218,7 @@ const { createPlant } = await import(new URL('../js/plants.js', import.meta.url)
 state.waveInterval = 1e9;
 state.zombies = [];
 state.suns = [];
-state.peas = [];
+state.projectiles = [];
 for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
 state.grid[2][1] = createPlant('wallnut', 2, 1, nowValue());
 // One zombie parked at the Wall-nut's cell, in eating range.
@@ -229,7 +235,7 @@ A(wall && wall.hp <= 400 - 8 * 9 && wall.hp >= 400 - 8 * 11,
 A(Math.abs(state.zombies[0].x - zStartX) < 1 && state.zombies[0].eating === true,
   'zombie stops at wall-nut and eats (shared eating system, no pass-through)');
 A(state.suns.length === 0, 'wall-nut generates no sun');
-A(state.peas.length === 0, 'wall-nut fires no projectile');
+A(state.projectiles.length === 0, 'wall-nut fires no projectile');
 // Same removal rule as every plant: hp <= 0 => removed from grid.
 state.grid[2][1].hp = 0.1; // one more bite pushes it under 0
 step(1);
@@ -237,6 +243,58 @@ A(state.grid[2][1] === null, 'wall-nut removed from grid at 0 HP');
 step(3);
 A(state.zombies[0].eating === false && state.zombies[0].x < zStartX,
   'zombie resumes walking once wall-nut is gone');
+
+// --- 13. Snow Pea: ice projectile, temporary slow, expiry, refresh-not-stack ---
+A(PLANT_TYPES.snowpea.projectile === 'icePea' && PLANT_TYPES.snowpea.cost === 175 &&
+  PLANT_TYPES.snowpea.role === 'shooter',
+  'snowpea config: cost 175, role shooter, projectile icePea');
+// Controlled scenario: board cleared, waves stopped (waveInterval=1e9 from §12).
+for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
+state.zombies = [];
+state.suns = [];
+state.projectiles = [];
+state.health = 1;
+state.gameOver = false;
+state.grid[2][4] = createPlant('snowpea', 2, 4, nowValue());
+const slowZ = { row: 2, x: 400, speed: 0.25, hp: 100, maxHp: 100, eating: false };
+state.zombies.push(slowZ);
+const slowTypes = new Set();
+let tHit1 = -1;
+for (let f = 0; f < 4000 && tHit1 < 0; f++) {
+  step(1);
+  state.projectiles.forEach(p => slowTypes.add(p.type));
+  if (slowZ.slowUntil !== undefined) tHit1 = nowValue();
+}
+A(tHit1 > 0, 'snow pea hit the zombie with an ice projectile');
+A(slowTypes.has('icePea') && !slowTypes.has('pea'), "snow pea fires 'icePea' projectiles only");
+A(slowZ.slowUntil === tHit1 + 3000, 'slow deadline set to now + 3000ms (BALANCE.SLOW_MS)');
+A(slowZ.speed === 0.25, 'zombie base speed untouched by the hit');
+// Movement while slowed: exactly base * 0.65 per frame (dt = 16ms).
+let x1 = slowZ.x;
+step(10);
+const dxSlow = (x1 - slowZ.x) / 10;
+A(Math.abs(dxSlow - 0.25 * 0.65) < 0.01,
+  `slowed speed = base * 0.65 (measured ${dxSlow.toFixed(4)}/frame, base 0.25)`);
+// Second ice hit arrives before expiry: deadline must REFRESH, not stack.
+let tHit2 = -1;
+for (let f = 0; f < 3000 && tHit2 < 0; f++) {
+  step(1);
+  if (slowZ.slowUntil !== undefined && slowZ.slowUntil > tHit1 + 3000) tHit2 = nowValue();
+}
+A(tHit2 > 0 && tHit2 < tHit1 + 3000, 'second ice hit lands while the first slow is still active');
+A(slowZ.slowUntil === tHit2 + 3000,
+  're-hit REFRESHES to now+3000 (deadline replaced — never stacked/multiplied)');
+A(slowZ.speed === 0.25, 'base speed still untouched after the re-hit');
+// Remove the shooter -> no further hits -> slow expires and speed restores.
+state.grid[2][4] = null;
+state.projectiles = [];
+for (let f = 0; f < 3000 && nowValue() < slowZ.slowUntil + 100; f++) step(1);
+A(nowValue() > slowZ.slowUntil, 'slow deadline passed (expired naturally)');
+let x2 = slowZ.x;
+step(10);
+const dxFull = (x2 - slowZ.x) / 10;
+A(Math.abs(dxFull - 0.25) < 0.01,
+  `speed fully restored after expiry (measured ${dxFull.toFixed(4)}/frame, base 0.25)`);
 
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);

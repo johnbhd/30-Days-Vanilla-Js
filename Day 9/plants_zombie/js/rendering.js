@@ -201,6 +201,22 @@ function drawZombie(z) {
     barTop = fcy - r * 1.1;
   }
 
+  // Snow Pea frost: soft cyan aura + frost specks while slowed (presentation
+  // only — the gameplay slow itself lives in zombies.js via slowUntil).
+  if (z.slowUntil !== undefined && performance.now() < z.slowUntil) {
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = '#8ee3ff';
+    ctx.beginPath();
+    ctx.ellipse(cx, (z.row + 0.62) * CELL_H, CELL_W * 0.3, CELL_H * 0.32, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = '#e8fbff';
+    ctx.fillRect(cx - CELL_W * 0.2, (z.row + 0.3) * CELL_H, 3, 3);
+    ctx.fillRect(cx + CELL_W * 0.17, (z.row + 0.72) * CELL_H, 3, 3);
+    ctx.restore();
+  }
+
   // HP bar, floating just above the head and following the zombie
   const bw = CELL_W * 0.6;
   const bh = 5;
@@ -216,21 +232,28 @@ function drawZombie(z) {
 }
 
 function drawPea(p) {
-  // Slightly larger, gradient-filled pea with outline and soft shadow
+  // Slightly larger, gradient-filled pea with outline and soft shadow.
+  // 'icePea' renders icy cyan (Snow Pea); 'pea' stays green.
   const R = 6.5; // ~13px diameter
+  const ice = p.type === 'icePea';
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.35)';
-  ctx.shadowBlur = 3;
+  ctx.shadowColor = ice ? 'rgba(120,220,255,0.5)' : 'rgba(0,0,0,0.35)';
+  ctx.shadowBlur = ice ? 5 : 3;
   ctx.shadowOffsetY = 2;
   const g = ctx.createRadialGradient(p.x - R * 0.3, p.y - R * 0.3, R * 0.2, p.x, p.y, R);
-  g.addColorStop(0, '#b9f27c');
-  g.addColorStop(1, '#66bb2a');
+  if (ice) {
+    g.addColorStop(0, '#eafaff');
+    g.addColorStop(1, '#5ec8f2');
+  } else {
+    g.addColorStop(0, '#b9f27c');
+    g.addColorStop(1, '#66bb2a');
+  }
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(p.x, p.y, R, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
-  ctx.strokeStyle = '#2e5d15';
+  ctx.strokeStyle = ice ? '#1f6f96' : '#2e5d15';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 }
@@ -327,7 +350,7 @@ export function draw(state) {
   }
 
   // Peas
-  state.peas.forEach(drawPea);
+  state.projectiles.forEach(drawPea);
 
   // Zombies (sorted by row for consistent overlap)
   state.zombies.forEach(drawZombie);

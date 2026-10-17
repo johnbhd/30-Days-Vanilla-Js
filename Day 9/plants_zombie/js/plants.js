@@ -50,7 +50,7 @@ export function updatePlants(state, now) {
         // frame the attack starts (identical to the original single-shot
         // behavior); additional shots wait `shotDelay` ms (Repeater: 200ms).
         while (p.shotsLeft > 0 && now >= p.nextShotAt) {
-          spawnProjectile(state, r, c);
+          spawnProjectile(state, r, c, def.projectile);
           p.shotsLeft -= 1;
           p.nextShotAt = now + def.shotDelay;
         }
