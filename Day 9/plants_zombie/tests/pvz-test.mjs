@@ -454,5 +454,149 @@ slots[0].fire('click'); // restore a clean selection baseline for later sections
 slots[0].fire('click');
 A(state.selectedPlant === null, 'baseline restored: no seed selected');
 
+// --- 18. shovel dig: generic removal, config-driven 50% refund, edge cases ---
+const { removePlantWithRefund } = await import(new URL('../js/plants.js', import.meta.url).href);
+A(typeof removePlantWithRefund === 'function', 'plants.js exports removePlantWithRefund');
+// Controlled sandbox: waves stopped, board cleared, plenty of sun.
+state.waveInterval = 1e9;
+state.zombies = [];
+state.suns = [];
+state.projectiles = [];
+for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
+state.sun = 2000;
+updateUI(state);
+const PLANT_KEYS = ['sunflower', 'peashooter', 'wallnut', 'snowpea', 'repeater'];
+const plantAt = (type, row, col) => {
+  slots[PLANT_KEYS.indexOf(type)].fire('click');
+  clickCanvas(cellX(col), cellY(row));
+};
+const dig = (row, col) => { tools[0].fire('click'); clickCanvas(cellX(col), cellY(row)); };
+
+// §35 — refund is exactly floor(cost * 0.5), config-driven, for ALL five types.
+const refundCases = [
+  ['sunflower', 0, 25], ['peashooter', 1, 50], ['wallnut', 2, 25],
+  ['snowpea', 3, 87], ['repeater', 4, 100], // 175 -> 87 proves the floor()
+];
+for (const [type, col, expected] of refundCases) {
+  plantAt(type, 0, col);
+  A(state.grid[0][col] && state.grid[0][col].type === type, `${type} planted for the dig test`);
+  const sunBefore = state.sun;
+  dig(0, col);
+  A(state.sun === sunBefore + expected,
+    `shovel refunds exactly ${expected} sun for ${type} (floor(cost * 0.5))`);
+  A(state.grid[0][col] === null, `${type} removed from the grid`);
+  A(state.selectedTool === null, `shovel auto-deselected after digging ${type} (one-use)`);
+}
+
+// §13/§14 — empty tile and outside-lawn clicks are no-ops; shovel stays armed.
+tools[0].fire('click');
+const sunEmpty = state.sun;
+clickCanvas(cellX(5), cellY(2)); // empty tile
+A(state.sun === sunEmpty, 'empty tile: sun unchanged');
+A(state.selectedTool === 'shovel', 'empty tile: shovel remains selected');
+clickCanvas(-40, -30); // outside the lawn (top-left)
+A(state.selectedTool === 'shovel', 'outside lawn (top-left): shovel remains selected');
+clickCanvas(650, 420); // outside the lawn (bottom-right)
+A(state.selectedTool === 'shovel', 'outside lawn (bottom-right): shovel remains selected');
+tools[0].fire('click'); // toggle off for the next section
+
+// §38 — a DAMAGED wall-nut still refunds the same 25 (refund is HP-independent).
+plantAt('wallnut', 1, 6);
+state.grid[1][6].hp = 41;
+const sunDmg = state.sun;
+dig(1, 6);
+A(state.grid[1][6] === null && state.sun === sunDmg + 25,
+  'damaged wall-nut still refunds exactly 25 (refund independent of HP)');
+
+// §39 — a zombie EATING a plant resumes walking after the shovel removes it.
+state.grid[3][2] = createPlant('wallnut', 3, 2, nowValue());
+const eatX = (2 + 0.7) * (600 / 9) - 2;
+const zEat = { row: 3, x: eatX, speed: 0.3, hp: 100, maxHp: 100, eating: false };
+state.zombies.push(zEat);
+step(63); // ~1s of biting (wall-nut loses only ~8 hp of 400)
+A(zEat.eating === true, 'zombie is eating the wall-nut before the dig');
+const sunEat = state.sun;
+dig(3, 2);
+A(state.grid[3][2] === null && state.sun === sunEat + 25,
+  'digging the eaten wall-nut removes it and refunds 25');
+step(3);
+A(zEat.eating === false && zEat.x < eatX,
+  'zombie STOPS eating and resumes walking (no stale plant reference)');
+state.zombies = [];
+// Same edge case with a second plant type (shooter).
+state.grid[3][2] = createPlant('peashooter', 3, 2, nowValue());
+const zEat2 = { row: 3, x: eatX, speed: 0.3, hp: 100, maxHp: 100, eating: false };
+state.zombies.push(zEat2);
+step(63);
+A(zEat2.eating === true, 'zombie is eating the peashooter before the dig');
+const sunEat2 = state.sun;
+dig(3, 2);
+A(state.grid[3][2] === null && state.sun === sunEat2 + 50,
+  'digging an eaten peashooter removes it and refunds 50');
+step(3);
+A(zEat2.eating === false && zEat2.x < eatX,
+  'zombie resumes walking after peashooter is dug');
+state.zombies = [];
+
+// §40 — repeater: in-flight pea continues, but the PENDING second shot cancels.
+state.grid[2][4] = createPlant('repeater', 2, 4, nowValue());
+const repZ2 = { row: 2, x: 400, speed: 0, hp: 1000, maxHp: 1000, eating: false };
+state.zombies.push(repZ2);
+let sawFirstPea = false;
+for (let f = 0; f < 600 && !sawFirstPea; f++) { step(1); if (state.projectiles.length >= 1) sawFirstPea = true; }
+A(sawFirstPea, 'repeater fired its first pea');
+const inFlight = state.projectiles.length;
+const sunRep = state.sun;
+dig(2, 4);
+A(state.grid[2][4] === null && state.sun === sunRep + 100,
+  'digging the repeater removes it and refunds 100');
+A(state.projectiles.length === inFlight,
+  'already-fired pea remains in flight after the dig');
+// Run past the 200ms second-shot window: no NEW projectile may appear.
+let maxAfterDig = 0;
+for (let f = 0; f < 20; f++) { step(1); maxAfterDig = Math.max(maxAfterDig, state.projectiles.length); }
+A(maxAfterDig <= inFlight,
+  `pending second shot CANCELED (max ${maxAfterDig} in flight, none added after dig)`);
+state.zombies = [];
+state.projectiles = [];
+
+// §41 — sunflower: existing pickup survives, but no future sun is produced.
+state.grid[1][1] = createPlant('sunflower', 1, 1, nowValue());
+for (let f = 0; f < 450 && state.suns.length === 0; f++) step(1); // ~7.2s
+A(state.suns.length >= 1, 'sunflower produced a sun pickup');
+// Ruling: sun collection keeps priority on tap (approved design), and the
+// pickup spawns ON the plant's own tile — so a tap there would collect it
+// rather than dig. Move it clear (a sun sitting elsewhere on the lawn) to
+// exercise the dig itself, then prove the pre-existing pickup survives.
+state.suns[0].x = 500; state.suns[0].y = 30;
+const sunsBefore = state.suns.length;
+const sunSF = state.sun;
+dig(1, 1);
+A(state.grid[1][1] === null && state.sun === sunSF + 25,
+  'digging the sunflower removes it and refunds 25');
+A(state.suns.length === sunsBefore, 'already-spawned sun pickup SURVIVES the dig');
+state.suns = []; // isolate the "no future sun" check
+for (let f = 0; f < 450; f++) step(1); // > one full sunInterval (7s)
+A(state.suns.length === 0, 'removed sunflower produces NO future sun');
+
+// §42 — Game Over takes priority; restart resets the shovel.
+state.grid[0][0] = createPlant('peashooter', 0, 0, nowValue()); // control dig
+const sunCtl = state.sun;
+dig(0, 0);
+A(state.grid[0][0] === null && state.sun === sunCtl + 50,
+  'control dig while ALIVE works (refunds 50) — proves the dig path exists');
+state.health = 1;
+state.gameOver = true;
+state.grid[1][1] = createPlant('sunflower', 1, 1, nowValue());
+tools[0].fire('click'); // attempt to arm the shovel during game over
+A(state.selectedTool === null, 'shovel CANNOT be selected after game over');
+state.selectedTool = 'shovel'; // force it, to prove the canvas guard too
+const sunGO = state.sun;
+clickCanvas(cellX(1), cellY(1));
+A(state.gameOver === false && state.sun === 200,
+  'game-over canvas click RESTARTS instead of digging (no refund leaked)');
+A(state.selectedTool === null && state.health === 1,
+  'restart clears the forced shovel selection and restores health=1');
+
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);

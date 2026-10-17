@@ -1,7 +1,7 @@
 // Seed-bank UI + all user input (select seed, collect sun, plant, restart).
 // Owns DOM reads/writes; receives `state` as a parameter — no window.* state.
 import { PLANT_TYPES, COLS, ROWS, CELL_W, CELL_H, LOGICAL_W, LOGICAL_H } from './config.js';
-import { createPlant } from './plants.js';
+import { createPlant, removePlantWithRefund } from './plants.js';
 
 // --- UI references (resolved on first use so importing this module has no
 // side effects; the DOM always exists by the time the game runs) ---
@@ -102,6 +102,32 @@ export function wireInput(state, canvas, onRestart) {
         updateUI(state);
         return;
       }
+    }
+
+    // Shovel mode: dig up the plant on the tapped tile for a 50% refund.
+    // Runs BEFORE the planting branch and inside the gameOver guard above, so
+    // a dig is impossible once the game is over. Sun collection kept priority
+    // (a tap on a sun over a planted tile collects it; tap again to dig).
+    if (state.selectedTool === 'shovel') {
+      const col = Math.floor(mx / CELL_W);
+      const row = Math.floor(my / CELL_H);
+      // Outside the lawn, or an empty tile: do nothing, and the shovel STAYS
+      // selected so the player can simply try another tile.
+      if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
+        const refund = removePlantWithRefund(state, row, col);
+        if (refund > 0) {
+          state.floatTexts.push({
+            x: col * CELL_W + CELL_W / 2,
+            y: row * CELL_H + CELL_H / 2,
+            text: `+${refund} SUN`,
+            at: performance.now(),
+          });
+          state.selectedTool = null; // one-use: shovel returns after a dig
+          document.querySelectorAll('.tool-slot').forEach(t => t.classList.remove('selected'));
+          updateUI(state);
+        }
+      }
+      return; // never falls through to planting while the shovel is armed
     }
 
     // Try planting

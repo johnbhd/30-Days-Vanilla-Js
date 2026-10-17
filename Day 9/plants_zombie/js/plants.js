@@ -1,6 +1,6 @@
 // Plant creation + per-frame plant behavior. Config-driven by PLANT_TYPES:
 // one code path per role (sun / shooter / defense) serves all five plants.
-import { PLANT_TYPES, CELL_W, CELL_H } from './config.js';
+import { PLANT_TYPES, BALANCE, CELL_W, CELL_H } from './config.js';
 import { spawnSun } from './suns.js';
 import { spawnProjectile } from './projectiles.js';
 
@@ -16,6 +16,20 @@ export function createPlant(type, row, col, now) {
     shotsLeft: 0,
     nextShotAt: 0,
   };
+}
+
+// Generic plant removal + 50% refund. ONE code path serves all five plant
+// types: the refund is derived from the plant's config cost, so a future
+// price change (or a new plant) automatically refunds correctly. Refund is
+// independent of remaining HP — it is always a share of the ORIGINAL cost.
+// Returns the refund granted (0 if there was no plant on that cell).
+export function removePlantWithRefund(state, row, col) {
+  const plant = state.grid[row][col];
+  if (!plant) return 0;
+  const refund = Math.floor(PLANT_TYPES[plant.type].cost * BALANCE.SHOVEL_REFUND_RATE);
+  state.grid[row][col] = null; // grid is the only plant store -> removal is one assignment
+  state.sun += refund;
+  return refund;
 }
 
 export function updatePlants(state, now) {
