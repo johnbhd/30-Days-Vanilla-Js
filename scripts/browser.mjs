@@ -4,11 +4,35 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= path.join(root, '.cache', 'browsers');
 
+export function shouldUseServerlessChromium({
+  platform = process.platform,
+  vercel = process.env.VERCEL,
+} = {}) {
+  return platform === 'linux' && vercel === '1';
+}
+
 export async function launchBrowser() {
   const { chromium } = await import('playwright');
-  if (process.env.VERCEL === '1') {
-    const { default: linuxChromium } = await import('@sparticuz/chromium');
-    return chromium.launch({ executablePath: await linuxChromium.executablePath(), args: linuxChromium.args, headless: true });
+  if (shouldUseServerlessChromium()) {
+    try {
+      const { default: linuxChromium } = await import('@sparticuz/chromium');
+      linuxChromium.setGraphicsMode = false;
+      return await chromium.launch({
+        executablePath: await linuxChromium.executablePath(),
+        args: [
+          ...linuxChromium.args,
+          '--disable-gpu',
+          '--disable-dev-shm-usage',
+          '--disable-gl-drawing-for-tests',
+        ],
+        headless: true,
+      });
+    } catch (error) {
+      throw new Error(
+        `Vercel Chromium could not start on ${process.platform} with Node ${process.version}: ${error.message}`,
+        { cause: error },
+      );
+    }
   }
   return chromium.launch({
     channel: 'chromium', headless: true,

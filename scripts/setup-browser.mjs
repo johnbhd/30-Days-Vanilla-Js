@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-if (process.env.VERCEL !== '1') {
+if (!(process.platform === 'linux' && process.env.VERCEL === '1')) {
   const cli = path.join(root, 'node_modules', 'playwright', 'cli.js');
   const child = spawn(process.execPath, [cli, 'install', 'chromium', '--no-shell'], {
     stdio: 'inherit',
