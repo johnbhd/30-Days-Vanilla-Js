@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A growing collection of Vanilla JavaScript projects by johnbhd. Explore games, tools, and daily experiments.">
+  <meta name="theme-color" content="#101311">
+  <title>Vanilla JS Projects — johnbhd</title>
+  <link rel="stylesheet" href="./src/css/gallery.css">
+</head>
+<body>
+  <a class="skip-link" href="#projects">Skip to projects</a>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="site-name" href="./index.html">johnbhd<span class="name-divider">/</span><span class="site-name-detail">vanilla js</span></a>
+      <a class="github-link" href="https://github.com/johnbhd/30-Days-Vanilla-Js" target="_blank" rel="noopener noreferrer">Explore the code <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="status-dot"></span>THE 30-DAY JAVASCRIPT CHALLENGE</p>
+          <h1 id="page-title">Vanilla JS projects.<br><span>One day at a time.</span></h1>
+          <p class="hero-description">Small ideas, playable experiments, and a little progress every day.<br class="desktop-break"> A collection of things I’m building while learning JavaScript.</p>
+        </div>
+        <div class="hero-stats" aria-label="Collection totals">
+          <div class="stat"><strong>{{PROJECT_COUNT}}<span>↗</span></strong><span>PROJECTS BUILT</span></div>
+          <div class="stat"><strong>{{DAY_COUNT}}<span>/30</span></strong><span>DAYS EXPLORED</span></div>
+        </div>
+      </section>
+      <div class="collection-heading" id="projects">
+        <p><span class="collection-dot"></span>THE COLLECTION</p>
+        <span>Latest days first <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 4v16m-5-5 5 5 5-5"/></svg></span>
+      </div>
+      <div class="collection">{{GALLERY}}</div>
+    </main>
+    <footer class="site-footer"><p>Made with curiosity &amp; vanilla JavaScript.</p><a href="#page-title">Back to top ↑</a></footer>
+  </div>
+</body>
+</html>

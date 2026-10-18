@@ -1,5 +1,61 @@
 # My JavaScript 30-Day Learning Challenge
 
+## Automatic project gallery
+
+The homepage discovers projects from `Day N` folders and creates its cards and
+page screenshots automatically. No project list or manual screenshots are needed.
+
+Use **Node 22.x, version 22.17 or newer**. Update older Node installations before
+installing dependencies. The browser is downloaded automatically during setup:
+
+```sh
+npm install
+npm run dev
+```
+
+Open `http://127.0.0.1:3000`. Keep the development command running while editing.
+It watches project files, updates affected screenshots, and reloads the gallery.
+Set `PORT` to use another port. The first generation takes longer because it
+captures every project.
+
+### Add a project
+
+Create `Day 10/my-project/index.html`, give it a `<title>`, and add its normal
+CSS, JavaScript, and assets. A card appears under Day 10 automatically. A single
+HTML file with another name also works, including files directly inside a Day
+folder. Inside a project folder, `index.html` takes priority over other HTML
+files. Internal pages are not separate cards. Multiple HTML files without an
+index are reported as ambiguous and skipped.
+
+Titles come directly from each HTML document. Fix a title in that document to
+change its card. Empty titles fall back to the folder or filename. Days appear
+newest first, with projects alphabetized within each Day.
+
+### Build and verify
+
+```sh
+npm test
+npm run build
+npm run verify:gallery
+```
+
+The build captures all entry pages with a headless browser and produces `dist/`
+for Vercel. Existing project and download URLs are preserved. Vercel runs the
+configured build automatically and uses Linux Chromium for capture. This change
+does not publish a deployment itself.
+
+Edit the homepage in `src/templates/home.html` and `src/css/gallery.css`.
+The root `index.html` is generated; direct edits are overwritten. Generated
+previews, browsers, caches, and `dist/` are ignored in Git and recreated locally
+or during deployment. After a build, XAMPP can also serve the generated homepage
+from this folder.
+
+Previews show the initial screen without clicking controls or playing games.
+Dynamic data and external services may affect their appearance. Failed page
+captures receive a fallback card background and a build-log warning. Browser or
+server startup failures stop the build. Browser verification writes desktop and
+mobile screenshots to `output/playwright/`.
+
 ## Overview
 I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goal is to strengthen my fundamentals in Vanilla JavaScript through daily tasks, balancing simple and complex concepts.
 

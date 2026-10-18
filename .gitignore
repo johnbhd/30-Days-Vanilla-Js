@@ -1,0 +1,7 @@
+node_modules/
+.cache/
+.superdesign/
+dist/
+output/playwright/
+src/assets/previews/
+
