@@ -96,3 +96,37 @@ export const SPAWN_WEIGHTS = [
 // (same-lane pressure emerges naturally from random rows — no forced fairness).
 // Index = level - 1, clamped for levels beyond the table.
 export const BURST_CHANCE = [0, 0, 0.15, 0.25, 0.35];
+
+// --- Zombie sprite-sheet animation metadata (rendering only; gameplay stats
+// live in ZOMBIE_TYPES). mode 'body': legacy semantics — scale so the body
+// span (top..foot within the tile) fills visualFrac of the lane, anchor the
+// body's foot line + horizontal center (byte-identical to the original render).
+// mode 'tile': repacked sheets — the tile itself is bottom-center anchored,
+// content already packed to the tile edges.
+export const ZOMBIE_ANIM = {
+  zombie: { // original Clint Bellanger sheet: 36 cols x 8 rows of 128px tiles
+    spriteKey: 'zombie', tileW: 128, tileH: 128, mode: 'body',
+    top: 47, foot: 102.5, cx: 61.5,
+    walk:   { row: 0, start: 4,  count: 8, ms: 140 },
+    attack: { row: 0, start: 16, count: 4, ms: 150 },
+    visualFrac: 0.80, barWidthFrac: 0.60,
+  },
+  zombieSprinter: { // small & quick — slightly under lane height
+    spriteKey: 'zombieSprinter', tileW: 74, tileH: 119, mode: 'tile',
+    walk:   { row: 0, start: 0, count: 4, ms: 110 },
+    attack: { row: 1, start: 0, count: 4, ms: 150 },
+    visualFrac: 0.76, barWidthFrac: 0.60,
+  },
+  zombieBrute: { // imposing bulk + wide HP bar
+    spriteKey: 'zombieBrute', tileW: 74, tileH: 127, mode: 'tile',
+    walk:   { row: 0, start: 0, count: 4, ms: 190 },
+    attack: { row: 1, start: 0, count: 4, ms: 190 },
+    visualFrac: 0.88, barWidthFrac: 0.75,
+  },
+  zombieBiter: {
+    spriteKey: 'zombieBiter', tileW: 76, tileH: 128, mode: 'tile',
+    walk:   { row: 0, start: 0, count: 4, ms: 140 },
+    attack: { row: 1, start: 0, count: 4, ms: 150 },
+    visualFrac: 0.80, barWidthFrac: 0.60,
+  },
+};

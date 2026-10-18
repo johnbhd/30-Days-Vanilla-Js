@@ -1,6 +1,6 @@
 // All canvas drawing: entities, planting preview, Game Over overlay.
 // ctx is set once via setupRenderer(canvas) — held in module scope, never on window.
-import { LOGICAL_W, LOGICAL_H, COLS, ROWS, CELL_W, CELL_H } from './config.js';
+import { LOGICAL_W, LOGICAL_H, COLS, ROWS, CELL_W, CELL_H, ZOMBIE_TYPES, ZOMBIE_ANIM } from './config.js';
 import { getSprite, spriteReady } from './assets.js';
 import { drawLawn } from './lawn.js';
 
@@ -202,61 +202,60 @@ function drawPlant(p) {
   }
 }
 
-// Zombie sprite content bounds (row 0, left-facing walk/bite frames), measured
-// from zombie.png: the opaque body spans tile-y 47..102 (foot line ~102.5) and
-// tile-x 38..84 (horizontal center 61.5) of each 128px tile. We anchor the draw
-// on the visible body, not the raw tile, so the sprite's large transparent
-// padding does not shrink the zombie on the lawn. Purely visual: z.x/z.row and
-// all collision/game logic use unchanged game coordinates.
-const Z_TILE = 128;
-const Z_BODY_TOP = 47;      // first opaque row of the body within a tile
-const Z_BODY_FOOT = 102.5;  // foot line within a tile
-const Z_BODY_CX = 61.5;     // horizontal center of the body within a tile
-const Z_VISUAL_FRAC = 0.8;  // visible body = 80% of lane height (target 70-85%)
-const Z_FOOT_INSET = 4;     // feet sit this far above the lane bottom line
-
-function zombieSpriteBox(z) {
-  const tile = CELL_H * Z_VISUAL_FRAC * Z_TILE / (Z_BODY_FOOT - Z_BODY_TOP);
-  return {
-    tile,
-    dx: z.x - (Z_BODY_CX / Z_TILE) * tile,
-    dy: (z.row + 1) * CELL_H - Z_FOOT_INSET - (Z_BODY_FOOT / Z_TILE) * tile,
-  };
-}
+// Zombie drawing is fully metadata-driven: ZOMBIE_ANIM (config.js) describes
+// each sheet's tile size, animation rows/timing, visual size, and anchoring.
+// The 'zombie' entry reproduces the original sheet's math exactly (the opaque
+// body spans tile-y 47..102.5, horizontal center 61.5 of each 128px tile —
+// anchoring on the visible body keeps the transparent padding from shrinking
+// the zombie on the lawn). Purely visual: z.x/z.row and all collision/game
+// logic use unchanged game coordinates.
+const Z_FOOT_INSET = 4; // feet sit this far above the lane bottom line
+const FALLBACK_TINTS = { // procedural vector fallback colors, per type
+  normal:   { body: '#7e9c5e', head: '#9ccc65', shirt: '#5d4037' },
+  sprinter: { body: '#5e8c9c', head: '#65c0cc', shirt: '#37474f' },
+  brute:    { body: '#8c7e9c', head: '#b3a8d8', shirt: '#4a148c' },
+  biter:    { body: '#7e9c5e', head: '#9ccc65', shirt: '#b71c1c' },
+};
 
 function drawZombie(z) {
   const cx = z.x;
+  const def = ZOMBIE_TYPES[z.type || 'normal']; // hand-built test zombies -> normal
+  const anim = ZOMBIE_ANIM[def ? def.sprite : 'zombie'];
   let barTop; // top of the visible head, for HP bar placement
 
-  if (spriteReady('zombie')) {
-    // Sprite sheet: 36 cols x 8 rows of 128px tiles.
-    // Row 0 = left-facing profile; frames 4-11 = lurch walk, 16-19 = bite.
-    const T = Z_TILE;
-    let frame;
-    if (z.eating) {
-      frame = 16 + (Math.floor(performance.now() / 150) % 4);
+  if (spriteReady(anim.spriteKey)) {
+    const a = z.eating ? anim.attack : anim.walk;
+    const frame = a.start + (Math.floor(performance.now() / a.ms) % a.count);
+    let scale, dx, dy;
+    if (anim.mode === 'body') {
+      scale = (CELL_H * anim.visualFrac) / (anim.foot - anim.top);
+      dx = cx - anim.cx * scale;
+      dy = (z.row + 1) * CELL_H - Z_FOOT_INSET - anim.foot * scale;
     } else {
-      frame = 4 + (Math.floor(performance.now() / 140) % 8);
+      scale = (CELL_H * anim.visualFrac) / anim.tileH;
+      dx = cx - (anim.tileW / 2) * scale;
+      dy = (z.row + 1) * CELL_H - Z_FOOT_INSET - anim.tileH * scale;
     }
-    const box = zombieSpriteBox(z);
+    const dw = anim.tileW * scale, dh = anim.tileH * scale;
     ctx.drawImage(
-      getSprite('zombie'),
-      frame * T, 0, T, T,
-      box.dx, box.dy, box.tile, box.tile
+      getSprite(anim.spriteKey),
+      frame * anim.tileW, a.row * anim.tileH, anim.tileW, anim.tileH,
+      dx, dy, dw, dh
     );
-    barTop = box.dy + (Z_BODY_TOP / Z_TILE) * box.tile;
+    barTop = dy + (anim.mode === 'body' ? anim.top : 0) * scale;
   } else {
-    // Fallback vector zombie — same visible size and anchor as the sprite:
-    // body ~80% of lane height, feet near lane bottom, centered on z.x.
-    const bodyH = CELL_H * Z_VISUAL_FRAC;
+    // Fallback vector zombie — same visible size and anchor as the sprite,
+    // tinted per type so mixed lanes stay readable in headless/loading states.
+    const tint = FALLBACK_TINTS[z.type] || FALLBACK_TINTS.normal;
+    const bodyH = CELL_H * anim.visualFrac;
     const r = bodyH * 0.35;
     const feetY = (z.row + 1) * CELL_H - Z_FOOT_INSET;
     const fcy = feetY - bodyH / 2; // shape is roughly symmetric about this
     // Body
-    ctx.fillStyle = '#7e9c5e';
+    ctx.fillStyle = tint.body;
     ctx.fillRect(cx - r * 0.5, fcy - r * 0.3, r, r * 1.1);
     // Head
-    ctx.fillStyle = '#9ccc65';
+    ctx.fillStyle = tint.head;
     ctx.beginPath();
     ctx.arc(cx, fcy - r * 0.6, r * 0.5, 0, Math.PI * 2);
     ctx.fill();
@@ -275,11 +274,11 @@ function drawZombie(z) {
     ctx.fillStyle = '#4a148c';
     ctx.fillRect(cx - r * 0.2, fcy - r * 0.35, r * 0.4, r * 0.15);
     // Arms reaching forward
-    ctx.fillStyle = '#7e9c5e';
+    ctx.fillStyle = tint.body;
     ctx.fillRect(cx - r * 0.9, fcy - r * 0.2, r * 0.5, r * 0.2);
     ctx.fillRect(cx - r * 0.9, fcy + r * 0.1, r * 0.5, r * 0.2);
     // Torn shirt
-    ctx.fillStyle = '#5d4037';
+    ctx.fillStyle = tint.shirt;
     ctx.fillRect(cx - r * 0.5, fcy + r * 0.1, r, r * 0.3);
     barTop = fcy - r * 1.1;
   }
@@ -301,7 +300,7 @@ function drawZombie(z) {
   }
 
   // HP bar, floating just above the head and following the zombie
-  const bw = CELL_W * 0.6;
+  const bw = CELL_W * anim.barWidthFrac;
   const bh = 5;
   const bx = cx - bw / 2;
   const by = barTop - bh - 4;

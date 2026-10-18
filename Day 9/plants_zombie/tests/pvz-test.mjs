@@ -255,7 +255,7 @@ A(state.grid[3][7] && state.grid[3][7].type === 'peashooter', 'peashooter plants
 A(state.sun === sunAfterPlace - 100, 'peashooter charged exactly 100');
 
 // --- 11. centralized costs for all five plants ---
-const { PLANT_TYPES, BALANCE } = await import(new URL('../js/config.js', import.meta.url).href);
+const { PLANT_TYPES, BALANCE, CELL_W } = await import(new URL('../js/config.js', import.meta.url).href);
 A(PLANT_TYPES.sunflower.cost === 50 && PLANT_TYPES.peashooter.cost === 100 &&
   PLANT_TYPES.wallnut.cost === 50 && PLANT_TYPES.snowpea.cost === 175 &&
   PLANT_TYPES.repeater.cost === 200,
@@ -958,6 +958,78 @@ A(existsSync(new URL('../images/zombie_sprinter.png', import.meta.url)) &&
   'the three repacked PNGs exist on disk');
 A(existsSync(new URL('../audio/bgm/tower-defense-theme.ogg', import.meta.url)),
   'background music file exists on disk');
+
+// ================= §30. Renderer: config-driven zombie animation =================
+const { ZOMBIE_ANIM } = await import(new URL('../js/config.js', import.meta.url).href);
+const { getSprite } = await import(new URL('../js/assets.js', import.meta.url).href);
+A(ZTYPE_KEYS.every(t => ZOMBIE_ANIM[ZOMBIE_TYPES[t].sprite]),
+  'every type sprite has ZOMBIE_ANIM metadata');
+A(ZTYPE_KEYS.every(t => {
+  const a = ZOMBIE_ANIM[ZOMBIE_TYPES[t].sprite];
+  return a.tileW > 0 && a.tileH > 0 && (a.mode === 'body' || a.mode === 'tile') &&
+    a.walk.count > 0 && a.attack.count > 0 && a.walk.ms > 0 && a.attack.ms > 0 &&
+    a.visualFrac >= 0.7 && a.visualFrac <= 0.9 && a.barWidthFrac > 0;
+}), 'every metadata entry: positive tile size, valid mode, timing, 70-90% lane height');
+A(ZOMBIE_ANIM.zombie.tileW === 128 && ZOMBIE_ANIM.zombie.mode === 'body' &&
+  ZOMBIE_ANIM.zombie.walk.start === 4 && ZOMBIE_ANIM.zombie.walk.count === 8 &&
+  ZOMBIE_ANIM.zombie.attack.start === 16 && ZOMBIE_ANIM.zombie.attack.count === 4 &&
+  ZOMBIE_ANIM.zombie.walk.ms === 140 && ZOMBIE_ANIM.zombie.attack.ms === 150,
+  'normal metadata encodes the ORIGINAL sheet exactly (frames 4-11 / 16-19 @140/150ms)');
+if (process.env.SPRITE_STUB) {
+  resetBoard();
+  for (const typeName of ZTYPE_KEYS) {
+    const anim = ZOMBIE_ANIM[ZOMBIE_TYPES[typeName].sprite];
+    const z = spawnAs(typeName, 4); // L4 weights: all four types spawnable
+    z.row = 1; z.x = 300; z.hp = z.maxHp = 100;
+    state.zombies = [z];
+    // --- walk frame ---
+    drawCalls.length = 0;
+    draw();
+    const sheet = getSprite(anim.spriteKey);
+    const walkFrame = anim.walk.start + (Math.floor(nowValue() / anim.walk.ms) % anim.walk.count);
+    const spr = drawCalls.filter(c => c.fn === 'drawImage' && c.args[0] === sheet);
+    A(spr.length === 1, `${typeName}: exactly one sprite draw per zombie per frame`);
+    const [, sx, sy, sw, sh, dx, dy, dw, dh] = spr[0].args;
+    A(sx === walkFrame * anim.tileW && sy === anim.walk.row * anim.tileH &&
+      sw === anim.tileW && sh === anim.tileH,
+      `${typeName}: walk source rect = frame ${walkFrame} of row ${anim.walk.row} (${sx},${sy},${sw},${sh})`);
+    const cxFrac = anim.mode === 'body' ? anim.cx / anim.tileW : 0.5;
+    const footFrac = anim.mode === 'body' ? anim.foot / anim.tileH : 1;
+    A(Math.abs(dx + cxFrac * dw - 300) < 0.05,
+      `${typeName}: content center anchored on z.x (off by ${Math.abs(dx + cxFrac * dw - 300).toFixed(3)}px)`);
+    A(Math.abs(dy + footFrac * dh - (z.row + 1) * 80 + 4) < 0.05,
+      `${typeName}: feet anchored at lane bottom - 4px`);
+    // --- attack frame (eating) ---
+    z.eating = true;
+    drawCalls.length = 0;
+    draw();
+    const atk = drawCalls.find(c => c.fn === 'drawImage' && c.args[0] === sheet);
+    A(atk.args[2] === anim.attack.row * anim.tileH,
+      `${typeName}: eating draws the attack row (${anim.attack.row})`);
+    // --- HP bar width follows the type ---
+    z.eating = false;
+    drawCalls.length = 0;
+    draw();
+    const barW = CELL_W * anim.barWidthFrac + 2;
+    A(drawCalls.some(c => c.fn === 'fillRect' && Math.abs(c.args[2] - barW) < 0.01 && c.args[3] === 7),
+      `${typeName}: HP bar drawn at its configured width (${barW.toFixed(1)}px)`);
+  }
+  state.zombies = [];
+} else {
+  // Procedural mode: the fallback vector path renders every new type safely.
+  resetBoard();
+  for (const typeName of ['sprinter', 'brute', 'biter']) {
+    const z = spawnAs(typeName, 3);
+    z.row = 1; z.x = 300;
+    state.zombies = [z];
+    drawCalls.length = 0;
+    draw();
+    A(drawCalls.some(c => c.fn === 'fillRect'),
+      `${typeName}: fallback vector zombie drawn headless`);
+  }
+  state.zombies = [];
+}
+resetBoard();
 
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
