@@ -27,7 +27,7 @@ export const BALANCE = {
   ZOMBIE_DIFFICULTY_STEP: 0.15, // +15% hp/speed per level
   WAVE_INTERVAL: 8000,     // ms between zombie spawns
   WAVE_INTERVAL_MIN: 2500, // floor for the interval
-  WAVE_INTERVAL_STEP: 800, // interval reduction per level
+  WAVE_INTERVAL_STEP: 900, // interval reduction per level (steepened for the enemy expansion)
 
   SKY_SUN_EVERY_MS: 6000,  // expected time between free sky suns
   SUN_TTL: 8000,           // ms before a sun expires
@@ -64,3 +64,35 @@ export const PLANT_TYPES = {
     projectile: 'pea',
   },
 };
+
+// --- Zombie type definitions (single source of truth: stats, roles, sprites).
+// Every type shares ONE movement/eating/collision code path; the differences
+// live here. At spawn time each type scales by the existing difficulty law:
+//   hp    = type.hp * difficulty
+//   speed = random in [speedMin, speedMax] * difficulty
+export const ZOMBIE_TYPES = {
+  normal:   { name: 'Normal Zombie', hp: 100, speedMin: 0.25, speedMax: 0.40,
+              eatDps: 8,  reward: BALANCE.KILL_SUN_REWARD, sprite: 'zombie' },
+  sprinter: { name: 'Sprinter',      hp:  75, speedMin: 0.40, speedMax: 0.55,
+              eatDps: 8,  reward: 12, sprite: 'zombieSprinter' },
+  brute:    { name: 'Brute',         hp: 240, speedMin: 0.20, speedMax: 0.26,
+              eatDps: 8,  reward: 25, sprite: 'zombieBrute' },
+  biter:    { name: 'Biter',         hp: 130, speedMin: 0.24, speedMax: 0.38,
+              eatDps: 14, reward: 16, sprite: 'zombieBiter' },
+};
+// (Rendering-only fields — visualFrac, barWidthFrac, animation rows/timing —
+// live in ZOMBIE_ANIM (spec §7), one home per number.)
+
+// Level-based spawn weights (index = level - 1; levels beyond the table clamp
+// to the last row). Values are relative weights summing to 100 per row.
+export const SPAWN_WEIGHTS = [
+  { normal: 85, sprinter: 15, brute: 0,  biter: 0  }, // level 1: mostly normal
+  { normal: 60, sprinter: 25, brute: 15, biter: 0  }, // level 2: brute appears
+  { normal: 45, sprinter: 25, brute: 15, biter: 15 }, // level 3: biter appears
+  { normal: 35, sprinter: 25, brute: 20, biter: 20 }, // level 4+: full mix
+];
+
+// Chance that a spawn event drops a SECOND weighted zombie immediately
+// (same-lane pressure emerges naturally from random rows — no forced fairness).
+// Index = level - 1, clamped for levels beyond the table.
+export const BURST_CHANCE = [0, 0, 0.15, 0.25, 0.35];

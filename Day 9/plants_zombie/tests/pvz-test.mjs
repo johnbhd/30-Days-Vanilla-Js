@@ -720,5 +720,50 @@ A(existsSync(new URL('../images/shovel.png', import.meta.url)),
 A(/Shovel artwork: original project asset/.test(html),
   'credits include the original shovel artwork line (existing credits kept)');
 
+// ================= §22. Zombie type config & normal-equivalence =================
+const { ZOMBIE_TYPES, SPAWN_WEIGHTS, BURST_CHANCE } =
+  await import(new URL('../js/config.js', import.meta.url).href);
+const ZTYPE_KEYS = ['normal', 'sprinter', 'brute', 'biter'];
+A(ZTYPE_KEYS.every(t => ZOMBIE_TYPES && ZOMBIE_TYPES[t]),
+  'ZOMBIE_TYPES defines all four zombie types');
+A(ZTYPE_KEYS.every(t => {
+  const d = ZOMBIE_TYPES[t];
+  return typeof d.name === 'string' && d.name.length > 0 &&
+    typeof d.hp === 'number' && d.hp > 0 &&
+    typeof d.speedMin === 'number' && typeof d.speedMax === 'number' &&
+    d.speedMax > d.speedMin && d.speedMin > 0 &&
+    typeof d.eatDps === 'number' && d.eatDps > 0 &&
+    typeof d.reward === 'number' && d.reward > 0 &&
+    typeof d.sprite === 'string';
+}), 'every type has numeric hp/speedMin/speedMax/eatDps/reward/name/sprite');
+A(ZOMBIE_TYPES.normal.hp === 100 && ZOMBIE_TYPES.normal.speedMin === 0.25 &&
+  ZOMBIE_TYPES.normal.speedMax === 0.40 && ZOMBIE_TYPES.normal.eatDps === 8 &&
+  ZOMBIE_TYPES.normal.reward === 10 && ZOMBIE_TYPES.normal.reward === BALANCE.KILL_SUN_REWARD,
+  'normal reproduces the legacy baseline exactly (100 hp, .25-.40, 8 dps, 10 sun)');
+const meanSpeed = t => (ZOMBIE_TYPES[t].speedMin + ZOMBIE_TYPES[t].speedMax) / 2;
+A(ZOMBIE_TYPES.sprinter.hp < ZOMBIE_TYPES.normal.hp &&
+  meanSpeed('sprinter') > 1.3 * meanSpeed('normal'),
+  'sprinter: less HP and a clearly faster mean speed (> 1.3x normal)');
+A(ZOMBIE_TYPES.brute.hp >= 2 * ZOMBIE_TYPES.normal.hp &&
+  meanSpeed('brute') < 0.85 * meanSpeed('normal'),
+  'brute: >= 2x HP and a clearly slower mean speed (< 0.85x normal)');
+A(ZOMBIE_TYPES.biter.eatDps > ZOMBIE_TYPES.normal.eatDps &&
+  ZOMBIE_TYPES.biter.hp > ZOMBIE_TYPES.normal.hp &&
+  ZOMBIE_TYPES.biter.hp < ZOMBIE_TYPES.brute.hp,
+  'biter: higher eat dps, medium HP between normal and brute');
+A(SPAWN_WEIGHTS.length === 4 && SPAWN_WEIGHTS.every(w =>
+  ZTYPE_KEYS.every(t => typeof w[t] === 'number') &&
+  w.normal + w.sprinter + w.brute + w.biter > 0),
+  'SPAWN_WEIGHTS: 4 rows, every type listed, every row spawnable');
+A(SPAWN_WEIGHTS[0].normal === 85 && SPAWN_WEIGHTS[0].sprinter === 15 &&
+  SPAWN_WEIGHTS[0].brute === 0 && SPAWN_WEIGHTS[0].biter === 0 &&
+  SPAWN_WEIGHTS[1].biter === 0 && SPAWN_WEIGHTS[2].biter > 0,
+  'staged introduction: L1 normal+sprinter only, L2 adds brute, L3 adds biter');
+A(BURST_CHANCE.length === 5 && BURST_CHANCE[0] === 0 && BURST_CHANCE[1] === 0 &&
+  BURST_CHANCE[2] > 0 && BURST_CHANCE[4] >= BURST_CHANCE[3],
+  'BURST_CHANCE: none at L1-2, grows from L3');
+A(BALANCE.WAVE_INTERVAL_STEP === 900 && BALANCE.WAVE_INTERVAL_MIN === 2500,
+  'interval step steepened to 900ms/level, floor still 2500ms');
+
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
