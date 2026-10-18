@@ -765,5 +765,185 @@ A(BURST_CHANCE.length === 5 && BURST_CHANCE[0] === 0 && BURST_CHANCE[1] === 0 &&
 A(BALANCE.WAVE_INTERVAL_STEP === 900 && BALANCE.WAVE_INTERVAL_MIN === 2500,
   'interval step steepened to 900ms/level, floor still 2500ms');
 
+// ================= §23. Weighted zombie spawning =================
+const { spawnZombie, pickZombieType, updateZombies, updateWaves } =
+  await import(new URL('../js/zombies.js', import.meta.url).href);
+const { updateProjectiles } =
+  await import(new URL('../js/projectiles.js', import.meta.url).href);
+const resetBoard = () => {
+  for (let r = 0; r < state.grid.length; r++) state.grid[r].fill(null);
+  state.zombies = []; state.projectiles = []; state.suns = [];
+  state.health = 1; state.gameOver = false; state.level = 1;
+  state.selectedPlant = null; state.selectedTool = null;
+  state.waveInterval = 1e9; state.waveTimer = 0; // waves off unless a test re-enables them
+};
+resetBoard();
+state.zombies = [];
+spawnZombie(state, () => 0.0); // roll 0 -> first weighted type at L1
+A(state.zombies.length === 1 && state.zombies[0].type === 'normal',
+  'L1 low roll spawns a normal zombie');
+state.zombies = [];
+spawnZombie(state, () => 0.90); // roll 90 of 100 -> past normal (85), into sprinter
+A(state.zombies[0].type === 'sprinter', 'L1 high roll spawns the rare sprinter');
+// rng = 1.0 (degenerate edge) must still yield a valid type
+state.zombies = [];
+spawnZombie(state, () => 1.0);
+A(!!ZOMBIE_TYPES[state.zombies[0].type], 'rng=1.0 falls back to a valid type (never undefined)');
+// full sweeps: staged introduction holds at every roll position
+const sweepTypes = lvl => {
+  const found = new Set();
+  state.level = lvl;
+  for (let r = 0; r < 1000; r++) {
+    state.zombies = [];
+    spawnZombie(state, () => r / 1000);
+    found.add(state.zombies[0].type);
+  }
+  return found;
+};
+const l1 = sweepTypes(1);
+A(l1.size === 2 && l1.has('normal') && l1.has('sprinter'),
+  'L1 1000-roll sweep yields ONLY normal + sprinter');
+const l2 = sweepTypes(2);
+A(l2.size === 3 && !l2.has('biter'), 'L2 sweep adds brute, still no biter');
+const l3 = sweepTypes(3);
+A(l3.size === 4, 'L3 sweep yields all four types');
+const l9 = sweepTypes(9);
+A(l9.size === 4 && [...l9].every(t => ZOMBIE_TYPES[t]),
+  'levels beyond the table clamp to L4+ weights; only valid types spawn');
+// spawned zombies carry the full generic shape
+state.zombies = [];
+state.level = 1;
+spawnZombie(state, () => 0.1);
+const zShape = state.zombies[0];
+A(zShape.type === 'normal' && zShape.row === 0 && zShape.x === 630 &&
+  typeof zShape.speed === 'number' && zShape.hp === 100 && zShape.maxHp === 100 &&
+  zShape.eatDps === 8 && zShape.reward === 10 && zShape.eating === false,
+  'spawned zombie: {type,row,x,speed,hp,maxHp,eatDps,reward,eating} all populated');
+
+// ================= §24. Per-type stats & kill rewards =================
+// Deterministic exact-type spawn: pick a roll inside the type's weight band
+// (rows sum to 100; the same rng value feeds the row/speed rolls harmlessly).
+const spawnAs = (type, lvl) => {
+  state.level = lvl;
+  const weights = SPAWN_WEIGHTS[Math.min(lvl, SPAWN_WEIGHTS.length) - 1];
+  let lo = 0;
+  for (const t of Object.keys(weights)) { if (t === type) break; lo += weights[t]; }
+  state.zombies = [];
+  spawnZombie(state, () => (lo + 0.5) / 100);
+  return state.zombies[0];
+};
+resetBoard();
+const zN = spawnAs('normal', 1), zS = spawnAs('sprinter', 1);
+const zB = spawnAs('brute', 3), zBi = spawnAs('biter', 3);
+A(zN.hp === 100 && zN.speed >= 0.25 && zN.speed <= 0.40 && zN.eatDps === 8 && zN.reward === 10,
+  'L1 normal spawn: 100 hp, speed in [.25,.40], 8 dps, 10 sun reward');
+A(zS.hp === 75 && zS.speed > 0.40 && zS.reward === 12,
+  'L1 sprinter spawn: 75 hp, speed > 0.40, 12 sun reward');
+A(zB.hp === 240 * 1.3 && zB.speed >= 0.20 * 1.3 && zB.speed <= 0.26 * 1.3 && zB.reward === 25,
+  'L3 brute spawn: 240 x 1.3 hp, speed band x 1.3, 25 sun reward (reward unscaled)');
+A(zBi.hp === 130 * 1.3 && zBi.eatDps === 14 && zBi.reward === 16,
+  'L3 biter spawn: 130 x 1.3 hp, 14 dps, 16 sun reward (dps/reward unscaled)');
+A(Math.abs(spawnAs('brute', 3).hp - 240 * 1.3) < 1e-9,
+  'difficulty law still scales every type (L3 brute = 240 x 1.3)');
+// kill rewards flow through the SHARED projectile path
+const killRewardOf = z => {
+  state.zombies = [z]; state.projectiles = [];
+  z.x = 300;            // on-lawn: spawned zombies start at 630, past the
+  z.hp = 10;            // projectile cull line (620), which skips hit checks
+  const before = state.sun;
+  state.projectiles.push({ row: z.row, x: z.x - 5, y: 0, type: 'pea' });
+  updateProjectiles(state, nowValue(), 16);
+  return state.sun - before;
+};
+A(killRewardOf(spawnAs('normal', 1)) === 10, 'kill reward: normal = 10 (legacy flat value)');
+A(killRewardOf(spawnAs('sprinter', 1)) === 12, 'kill reward: sprinter = 12');
+A(killRewardOf(spawnAs('brute', 3)) === 25, 'kill reward: brute = 25');
+A(killRewardOf(spawnAs('biter', 3)) === 16, 'kill reward: biter = 16');
+resetBoard();
+
+// ================= §25. Snow Pea slow: each type slows AND restores ITS OWN speed =================
+for (const typeName of ZTYPE_KEYS) {
+  resetBoard();
+  const z = spawnAs(typeName, typeName === 'brute' || typeName === 'biter' ? 3 : 1);
+  z.row = 2; z.x = 500; z.hp = 1e6; z.maxHp = 1e6;
+  state.zombies = [z];
+  const baseSpeed = z.speed; // the type+difficulty speed actually spawned
+  let x0 = z.x; step(10);
+  const dxBase = (x0 - z.x) / 10;
+  A(Math.abs(dxBase - baseSpeed) < 0.01,
+    `${typeName}: walks at its own base speed (${baseSpeed.toFixed(3)}/frame)`);
+  z.slowUntil = nowValue() + BALANCE.SLOW_MS; // exactly what an icePea hit writes
+  x0 = z.x; step(10);
+  const dxSlow = (x0 - z.x) / 10;
+  A(Math.abs(dxSlow - baseSpeed * BALANCE.SLOW_MULT) < 0.01,
+    `${typeName}: slowed = own base x ${BALANCE.SLOW_MULT} (measured ${dxSlow.toFixed(3)}/frame)`);
+  A(z.speed === baseSpeed, `${typeName}: base speed never mutated by the slow`);
+  z.slowUntil = nowValue() + 50; // fast-forward past expiry
+  for (let f = 0; f < 200 && nowValue() < z.slowUntil; f++) step(1);
+  x0 = z.x; step(10);
+  const dxAfter = (x0 - z.x) / 10;
+  A(Math.abs(dxAfter - baseSpeed) < 0.01,
+    `${typeName}: expiry restores ITS OWN speed (${dxAfter.toFixed(3)}/frame)`);
+}
+resetBoard();
+
+// ================= §26. Durability & chewing speed =================
+const shotsToKill = z => {
+  let n = 0;
+  while (z.hp > 0 && n < 1000) { z.hp -= BALANCE.PEA_DAMAGE; n++; }
+  return n;
+};
+A(shotsToKill(spawnAs('brute', 3)) > 2 * shotsToKill(spawnAs('normal', 1)),
+  'brute needs > 2x the peas of a normal zombie (tank durability)');
+A(shotsToKill(spawnAs('sprinter', 1)) < shotsToKill(spawnAs('normal', 1)),
+  'sprinter dies to fewer peas than normal (glass cannon)');
+const chewLoss = z => {
+  resetBoard();
+  state.grid[4][2] = createPlant('wallnut', 4, 2, nowValue());
+  Object.assign(z, { row: 4, x: (2 + 0.7) * (600 / 9) - 2, eating: false, hp: 1e6 });
+  state.zombies = [z];
+  const hp0 = state.grid[4][2].hp;
+  step(125); // 2 seconds of continuous biting
+  return hp0 - state.grid[4][2].hp;
+};
+const normalLoss = chewLoss(spawnAs('normal', 1));
+const biterLoss = chewLoss(spawnAs('biter', 3));
+A(normalLoss >= 15 && normalLoss <= 17,
+  `normal chews ~16 plant-HP over 2s at 8 dps (measured ${normalLoss})`);
+A(biterLoss >= 27 && biterLoss <= 29,
+  `biter chews ~28 plant-HP over 2s at 14 dps (measured ${biterLoss})`);
+A(biterLoss > 1.5 * normalLoss, 'biter destroys plants meaningfully faster than normal');
+resetBoard();
+
+// ================= §27. Home breach: every type => health 1 -> 0 =================
+for (const typeName of ZTYPE_KEYS) {
+  resetBoard();
+  const z = spawnAs(typeName, typeName === 'brute' || typeName === 'biter' ? 3 : 1);
+  z.x = BALANCE.HOUSE_X - 1; z.row = 0; z.speed = 0;
+  state.zombies = [z];
+  step(1);
+  A(state.health === 0 && state.gameOver === true,
+    `${typeName}: crossing HOUSE_X drains 1 -> 0 and ends the game immediately`);
+}
+resetBoard();
+
+// ================= §28. Shovel vs new types: eating target removed -> resume =================
+// (L4 weights: all three new types are spawnable there; L1 lacks brute/biter.)
+for (const typeName of ['brute', 'biter', 'sprinter']) {
+  resetBoard();
+  state.grid[2][1] = createPlant('wallnut', 2, 1, nowValue());
+  const z = spawnAs(typeName, 4);
+  Object.assign(z, { row: 2, x: (1 + 0.7) * (600 / 9) - 2, eating: false, hp: 1e6, maxHp: 1e6 });
+  state.zombies = [z];
+  step(5);
+  A(z.eating === true, `${typeName}: stops and eats the wall-nut (shared eating system)`);
+  removePlantWithRefund(state, 2, 1); // the shovel's actual removal path
+  const xAfter = z.x;
+  step(3);
+  A(z.eating === false && z.x < xAfter,
+    `${typeName}: resumes walking the moment the wall-nut is shoveled`);
+}
+resetBoard();
+
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);

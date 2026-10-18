@@ -1,17 +1,36 @@
 // Zombie spawning, walking, eating, house breach (health 1 -> 0 lives here),
 // and wave scheduling.
-import { COLS, ROWS, CELL_W, LOGICAL_W, BALANCE } from './config.js';
+import { COLS, ROWS, CELL_W, LOGICAL_W, BALANCE, ZOMBIE_TYPES, SPAWN_WEIGHTS, BURST_CHANCE } from './config.js';
 
-// --- Spawn a zombie ---
-export function spawnZombie(state) {
-  const row = Math.floor(Math.random() * ROWS);
+// Weighted type pick from the level's SPAWN_WEIGHTS row (clamped for levels
+// beyond the table). rng is injectable so tests can drive it deterministically.
+export function pickZombieType(level, rng = Math.random) {
+  const weights = SPAWN_WEIGHTS[Math.min(level, SPAWN_WEIGHTS.length) - 1];
+  let total = 0;
+  for (const w of Object.values(weights)) total += w;
+  let roll = rng() * total;
+  for (const [type, w] of Object.entries(weights)) {
+    if (w > 0 && roll < w) return type;
+    roll -= w;
+  }
+  return 'normal'; // degenerate rng result (e.g. exactly 1.0) -> baseline type
+}
+
+// --- Spawn a zombie (ONE generic shape for every type; stats from config) ---
+export function spawnZombie(state, rng = Math.random) {
+  const type = pickZombieType(state.level, rng);
+  const def = ZOMBIE_TYPES[type];
+  const row = Math.floor(rng() * ROWS);
   const difficulty = 1 + (state.level - 1) * BALANCE.ZOMBIE_DIFFICULTY_STEP;
   state.zombies.push({
+    type,
     row,
     x: LOGICAL_W + 30,
-    hp: BALANCE.ZOMBIE_BASE_HP * difficulty,
-    maxHp: BALANCE.ZOMBIE_BASE_HP * difficulty,
-    speed: (0.25 + Math.random() * 0.15) * difficulty,
+    hp: def.hp * difficulty,
+    maxHp: def.hp * difficulty,
+    speed: (def.speedMin + rng() * (def.speedMax - def.speedMin)) * difficulty,
+    eatDps: def.eatDps,
+    reward: def.reward,
     eating: false,
   });
 }
@@ -28,7 +47,9 @@ export function updateZombies(state, now, dt) {
       const plant = state.grid[z.row][col];
       if (plant && z.x <= (col + 0.7) * CELL_W) {
         z.eating = true;
-        plant.hp -= BALANCE.EAT_DPS * (dt / 1000);
+        // Per-type chewing speed; hand-built test zombies (no eatDps) keep the
+        // legacy 8 dps baseline.
+        plant.hp -= (z.eatDps ?? BALANCE.EAT_DPS) * (dt / 1000);
         if (plant.hp <= 0) {
           state.grid[z.row][col] = null;
         }

@@ -34,7 +34,9 @@ export function updateProjectiles(state, now, dt) {
         state.projectiles.splice(i, 1);
         if (z.hp <= 0) {
           state.zombies.splice(j, 1);
-          state.sun += BALANCE.KILL_SUN_REWARD; // small reward
+          // Per-type reward; hand-built test zombies (no reward) fall back to
+          // the legacy flat KILL_SUN_REWARD.
+          state.sun += z.reward ?? BALANCE.KILL_SUN_REWARD;
         }
         break;
       }
