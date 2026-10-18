@@ -76,17 +76,28 @@ export function updateZombies(state, now, dt) {
   }
 }
 
-export function updateWaves(state, dt) {
-  // --- Wave spawning ---
+export function updateWaves(state, dt, rng = Math.random) {
+  // --- Wave spawning (with level-scaled burst pressure) ---
   state.waveTimer += dt;
   if (state.waveTimer > state.waveInterval) {
     state.waveTimer = 0;
-    spawnZombie(state);
-    state.spawned = (state.spawned || 0) + 1;
-    // Level up every 8 zombies, speed up the wave
-    if (state.spawned % 8 === 0) {
-      state.level += 1;
-      state.waveInterval = Math.max(BALANCE.WAVE_INTERVAL_MIN, state.waveInterval - BALANCE.WAVE_INTERVAL_STEP);
+    const noteSpawn = () => {
+      state.spawned = (state.spawned || 0) + 1;
+      // Level up every 8 zombies, speed up the wave
+      if (state.spawned % 8 === 0) {
+        state.level += 1;
+        state.waveInterval = Math.max(BALANCE.WAVE_INTERVAL_MIN,
+          state.waveInterval - BALANCE.WAVE_INTERVAL_STEP);
+      }
+    };
+    spawnZombie(state, rng);
+    noteSpawn();
+    // Burst: a level-scaled chance to drop a SECOND zombie immediately. Both
+    // count toward level pacing; random rows keep same-lane pressure natural.
+    const idx = Math.min(state.level, BURST_CHANCE.length) - 1;
+    if (rng() < BURST_CHANCE[idx]) {
+      spawnZombie(state, rng);
+      noteSpawn();
     }
   }
 }

@@ -1031,5 +1031,59 @@ if (process.env.SPRITE_STUB) {
 }
 resetBoard();
 
+// ================= §31. Waves: burst spawns + interval progression =================
+resetBoard();
+state.waveInterval = BALANCE.WAVE_INTERVAL; state.waveTimer = 0; state.level = 1;
+// L1: burst off — a full roll sweep never doubles a spawn (pin spawned so the
+// sweep itself can't level us past the L1 row mid-loop)
+let doubled = 0;
+for (let r = 0; r < 200; r++) {
+  state.zombies = [];
+  state.spawned = 0;
+  updateWaves(state, BALANCE.WAVE_INTERVAL + 1, () => r / 200);
+  if (state.zombies.length > 1) doubled++;
+}
+A(doubled === 0 && state.zombies.length === 1,
+  'L1: burst never fires (200-roll sweep, exactly one zombie per event)');
+// L5: burst fires for rolls below BURST_CHANCE[4] = 0.35, second zombie is a real spawn
+state.level = 5; state.spawned = 0; state.waveInterval = 4400;
+let burstCount = 0, secondOk = true;
+for (let r = 0; r < 100; r++) {
+  state.zombies = [];
+  updateWaves(state, 5000, () => r / 100);
+  if (state.zombies.length === 2) {
+    burstCount++;
+    if (!ZOMBIE_TYPES[state.zombies[1].type] || state.zombies[1].row === undefined) secondOk = false;
+  }
+}
+A(burstCount === 35, `L5: exactly 35/100 rolls burst (BURST_CHANCE[4] = 0.35; got ${burstCount})`);
+A(secondOk, 'the burst zombie is a fully-populated generic spawn (own type/row)');
+// every zombie counts toward level pacing (spawned increments per zombie)
+state.level = 1; state.spawned = 7; state.waveInterval = BALANCE.WAVE_INTERVAL;
+state.zombies = [];
+updateWaves(state, BALANCE.WAVE_INTERVAL + 1, () => 0.9); // L1: sprinter, no burst
+A(state.spawned === 8 && state.level === 2, 'spawned counts every zombie; level-up still at 8');
+// interval progression: 8000 -> 7100 -> 6200 -> 5300 -> 4400 -> 3500 -> 2600 -> 2500 floor
+resetBoard();
+const intervals = [];
+state.level = 1; state.waveInterval = BALANCE.WAVE_INTERVAL;
+for (let i = 0; i < 9; i++) {
+  state.spawned = 7; // every spawn is an 8th -> level up each iteration
+  state.zombies = [];
+  updateWaves(state, 1e6); // default rng (0.5): no burst at any level
+  intervals.push(state.waveInterval);
+}
+A(intervals.join(',') === '7100,6200,5300,4400,3500,2600,2500,2500,2500',
+  `interval curve steepens then floors at 2500 (got ${intervals.join(',')})`);
+resetBoard();
+
+// ================= §34. Difficulty sanity: Level 1 stays fair =================
+A(SPAWN_WEIGHTS[0].normal === 85 && SPAWN_WEIGHTS[0].sprinter === 15,
+  'L1 remains 85% normal zombies (fair opening)');
+A(BALANCE.WAVE_INTERVAL === 8000, 'L1 spawn interval unchanged at 8000ms');
+A(BALANCE.WAVE_INTERVAL_MIN === 2500, 'spawn interval floor still 2500ms');
+A(BURST_CHANCE[0] === 0 && BURST_CHANCE[1] === 0, 'no burst pressure at L1-2');
+resetBoard();
+
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
