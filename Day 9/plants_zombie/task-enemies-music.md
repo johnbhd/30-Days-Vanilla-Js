@@ -53,8 +53,11 @@ health rules, plants, shovel, or the existing normal zombie's behavior.
 - Page: https://opengameart.org/content/tower-defense-theme
 - Duration 199.4 s (3:19); tags: happy, cute, mellow, tower/defense, loop
 - Source: 320 kbps MP3, 7.98 MB (downloaded, probed)
-- Ship: re-encoded **OGG Vorbis q3 ~= 2.9 MB** (`ffmpeg -c:a libvorbis -q:a 3`),
-  FULL track (no trim — preserves the designed loop seam)
+- Ship: re-encoded **MP3 128 kbps ~= 3.19 MB** (`ffmpeg -c:a libmp3lame -b:a 128k`),
+  FULL track (no trim — preserves the designed loop seam).
+  *Post-review amendment:* the plan's OGG q3 was swapped for MP3 because iOS/iPadOS
+  Safari cannot play OGG — music would be dead on the tablet target. MP3 plays
+  everywhere (same master, same duration, +0.3 MB).
 
 "No official Plants vs. Zombies sprites or music are used."
 
@@ -191,7 +194,7 @@ Object: `{ type, row, x, speed, hp, maxHp, eatDps, reward, eating, slowUntil? }`
 ## 8. Audio (js/audio.js, new, small)
 
 - Singleton: `let el = null`; `ensureAudio()` creates ONE
-  `Audio('audio/bgm/tower-defense-theme.ogg')`, loop = true, volume = 0.32,
+  `Audio('audio/bgm/tower-defense-theme.mp3')`, loop = true, volume = 0.32,
   applies the persisted mute flag.
 - Autoplay-safe start: one-time document `pointerdown`/`keydown` listener
   (installed by ui/main) -> ensureAudio() + `el.play().catch(() => {})`.
@@ -219,7 +222,7 @@ Object: `{ type, row, x, speed, hp, maxHp, eatDps, reward, eating, slowUntil? }`
 Modify: js/config.js, js/zombies.js, js/projectiles.js, js/rendering.js,
 js/assets.js, js/main.js, js/ui.js, index.html, style.css, tests/pvz-test.mjs
 Create: js/audio.js, images/zombie_sprinter.png, images/zombie_brute.png,
-images/zombie_biter.png, audio/bgm/tower-defense-theme.ogg
+images/zombie_biter.png, audio/bgm/tower-defense-theme.mp3
 (Generator scripts live in /tmp/opencode and are NOT committed — consistent with
 the shovel/snowpea pipelines.)
 

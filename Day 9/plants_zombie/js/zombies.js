@@ -3,9 +3,11 @@
 import { COLS, ROWS, CELL_W, LOGICAL_W, BALANCE, ZOMBIE_TYPES, SPAWN_WEIGHTS, BURST_CHANCE } from './config.js';
 
 // Weighted type pick from the level's SPAWN_WEIGHTS row (clamped for levels
-// beyond the table). rng is injectable so tests can drive it deterministically.
+// beyond the table — and below it, so level 0 / negatives floor to row 1).
+// rng is injectable so tests can drive it deterministically.
 export function pickZombieType(level, rng = Math.random) {
-  const weights = SPAWN_WEIGHTS[Math.min(level, SPAWN_WEIGHTS.length) - 1];
+  const row = Math.max(0, Math.min(level, SPAWN_WEIGHTS.length) - 1);
+  const weights = SPAWN_WEIGHTS[row];
   let total = 0;
   for (const w of Object.values(weights)) total += w;
   let roll = rng() * total;

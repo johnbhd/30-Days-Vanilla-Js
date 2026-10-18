@@ -802,6 +802,9 @@ A(state.zombies[0].type === 'sprinter', 'L1 high roll spawns the rare sprinter')
 state.zombies = [];
 spawnZombie(state, () => 1.0);
 A(!!ZOMBIE_TYPES[state.zombies[0].type], 'rng=1.0 falls back to a valid type (never undefined)');
+// degenerate level values (0, negative) index the weights table's clamp floor
+A([-5, -1, 0].every(lvl => !!ZOMBIE_TYPES[pickZombieType(lvl)]),
+  'degenerate levels (0, negative) fall back to a valid type instead of throwing');
 // full sweeps: staged introduction holds at every roll position
 const sweepTypes = lvl => {
   const found = new Set();
@@ -969,7 +972,7 @@ A(existsSync(new URL('../images/zombie_sprinter.png', import.meta.url)) &&
   existsSync(new URL('../images/zombie_brute.png', import.meta.url)) &&
   existsSync(new URL('../images/zombie_biter.png', import.meta.url)),
   'the three repacked PNGs exist on disk');
-A(existsSync(new URL('../audio/bgm/tower-defense-theme.ogg', import.meta.url)),
+A(existsSync(new URL('../audio/bgm/tower-defense-theme.mp3', import.meta.url)),
   'background music file exists on disk');
 
 // ================= §30. Renderer: config-driven zombie animation =================
@@ -1121,7 +1124,7 @@ A(audioMod.isMuted() === false, 'default state is unmuted');
 audioMod.startOnGesture();
 const a1 = fakeInstances[0];
 A(fakeInstances.length === 1, 'the first gesture creates exactly ONE Audio instance');
-A(a1.src === 'audio/bgm/tower-defense-theme.ogg', 'src points at the local ogg (no hotlink)');
+A(a1.src === 'audio/bgm/tower-defense-theme.mp3', 'src points at the local mp3 (no hotlink)');
 A(a1.loop === true, 'music loops');
 A(a1.volume >= 0.25 && a1.volume <= 0.40, `volume stays moderate (${a1.volume})`);
 A(a1.playCalls === 1 && a1.paused === false, 'first gesture starts playback');

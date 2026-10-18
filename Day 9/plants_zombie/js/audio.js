@@ -11,7 +11,7 @@
 let el = null;       // the singleton — constructed exactly once, ever
 let started = false; // a gesture has (attempted to) start playback
 
-const SRC = 'audio/bgm/tower-defense-theme.ogg';
+const SRC = 'audio/bgm/tower-defense-theme.mp3'; // MP3: plays on every target browser, incl. iOS Safari
 const VOLUME = 0.32; // moderate background level (spec: 0.25-0.40)
 const STORAGE_KEY = 'pvzMusicMuted';
 

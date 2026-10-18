@@ -12,7 +12,7 @@ export function createState() {
     hoverCell: null,       // presentation pointer target {row,col} or null (not gameplay)
     floatTexts: [],        // transient refund feedback entries (not gameplay)
     grid: [],           // grid[row][col] = plant object or null
-    zombies: [],        // {row, x, hp, speed, eating}
+    zombies: [],        // {type, row, x, hp, speed, eating, ...} — full shape in config.js ZOMBIE_TYPES
     projectiles: [],     // {row, x, y, type: 'pea'|'icePea'}
     suns: [],           // {x, y, value, ttl, falling, targetY}
     waveTimer: 0,
