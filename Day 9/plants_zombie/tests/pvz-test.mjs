@@ -36,6 +36,7 @@ const elements = {
   'sun-count': { textContent: '' },
   'health-count': { textContent: '' },
   'level-count': { textContent: '' },
+  'music-toggle': makeToggle('🔊'),
 };
 
 function makeSlot(plant) {
@@ -100,6 +101,18 @@ function makeTool(tool, label) {
   };
 }
 export const tools = [makeTool('shovel', 'Shovel')];
+
+// Music toggle is a plain HUD button (no dataset semantics): it only needs
+// textContent + listener storage for click/keydown in headless tests.
+function makeToggle(label) {
+  const h = {};
+  return {
+    textContent: label,
+    addEventListener(ev, fn) { h[ev] = fn; },
+    fire(ev, e = {}) { h[ev] && h[ev](e); },
+    click() { h.click && h.click({}); },
+  };
+}
 
 // --- globalThis stubs (installed BEFORE importing the modules) ---
 Object.defineProperty(globalThis, 'performance', {
@@ -1156,6 +1169,66 @@ catch { headlessThrew = true; }
 A(headlessThrew === false, 'all audio calls are safe no-ops without an Audio global');
 audioMod._resetForTests();
 delete globalThis.localStorage;
+
+// ================= §33. Music button UI + autoplay/game hooks =================
+globalThis.localStorage = {
+  _store: {},
+  getItem(k) { return this._store[k] ?? null; },
+  setItem(k, v) { this._store[k] = String(v); },
+};
+let uiMusic = [];
+globalThis.Audio = class {
+  constructor(src) {
+    this.src = src; this.loop = false; this.volume = 1; this.muted = false;
+    this.paused = true; this.playCalls = 0;
+    uiMusic.push(this);
+  }
+  play() { this.playCalls++; this.paused = false; return Promise.resolve(); }
+  pause() { this.paused = true; }
+};
+audioMod._resetForTests();
+const musicEl = elements['music-toggle'];
+A(!!musicEl && musicEl.textContent === '🔊', 'music toggle element stub registered, sound-on icon');
+fireDocument('pointerdown'); // the REAL installed first-gesture listener
+A(uiMusic.length === 1 && uiMusic[0].playCalls === 1,
+  'the installed gesture listener starts the music exactly once');
+A(musicEl.textContent === '🔊', 'icon shows sound-on after the gesture');
+musicEl.fire('click');
+A(audioMod.isMuted() === true && musicEl.textContent === '🔇' && uiMusic[0].muted === true,
+  'tapping the button mutes and swaps the icon');
+musicEl.fire('click');
+A(audioMod.isMuted() === false && musicEl.textContent === '🔊' &&
+  uiMusic[0].paused === false && uiMusic[0].playCalls === 2,
+  'tapping again unmutes and resumes the SAME instance');
+A(uiMusic.length === 1, 'toggles never spawn a second music instance');
+musicEl.fire('keydown', { key: 'Enter', preventDefault() {} });
+A(audioMod.isMuted() === true && musicEl.textContent === '🔇', 'Enter key activates the button');
+musicEl.fire('keydown', { key: 'a', preventDefault() {} });
+A(audioMod.isMuted() === true, 'other keys are ignored');
+musicEl.fire('click'); // unmute for the hook tests
+// Game Over pauses the music; restart resumes it (same instance)
+state.gameOver = true;
+update(nowValue());
+A(uiMusic[0].paused === true, 'Game Over pauses the background music');
+restartGame();
+A(state.gameOver === false && state.health === 1 &&
+  uiMusic[0].paused === false && uiMusic.length === 1,
+  'restart resumes music on the same instance (never overlapping copies)');
+// shipped-markup regression guards (real index.html, like the shovel §21)
+A(/id="music-toggle"/.test(html) && /aria-label="Toggle music"/.test(html),
+  'index.html declares the music toggle as an accessible HUD button');
+A(/hud-music[^>]*>🔊|>🔊</.test(html), 'the markup ships the sound-on icon');
+A(/class="hud-item hud-music"/.test(html), 'the toggle uses the shared .hud-item chip styling');
+A(/ashuuya/.test(html) && /128x128 2D Zombies/.test(html) && /CC0/.test(html),
+  'credits include the ashuuya zombie sprite pack (title + license)');
+A(/Tower Defense Theme/.test(html) && /DST/.test(html),
+  'credits include the DST music track');
+A(/zombie-sprites/.test(html) && /Clint Bellanger/.test(html),
+  'ALL pre-existing credits preserved (original zombie credit intact)');
+audioMod._resetForTests();
+delete globalThis.Audio;
+delete globalThis.localStorage;
+resetBoard();
 
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);

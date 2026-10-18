@@ -2,6 +2,7 @@
 // Owns DOM reads/writes; receives `state` as a parameter — no window.* state.
 import { PLANT_TYPES, COLS, ROWS, CELL_W, CELL_H, LOGICAL_W, LOGICAL_H } from './config.js';
 import { createPlant, removePlantWithRefund } from './plants.js';
+import * as audio from './audio.js';
 
 // --- UI references (resolved on first use so importing this module has no
 // side effects; the DOM always exists by the time the game runs) ---
@@ -77,6 +78,27 @@ export function wireInput(state, canvas, onRestart) {
       }
     });
   });
+
+  // --- Music toggle (all music state lives in audio.js; combat state untouched) ---
+  const musicBtn = document.getElementById('music-toggle');
+  const syncMusicIcon = () => { musicBtn.textContent = audio.isMuted() ? '🔇' : '🔊'; };
+  syncMusicIcon(); // initial icon reflects the persisted preference
+  musicBtn.addEventListener('click', () => {
+    const muted = audio.toggleMute();
+    syncMusicIcon();
+    if (!muted) audio.resume(); // unmute mid-game resumes seamlessly
+  });
+  musicBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      musicBtn.click();
+    }
+  });
+
+  // Browser autoplay policy: the music may only begin after a user gesture.
+  // startOnGesture is idempotent, so both listeners may fire freely.
+  document.addEventListener('pointerdown', () => audio.startOnGesture());
+  document.addEventListener('keydown', () => audio.startOnGesture());
 
   // Optional desktop nicety: Escape cancels shovel mode.
   document.addEventListener('keydown', (e) => {

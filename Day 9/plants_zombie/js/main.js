@@ -14,6 +14,7 @@ import { updateProjectiles } from './projectiles.js';
 import { updateZombies, updateWaves } from './zombies.js';
 import { updateUI, wireInput } from './ui.js';
 import { setupRenderer, draw as drawGame } from './rendering.js';
+import * as audio from './audio.js';
 
 export const state = createState();
 
@@ -39,7 +40,8 @@ export function initializeGame() {
 
 // --- Main update loop ---
 export function update(now) {
-  if (state.gameOver || !state.running) return;
+  if (state.gameOver) { audio.pause(); return; } // idempotent: stops BGM on Game Over
+  if (!state.running) return;
 
   const dt = now - lastTime;
   lastTime = now;
@@ -75,6 +77,7 @@ export function restartGame() {
   document.querySelectorAll('.tool-slot').forEach(s => s.classList.remove('selected'));
   state.gameOver = false;
   updateUI(state);
+  audio.resume(); // no-op while muted or before the first gesture
   lastTime = performance.now();
 }
 
