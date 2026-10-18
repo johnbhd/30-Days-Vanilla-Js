@@ -1085,5 +1085,77 @@ A(BALANCE.WAVE_INTERVAL_MIN === 2500, 'spawn interval floor still 2500ms');
 A(BURST_CHANCE[0] === 0 && BURST_CHANCE[1] === 0, 'no burst pressure at L1-2');
 resetBoard();
 
+// ================= §32. Audio module: singleton, autoplay, mute =================
+const audioMod = await import(new URL('../js/audio.js', import.meta.url).href);
+let fakeInstances = [];
+globalThis.localStorage = {
+  _store: {},
+  getItem(k) { return this._store[k] ?? null; },
+  setItem(k, v) { this._store[k] = String(v); },
+};
+class FakeAudio {
+  constructor(src) {
+    this.src = src; this.loop = false; this.volume = 1; this.muted = false;
+    this.paused = true; this.playCalls = 0;
+    fakeInstances.push(this);
+  }
+  play() { this.playCalls++; this.paused = false; return Promise.resolve(); }
+  pause() { this.paused = true; }
+}
+globalThis.Audio = FakeAudio;
+
+A(audioMod.isMuted() === false, 'default state is unmuted');
+audioMod.startOnGesture();
+const a1 = fakeInstances[0];
+A(fakeInstances.length === 1, 'the first gesture creates exactly ONE Audio instance');
+A(a1.src === 'audio/bgm/tower-defense-theme.ogg', 'src points at the local ogg (no hotlink)');
+A(a1.loop === true, 'music loops');
+A(a1.volume >= 0.25 && a1.volume <= 0.40, `volume stays moderate (${a1.volume})`);
+A(a1.playCalls === 1 && a1.paused === false, 'first gesture starts playback');
+audioMod.startOnGesture();
+A(fakeInstances.length === 1 && a1.playCalls === 1,
+  'later gestures never create a second instance or restart the track');
+audioMod.pause();
+A(a1.paused === true, 'pause() stops the music (Game Over path)');
+audioMod.resume();
+A(a1.paused === false && a1.playCalls === 2, 'resume() restarts the SAME instance');
+A(audioMod.toggleMute() === true && a1.muted === true && a1.paused === false,
+  'mute flips the element muted flag WITHOUT pausing (position preserved)');
+A(globalThis.localStorage._store.pvzMusicMuted === '1', 'mute persists to localStorage');
+A(audioMod.toggleMute() === false && a1.muted === false && a1.paused === false &&
+  a1.playCalls === 2,
+  'unmute restores sound on the same instance with no replay');
+// autoplay rejection must be swallowed silently
+audioMod._resetForTests();
+fakeInstances = [];
+globalThis.Audio = class extends FakeAudio {
+  play() { this.playCalls++; return Promise.reject(new Error('NotAllowedError')); }
+};
+let threw = false;
+try { audioMod.startOnGesture(); await Promise.resolve(); } catch { threw = true; }
+A(threw === false, 'autoplay play() rejection is swallowed without throwing');
+// persisted mute: first gesture must NOT attempt playback
+audioMod._resetForTests();
+fakeInstances = [];
+globalThis.Audio = FakeAudio;
+globalThis.localStorage._store.pvzMusicMuted = '1';
+audioMod._resetForTests();
+audioMod.startOnGesture();
+const a2 = fakeInstances[0];
+A(a2.playCalls === 0,
+  'a persisted mute means the first gesture starts SILENT (no autoplay attempt)');
+A(audioMod.toggleMute() === false, 'unmuting returns false (now unmuted)');
+audioMod.resume();
+A(a2.playCalls === 1 && a2.paused === false, 'unmute after the silent start resumes playback');
+// headless safety: no Audio global -> every call is a safe no-op
+audioMod._resetForTests();
+delete globalThis.Audio;
+let headlessThrew = false;
+try { audioMod.startOnGesture(); audioMod.pause(); audioMod.resume(); audioMod.toggleMute(); }
+catch { headlessThrew = true; }
+A(headlessThrew === false, 'all audio calls are safe no-ops without an Audio global');
+audioMod._resetForTests();
+delete globalThis.localStorage;
+
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
