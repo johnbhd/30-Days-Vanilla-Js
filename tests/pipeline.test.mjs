@@ -46,6 +46,14 @@ test('serves encoded project paths and modules while blocking private build file
   }
 });
 
+test('recognizes the Tailwind CDN as a serverless preview resource to block', () => {
+  assert.equal(typeof pipeline.isPreviewUnsafeUrl, 'function');
+  assert.equal(pipeline.isPreviewUnsafeUrl('https://cdn.tailwindcss.com'), true);
+  assert.equal(pipeline.isPreviewUnsafeUrl('https://cdn.tailwindcss.com/3.4.1'), true);
+  assert.equal(pipeline.isPreviewUnsafeUrl('https://example.com/tailwind.css'), false);
+  assert.equal(pipeline.isPreviewUnsafeUrl('/local/script.js'), false);
+});
+
 test('successful capture produces a real JPEG while a failed page receives a fallback', async t => {
   assert.equal(typeof pipeline.capturePreviews, 'function', 'automated preview capture must exist');
   assert.equal(typeof serverModule.startServer, 'function');

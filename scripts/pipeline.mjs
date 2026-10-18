@@ -1,8 +1,17 @@
 import { mkdir, readFile, writeFile, readdir, rm, cp, access, rename } from 'node:fs/promises';
 import path from 'node:path';
-import { launchBrowser } from './browser.mjs';
+import { launchBrowser, shouldUseServerlessChromium } from './browser.mjs';
 import { discoverProjects, encodePath, renderGallery } from './gallery.mjs';
 import { isPublicPath } from './server.mjs';
+
+export function isPreviewUnsafeUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname.toLowerCase() === 'cdn.tailwindcss.com';
+  } catch {
+    return false;
+  }
+}
 
 export async function capturePreviews({ root, baseUrl, projects, previousProjects = [], changedEntries = null }) {
   const directory = path.join(root, 'src', 'assets', 'previews');
@@ -20,11 +29,19 @@ export async function capturePreviews({ root, baseUrl, projects, previousProject
         return { ...project, preview: previous.preview };
       } catch { /* A removed preview is captured again. */ }
     }
-    const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
+    let context;
     let timer;
     try {
+      context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
       const page = await context.newPage();
       page.on('dialog', dialog => dialog.dismiss());
+      if (shouldUseServerlessChromium()) {
+        await page.route('**/*', async route => {
+          const request = route.request();
+          if (request.resourceType() === 'script' && isPreviewUnsafeUrl(request.url())) await route.abort();
+          else await route.continue();
+        });
+      }
       const target = path.join(directory, project.id + '.jpg');
       const temporary = target + '.tmp';
       const work = async () => {
@@ -54,7 +71,13 @@ export async function capturePreviews({ root, baseUrl, projects, previousProject
       return { ...project };
     } finally {
       clearTimeout(timer);
-      await context.close();
+      if (context) {
+        try {
+          await context.close();
+        } catch (error) {
+          console.warn(`[preview] context cleanup failed for ${project.entry}: ${error.message}`);
+        }
+      }
       await rm(path.join(directory, project.id + '.jpg.tmp'), { force: true });
     }
   }
@@ -73,7 +96,11 @@ export async function capturePreviews({ root, baseUrl, projects, previousProject
     }
     return result;
   } finally {
-    await browser.close();
+    try {
+      await browser.close();
+    } catch (error) {
+      console.warn(`[browser] cleanup failed: ${error.message}`);
+    }
   }
 }
 
