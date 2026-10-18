@@ -1,7 +1,9 @@
 // Sprite loading (one-time, guarded for headless tests) + sprite readiness.
 
 // --- Sprites (OpenGameArt: zombie by Clint Bellanger CC-BY 3.0,
-//     sunflower by Robyn CC0/CC-BY, man-eating plant by bevouliin.com CC-BY 4.0) ---
+//     sunflower by Robyn CC0/CC-BY, man-eating plant by bevouliin.com CC-BY 4.0,
+//     new enemy sheets: CC0 sprite pack by ashuuya "128x128 2D Zombies
+//     Spritesheet", repacked into uniform walk/attack grids) ---
 export const SPRITE_SRC = {
   sunflower: 'images/sunflower.png',
   peashooter: 'images/peashooter_cut.png',
@@ -9,6 +11,9 @@ export const SPRITE_SRC = {
   snowpea: 'images/snowpea.png',    // CC-BY 4.0 derivative of peashooter_cut (bevouliin.com)
   repeater: 'images/repeater.png',  // CC-BY 4.0 derivative of peashooter_cut (bevouliin.com)
   zombie: 'images/zombie.png',
+  zombieSprinter: 'images/zombie_sprinter.png', // fast enemy (type C)
+  zombieBrute: 'images/zombie_brute.png',       // tank enemy (type B)
+  zombieBiter: 'images/zombie_biter.png',       // strong attacker (type A)
 };
 
 const sprites = {};

@@ -945,5 +945,19 @@ for (const typeName of ['brute', 'biter', 'sprinter']) {
 }
 resetBoard();
 
+// ================= §29. New zombie + music assets registered =================
+const { SPRITE_SRC } = await import(new URL('../js/assets.js', import.meta.url).href);
+A(SPRITE_SRC.zombieSprinter === 'images/zombie_sprinter.png' &&
+  SPRITE_SRC.zombieBrute === 'images/zombie_brute.png' &&
+  SPRITE_SRC.zombieBiter === 'images/zombie_biter.png' &&
+  SPRITE_SRC.zombie === 'images/zombie.png',
+  'assets.js registers the three new sheets and keeps the original zombie');
+A(existsSync(new URL('../images/zombie_sprinter.png', import.meta.url)) &&
+  existsSync(new URL('../images/zombie_brute.png', import.meta.url)) &&
+  existsSync(new URL('../images/zombie_biter.png', import.meta.url)),
+  'the three repacked PNGs exist on disk');
+A(existsSync(new URL('../audio/bgm/tower-defense-theme.ogg', import.meta.url)),
+  'background music file exists on disk');
+
 console.log(failures.length === 0 ? '\nALL TESTS PASSED' : `\n${failures.length} TEST(S) FAILED`);
 process.exit(failures.length === 0 ? 0 : 1);
