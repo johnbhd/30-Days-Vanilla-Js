@@ -1,8 +1,8 @@
 # Task Spec: 3 New Zombie Types + Background Music + Difficulty
 
-Status: DESIGN APPROVED (research report + balance table approved in chat).
-This document is the written spec. Implementation starts only after written-spec
-approval → implementation plan → code (Superpowers workflow).
+Status: COMPLETE — implemented per docs/superpowers/plans/2026-10-18-enemies-music-difficulty.md
+(commits e1113d5..HEAD), verified §12 acceptance walk; 293 assertions green in both
+test modes; browser/tablet feel checks remain user-side.
 
 Baseline: commit `a227958`, clean tree, 164/164 tests PASS in both modes
 (`node tests/pvz-test.mjs`, `SPRITE_STUB=1 node tests/pvz-test.mjs`).
