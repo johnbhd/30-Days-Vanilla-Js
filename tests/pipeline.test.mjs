@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, access } from 'node:fs/promise
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { createServer } from 'node:http';
 
 const serverModule = await import('../scripts/server.mjs').catch(error => {
   if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
@@ -12,6 +13,7 @@ const pipeline = await import('../scripts/pipeline.mjs').catch(error => {
   if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
   return {};
 });
+const { chromium } = await import('playwright');
 
 async function fixture(t, files) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'gallery-pipeline-'));
@@ -46,14 +48,6 @@ test('serves encoded project paths and modules while blocking private build file
   }
 });
 
-test('recognizes the Tailwind CDN as a serverless preview resource to block', () => {
-  assert.equal(typeof pipeline.isPreviewUnsafeUrl, 'function');
-  assert.equal(pipeline.isPreviewUnsafeUrl('https://cdn.tailwindcss.com'), true);
-  assert.equal(pipeline.isPreviewUnsafeUrl('https://cdn.tailwindcss.com/3.4.1'), true);
-  assert.equal(pipeline.isPreviewUnsafeUrl('https://example.com/tailwind.css'), false);
-  assert.equal(pipeline.isPreviewUnsafeUrl('/local/script.js'), false);
-});
-
 test('successful capture produces a real JPEG while a failed page receives a fallback', async t => {
   assert.equal(typeof pipeline.capturePreviews, 'function', 'automated preview capture must exist');
   assert.equal(typeof serverModule.startServer, 'function');
@@ -74,6 +68,63 @@ test('successful capture produces a real JPEG while a failed page receives a fal
   const jpeg = await readFile(path.join(root, 'src/assets/previews/hello.jpg'));
   assert.deepEqual([...jpeg.subarray(0, 3)], [255, 216, 255]);
   assert.ok(jpeg.length > 2000);
+});
+
+test('single-process Chromium captures every project without sharing browser contexts', async t => {
+  // Reproduce the former shared-context crash even if single-process mode is enabled.
+  t.mock.method(chromium, 'launch', async options => {
+    const browserServer = await chromium.launchServer({
+      ...options,
+      args: [...(options.args ?? []), '--single-process'],
+    });
+    const browser = await chromium.connect(browserServer.wsEndpoint());
+    // A broken shared browser can hang in newPage before capture's timeout starts.
+    const watchdog = setTimeout(() => browserServer.kill().catch(() => {}), 15000);
+    browser.on('disconnected', () => {
+      clearTimeout(watchdog);
+      browserServer.kill().catch(() => {});
+    });
+    t.after(() => browserServer.kill());
+    return browser;
+  });
+  const root = await fixture(t, {
+    'Day 1/first/index.html': '<h1>First preview</h1>',
+    'Day 1/second/index.html': '<h1>Second preview</h1>',
+    'Day 1/third/index.html': '<h1>Third preview</h1>',
+  });
+  const server = await serverModule.startServer(root);
+  t.after(() => server.close());
+  const projects = ['first', 'second', 'third'].map(id => ({
+    id, entry: `Day 1/${id}/index.html`, title: id,
+  }));
+  const result = await pipeline.capturePreviews({ root, baseUrl: server.url, projects });
+  assert.equal(result.successes, 3, JSON.stringify(result.failures));
+  assert.equal(result.failures.length, 0);
+  for (const project of result.projects) {
+    assert.ok(project.preview);
+    const jpeg = await readFile(path.join(root, 'src/assets/previews', project.id + '.jpg'));
+    assert.deepEqual([...jpeg.subarray(0, 3)], [255, 216, 255]);
+  }
+});
+
+test('a deployment with missing previews fails before replacing the homepage', async t => {
+  const root = await fixture(t, {
+    'index.html': 'Existing homepage',
+    'Day 1/game/index.html': '<title>Game</title>',
+    'src/templates/home.html': 'Gallery template',
+  });
+  const server = createServer((request, response) => {
+    response.writeHead(404);
+    response.end('Not found');
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  await assert.rejects(pipeline.generateGallery({
+    root,
+    baseUrl: `http://127.0.0.1:${server.address().port}`,
+    requirePreviews: true,
+  }), /preview.*failed/i);
+  assert.equal(await readFile(path.join(root, 'index.html'), 'utf8'), 'Existing homepage');
 });
 
 test('packaging preserves public URLs and excludes development files', async t => {

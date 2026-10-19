@@ -44,6 +44,11 @@ for Vercel. Existing project and download URLs are preserved. Vercel runs the
 configured build automatically and uses Linux Chromium for capture. This change
 does not publish a deployment itself.
 
+Each project is captured in its own browser process. On Vercel, captures run one
+at a time and Chromium's unstable `--single-process` flag is disabled. The build
+stops if any preview fails, instead of deploying missing project banners. A
+successful build reports `0 fallbacks` in the gallery summary.
+
 Edit the homepage in `src/templates/home.html` and `src/css/gallery.css`.
 The root `index.html` is generated; direct edits are overwritten. Generated
 previews, browsers, caches, and `dist/` are ignored in Git and recreated locally
@@ -52,9 +57,9 @@ from this folder.
 
 Previews show the initial screen without clicking controls or playing games.
 Dynamic data and external services may affect their appearance. Failed page
-captures receive a fallback card background and a build-log warning. Browser or
-server startup failures stop the build. Browser verification writes desktop and
-mobile screenshots to `output/playwright/`.
+captures receive a fallback card background during development and a log warning.
+Deployment builds require every preview to succeed. Browser verification writes
+desktop and mobile screenshots to `output/playwright/`.
 
 ## Overview
 I am documenting my 30-day JavaScript learning journey guided by ChatGPT. My goal is to strengthen my fundamentals in Vanilla JavaScript through daily tasks, balancing simple and complex concepts.

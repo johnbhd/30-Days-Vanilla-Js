@@ -4,19 +4,9 @@ import { launchBrowser, shouldUseServerlessChromium } from './browser.mjs';
 import { discoverProjects, encodePath, renderGallery } from './gallery.mjs';
 import { isPublicPath } from './server.mjs';
 
-export function isPreviewUnsafeUrl(value) {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' && url.hostname.toLowerCase() === 'cdn.tailwindcss.com';
-  } catch {
-    return false;
-  }
-}
-
 export async function capturePreviews({ root, baseUrl, projects, previousProjects = [], changedEntries = null }) {
   const directory = path.join(root, 'src', 'assets', 'previews');
   await mkdir(directory, { recursive: true });
-  const browser = await launchBrowser();
   const old = new Map(previousProjects.map(project => [project.entry, project]));
   const result = { projects: [], successes: 0, reused: 0, failures: [] };
   let cursor = 0;
@@ -29,19 +19,14 @@ export async function capturePreviews({ root, baseUrl, projects, previousProject
         return { ...project, preview: previous.preview };
       } catch { /* A removed preview is captured again. */ }
     }
-    let context;
+    let browser;
     let timer;
     try {
-      context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
+      // Isolate projects so a browser crash cannot invalidate later captures.
+      browser = await launchBrowser();
+      const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
       const page = await context.newPage();
       page.on('dialog', dialog => dialog.dismiss());
-      if (shouldUseServerlessChromium()) {
-        await page.route('**/*', async route => {
-          const request = route.request();
-          if (request.resourceType() === 'script' && isPreviewUnsafeUrl(request.url())) await route.abort();
-          else await route.continue();
-        });
-      }
       const target = path.join(directory, project.id + '.jpg');
       const temporary = target + '.tmp';
       const work = async () => {
@@ -71,50 +56,46 @@ export async function capturePreviews({ root, baseUrl, projects, previousProject
       return { ...project };
     } finally {
       clearTimeout(timer);
-      if (context) {
+      if (browser) {
         try {
-          await context.close();
+          await browser.close();
         } catch (error) {
-          console.warn(`[preview] context cleanup failed for ${project.entry}: ${error.message}`);
+          console.warn(`[preview] browser cleanup failed for ${project.entry}: ${error.message}`);
         }
       }
       await rm(path.join(directory, project.id + '.jpg.tmp'), { force: true });
     }
   }
   const captured = new Array(projects.length);
-  try {
-    await Promise.all(Array.from({ length: Math.min(2, projects.length) }, async () => {
-      while (cursor < projects.length) {
-        const index = cursor++;
-        captured[index] = await capture(projects[index]);
-      }
-    }));
-    result.projects = captured;
-    const keep = new Set(captured.filter(project => project.preview).map(project => project.id + '.jpg'));
-    for (const item of await readdir(directory, { withFileTypes: true })) {
-      if (item.isFile() && item.name.endsWith('.jpg') && !keep.has(item.name)) await rm(path.join(directory, item.name));
+  const concurrency = shouldUseServerlessChromium() ? 1 : 2;
+  await Promise.all(Array.from({ length: Math.min(concurrency, projects.length) }, async () => {
+    while (cursor < projects.length) {
+      const index = cursor++;
+      captured[index] = await capture(projects[index]);
     }
-    return result;
-  } finally {
-    try {
-      await browser.close();
-    } catch (error) {
-      console.warn(`[browser] cleanup failed: ${error.message}`);
-    }
+  }));
+  result.projects = captured;
+  const keep = new Set(captured.filter(project => project.preview).map(project => project.id + '.jpg'));
+  for (const item of await readdir(directory, { withFileTypes: true })) {
+    if (item.isFile() && item.name.endsWith('.jpg') && !keep.has(item.name)) await rm(path.join(directory, item.name));
   }
+  return result;
 }
 
-export async function generateGallery({ root, baseUrl, previousProjects, changedEntries }) {
+export async function generateGallery({ root, baseUrl, previousProjects, changedEntries, requirePreviews = false }) {
   const { projects, warnings } = await discoverProjects(root);
   const previews = await capturePreviews({ root, baseUrl, projects, previousProjects, changedEntries });
+  for (const warning of warnings) console.warn('[gallery] ' + warning);
+  for (const failure of previews.failures) console.warn(`[preview] ${failure.entry}: ${failure.error}`);
+  console.log(`[gallery] ${projects.length} projects / ${new Set(projects.map(project => project.day)).size} days; ${previews.successes} captured, ${previews.reused} reused, ${previews.failures.length} fallbacks, ${warnings.length} skipped.`);
+  if (requirePreviews && previews.failures.length) {
+    throw new Error(`Preview capture failed for ${previews.failures.length} of ${projects.length} projects. See the [preview] errors above; deployment stopped to avoid publishing missing banners.`);
+  }
   const template = await readFile(path.join(root, 'src/templates/home.html'), 'utf8');
   const html = renderGallery(template, previews.projects);
   const target = path.join(root, 'index.html');
   await writeFile(target + '.tmp', html);
   await rename(target + '.tmp', target);
-  for (const warning of warnings) console.warn('[gallery] ' + warning);
-  for (const failure of previews.failures) console.warn(`[preview] ${failure.entry}: ${failure.error}`);
-  console.log(`[gallery] ${projects.length} projects / ${new Set(projects.map(project => project.day)).size} days; ${previews.successes} captured, ${previews.reused} reused, ${previews.failures.length} fallbacks, ${warnings.length} skipped.`);
   return { ...previews, warnings };
 }
 

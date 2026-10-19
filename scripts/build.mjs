@@ -5,7 +5,7 @@ import { generateGallery, packageSite } from './pipeline.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const server = await startServer(root);
 try {
-  await generateGallery({ root, baseUrl: server.url });
+  await generateGallery({ root, baseUrl: server.url, requirePreviews: true });
   await packageSite(root);
 } finally {
   await server.close();

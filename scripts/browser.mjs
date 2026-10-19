@@ -11,16 +11,18 @@ export function shouldUseServerlessChromium({
   return platform === 'linux' && vercel === '1';
 }
 
-export async function launchBrowser() {
+export async function launchBrowser({ serverless = shouldUseServerlessChromium() } = {}) {
   const { chromium } = await import('playwright');
-  if (shouldUseServerlessChromium()) {
+  if (serverless) {
     try {
       const { default: linuxChromium } = await import('@sparticuz/chromium');
       linuxChromium.setGraphicsMode = false;
       return await chromium.launch({
         executablePath: await linuxChromium.executablePath(),
         args: [
-          ...linuxChromium.args,
+          // Vercel builds support renderer subprocesses. Single-process mode
+          // crashes with multiple contexts and some pages' network activity.
+          ...linuxChromium.args.filter(argument => argument !== '--single-process'),
           '--disable-gpu',
           '--disable-dev-shm-usage',
           '--disable-gl-drawing-for-tests',
