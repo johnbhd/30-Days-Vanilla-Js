@@ -365,6 +365,46 @@ canvas {
   min-width: 0;
 }
 
+.toggle-card-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #cbd5e1;
+  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  font-size: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: auto;
+  transition: all 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.toggle-card-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-color: #4ecca3;
+}
+
+.hero-panel.collapsed {
+  padding: 4px 6px;
+}
+
+.hero-panel.collapsed .exp-bar-container,
+.hero-panel.collapsed .builds-header,
+.hero-panel.collapsed .inventory-tray,
+.hero-panel.collapsed .icon-action-btn,
+.hero-panel.collapsed .hero-badges {
+  display: none !important;
+}
+
+.hero-panel.collapsed .hero-panel-actions {
+  margin-top: 2px;
+}
+
 .hero-lvl-circle {
   width: 17px;
   height: 17px;
@@ -769,6 +809,10 @@ canvas {
   padding: 24px;
   max-width: 680px;
   width: 92%;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
 }
 
@@ -1195,6 +1239,10 @@ canvas {
   padding: 20px 24px;
   width: 90%;
   max-width: 680px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
 }
 
@@ -1274,6 +1322,10 @@ canvas {
   padding: 20px 24px;
   width: 90%;
   max-width: 460px;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
 }
 
@@ -1442,6 +1494,21 @@ canvas {
     font-size: 0.95rem;
     padding: 12px 20px;
   }
+  .game-wrapper {
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    aspect-ratio: unset !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
   .ui-overlay {
     padding: 8px;
   }
@@ -1450,13 +1517,32 @@ canvas {
     align-items: flex-start;
   }
   .top-right-column {
-    width: clamp(155px, 35vw, 190px);
+    width: auto;
+    max-width: 185px;
     margin-top: 0;
-    gap: 4px;
+    gap: 0;
   }
   .hero-panel {
     width: 100%;
     padding: 4px 6px;
+    background: rgba(12, 18, 34, 0.68);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(78, 204, 163, 0.25);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  }
+  .hero-panel.collapsed {
+    padding: 3px 6px;
+  }
+  .hero-panel.collapsed .exp-bar-container,
+  .hero-panel.collapsed .builds-header,
+  .hero-panel.collapsed .inventory-tray,
+  .hero-panel.collapsed .icon-action-btn,
+  .hero-panel.collapsed .hero-badges {
+    display: none !important;
+  }
+  .hero-panel.collapsed .hero-panel-actions {
+    margin-top: 2px;
   }
   .hero-lvl-circle {
     width: 14px;
@@ -1490,16 +1576,34 @@ canvas {
     padding: 1px 3px;
   }
   .hero-skills-panel {
-    width: 100%;
+    position: fixed;
+    bottom: calc(10px + env(safe-area-inset-bottom, 8px));
+    right: calc(10px + env(safe-area-inset-right, 8px));
+    width: auto;
+    max-width: none;
+    background: rgba(12, 18, 34, 0.62);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(78, 204, 163, 0.25);
+    border-radius: 14px;
     padding: 4px 6px;
+    z-index: 60;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  }
+  .skills-panel-header {
+    display: none;
+  }
+  .skills-tray {
+    gap: 5px;
+    margin-top: 0;
   }
   .skill-circle-btn {
-    width: 34px;
-    height: 34px;
-  }
-  .ultimate-circle-btn {
     width: 38px;
     height: 38px;
+    background: radial-gradient(circle, rgba(26, 39, 68, 0.8) 0%, rgba(13, 23, 46, 0.9) 100%);
+  }
+  .ultimate-circle-btn {
+    width: 44px;
+    height: 44px;
   }
   .skill-icon-wrap {
     font-size: 12px;
@@ -1508,8 +1612,8 @@ canvas {
     font-size: 13px;
   }
   .skill-label {
-    font-size: 7px;
-    max-width: 30px;
+    font-size: 6.5px;
+    max-width: 36px;
   }
   .inv-slot {
     width: 20px;
@@ -1585,15 +1689,13 @@ canvas {
   .ui-overlay {
     padding: 5px;
   }
-  .top-row {
-    justify-content: flex-end;
-  }
   .top-right-column {
-    width: clamp(130px, 45vw, 160px);
-    gap: 3px;
+    max-width: 155px;
+    gap: 0;
   }
   .hero-panel {
     padding: 3px 5px;
+    border-radius: 6px;
   }
   .hero-panel-header h2 {
     font-size: 0.72rem;
@@ -1640,26 +1742,23 @@ canvas {
     padding: 0;
   }
   .hero-skills-panel {
+    bottom: calc(8px + env(safe-area-inset-bottom, 6px));
+    right: calc(8px + env(safe-area-inset-right, 6px));
     padding: 3px 5px;
   }
   .skills-panel-header {
-    font-size: 0.58rem;
-    margin-bottom: 2px;
-    padding-bottom: 2px;
-  }
-  .skills-keys-hint {
-    font-size: 0.52rem;
+    display: none;
   }
   .skills-tray {
-    gap: 2px;
+    gap: 3px;
   }
   .skill-circle-btn {
-    width: 26px;
-    height: 26px;
+    width: 34px;
+    height: 34px;
   }
   .ultimate-circle-btn {
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
   }
   .skill-key-badge {
     width: 11px;
@@ -1669,21 +1768,44 @@ canvas {
     left: -2px;
   }
   .skill-icon-wrap {
-    font-size: 9.5px;
+    font-size: 10px;
   }
   .skill-icon-r {
-    font-size: 10.5px;
+    font-size: 11.5px;
   }
   .skill-label {
     font-size: 6px;
-    max-width: 28px;
+    max-width: 30px;
     line-height: 1;
     display: block;
   }
 }
 
-/* Ensure full-screen scrollable hero select on mobile portrait devices */
+/* Ensure full-screen canvas and zoomed hero on mobile portrait devices */
 @media (orientation: portrait) {
+  body {
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+  }
+  .game-wrapper {
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    aspect-ratio: unset !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
   .hero-select-overlay {
     position: fixed;
     top: 0;
@@ -1693,10 +1815,44 @@ canvas {
     height: 100dvh;
     z-index: 200;
   }
+  .hero-skills-panel {
+    position: fixed;
+    bottom: calc(10px + env(safe-area-inset-bottom, 8px));
+    right: calc(10px + env(safe-area-inset-right, 8px));
+    width: auto;
+    max-width: none;
+    z-index: 60;
+  }
+  .skills-panel-header {
+    display: none;
+  }
 }
 
-/* Ensure compact layout and smooth scrolling on landscape mobile phones */
+/* Ensure full-screen landscape canvas with non-blocking HUD controls */
 @media (orientation: landscape) and (max-height: 600px) {
+  body {
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+  }
+  .game-wrapper {
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    aspect-ratio: unset !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
   .hero-select-overlay {
     position: fixed;
     top: 0;
@@ -1754,5 +1910,56 @@ canvas {
     min-height: 36px;
     font-size: 0.82rem;
     padding: 6px 16px;
+  }
+  .top-right-column {
+    max-width: 165px;
+    gap: 0;
+  }
+  .hero-panel {
+    background: rgba(12, 18, 34, 0.65);
+    backdrop-filter: blur(6px);
+    padding: 3px 5px;
+  }
+  .hero-skills-panel {
+    position: fixed;
+    bottom: calc(8px + env(safe-area-inset-bottom, 6px));
+    right: calc(8px + env(safe-area-inset-right, 6px));
+    background: rgba(12, 18, 34, 0.6);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(78, 204, 163, 0.25);
+    border-radius: 12px;
+    padding: 3px 5px;
+    z-index: 60;
+  }
+  .skills-panel-header {
+    display: none;
+  }
+  .skills-tray {
+    gap: 4px;
+  }
+  .skill-circle-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .ultimate-circle-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .skill-key-badge {
+    width: 11px;
+    height: 11px;
+    font-size: 7px;
+    top: -2px;
+    left: -2px;
+  }
+  .skill-icon-wrap {
+    font-size: 10px;
+  }
+  .skill-icon-r {
+    font-size: 11px;
+  }
+  .skill-label {
+    font-size: 5.5px;
+    max-width: 30px;
   }
 }

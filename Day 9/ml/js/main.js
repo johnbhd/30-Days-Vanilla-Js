@@ -334,6 +334,18 @@ if (changeHeroBtn) {
   });
 }
 
+// Collapsible Hero Panel on Mobile
+const toggleHeroPanelBtn = document.getElementById("toggleHeroPanelBtn");
+const heroPanelEl = document.getElementById("heroPanel");
+if (toggleHeroPanelBtn && heroPanelEl) {
+  toggleHeroPanelBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    heroPanelEl.classList.toggle("collapsed");
+    const isCollapsed = heroPanelEl.classList.contains("collapsed");
+    toggleHeroPanelBtn.innerHTML = isCollapsed ? '<i class="fa-solid fa-chevron-down"></i>' : '<i class="fa-solid fa-chevron-up"></i>';
+  });
+}
+
 // Shop toggle buttons
 if (openShopBtn) {
   openShopBtn.addEventListener("click", () => {

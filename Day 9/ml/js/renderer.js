@@ -94,8 +94,26 @@ class Renderer {
   renderUI(hero, matchTime, waveCount, blueCrystal, redCrystal, gameStats, enemyBot) {
     this.ctx.save();
 
+    // Determine visible horizontal window if canvas is using object-fit: cover in mobile portrait
+    let visibleLeft = 0;
+    let visibleRight = GAME.CANVAS_WIDTH;
+    if (this.canvas && typeof window !== "undefined") {
+      const rect = this.canvas.getBoundingClientRect();
+      const style = window.getComputedStyle(this.canvas);
+      if (style && style.objectFit === "cover" && rect.width > 0 && rect.height > 0) {
+        const canvasAspect = GAME.CANVAS_WIDTH / GAME.CANVAS_HEIGHT;
+        const rectAspect = rect.width / rect.height;
+        if (rectAspect < canvasAspect) {
+          const scale = rect.height / GAME.CANVAS_HEIGHT;
+          const cropX = (GAME.CANVAS_WIDTH * scale - rect.width) / 2 / scale;
+          visibleLeft = cropX;
+          visibleRight = GAME.CANVAS_WIDTH - cropX;
+        }
+      }
+    }
+
     // Top-left Match Status HUD (Clock & Wave Card on Canvas)
-    const hudX = 14;
+    const hudX = visibleLeft + 14;
     const hudY = 14;
     const hudWidth = 205;
     const hasBotDead = enemyBot && enemyBot.isDead;
@@ -142,7 +160,7 @@ class Renderer {
     if (hero && hero.isDead) {
       const bannerW = 280;
       const bannerH = 50;
-      const bx = (GAME.CANVAS_WIDTH - bannerW) / 2;
+      const bx = (visibleLeft + visibleRight - bannerW) / 2;
       const by = 18;
 
       this.ctx.save();

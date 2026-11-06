@@ -14,10 +14,30 @@ const Input = {
   init(canvas, camera) {
     const updateCoords = (clientX, clientY) => {
       const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      this.mouseX = (clientX - rect.left) * scaleX;
-      this.mouseY = (clientY - rect.top) * scaleY;
+      if (!rect || rect.width <= 0 || rect.height <= 0) return;
+
+      const style = (typeof window !== "undefined") ? window.getComputedStyle(canvas) : null;
+      if (style && style.objectFit === "cover") {
+        const canvasAspect = canvas.width / canvas.height;
+        const rectAspect = rect.width / rect.height;
+        let scale, offsetX = 0, offsetY = 0;
+        if (rectAspect < canvasAspect) {
+          // Cropped horizontally (e.g. mobile portrait)
+          scale = rect.height / canvas.height;
+          offsetX = (canvas.width * scale - rect.width) / 2;
+        } else {
+          // Cropped vertically (e.g. wide mobile landscape)
+          scale = rect.width / canvas.width;
+          offsetY = (canvas.height * scale - rect.height) / 2;
+        }
+        this.mouseX = ((clientX - rect.left) + offsetX) / scale;
+        this.mouseY = ((clientY - rect.top) + offsetY) / scale;
+      } else {
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        this.mouseX = (clientX - rect.left) * scaleX;
+        this.mouseY = (clientY - rect.top) * scaleY;
+      }
     };
 
     // Click to set move target or attack target
