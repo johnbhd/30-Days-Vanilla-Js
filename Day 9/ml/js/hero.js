@@ -630,13 +630,22 @@ class Hero {
 
     // Perform Attack
     if (this.attackTarget && this.attackTimer <= 0) {
-      this.attackTimer = this.attackCooldown;
+      let cooldown = this.attackCooldown;
+      if (skillManager && skillManager.activeBuffs && skillManager.activeBuffs.attackSpeedBoost > 1) {
+        cooldown /= skillManager.activeBuffs.attackSpeedBoost;
+      }
+      this.attackTimer = cooldown;
       const tx = this.attackTarget.x !== undefined ? this.attackTarget.x : this.attackTarget.worldX;
       const ty = this.attackTarget.y !== undefined ? this.attackTarget.y : this.attackTarget.worldY;
 
+      let effectiveDmg = this.attackDamage;
+      if (skillManager && skillManager.activeBuffs && skillManager.activeBuffs.bonusDamage > 0) {
+        effectiveDmg += skillManager.activeBuffs.bonusDamage;
+      }
+
       // Spawn projectile if ranged or instant strike if melee
       const isRanged = this.attackRange > 130;
-      if (gameStats) gameStats.damageDealt += this.attackDamage;
+      if (gameStats) gameStats.damageDealt += effectiveDmg;
 
       if (sound) {
         if (isRanged) sound.playShoot();
@@ -660,7 +669,7 @@ class Hero {
             y: this.y,
             target: this.attackTarget,
             speed: 460,
-            damage: this.attackDamage,
+            damage: effectiveDmg,
             team: this.team,
             color: projColor,
             radius: this.id === "angela" ? 5 : 4
@@ -677,10 +686,10 @@ class Hero {
 
         // Direct melee strike
         if (typeof this.attackTarget.takeDamage === "function") {
-          this.attackTarget.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
+          this.attackTarget.takeDamage(effectiveDmg, this, combatTexts, particles, sound, scoreboard);
         } else if (this.attackTarget.hp !== undefined) {
           const prevHp = this.attackTarget.hp || 0;
-          this.attackTarget.hp = Math.max(0, this.attackTarget.hp - this.attackDamage);
+          this.attackTarget.hp = Math.max(0, this.attackTarget.hp - effectiveDmg);
           if (prevHp > 0 && this.attackTarget.hp <= 0 && this.attackTarget.bounty) {
             const bounty = this.attackTarget.bounty;
             if (gameStats) {

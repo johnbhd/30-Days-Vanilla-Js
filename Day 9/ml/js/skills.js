@@ -5,16 +5,16 @@
 
 const HERO_SKILLS = {
   miya: {
-    q: { name: "Moon Arrow", cd: 4, type: "multishot", range: 340, indicator: "cone", desc: "Fires 3 split arrows at nearby enemies" },
-    w: { name: "Arrow of Eclipse", cd: 7, type: "aoe", radius: 60, range: 420, indicator: "circle_aoe", desc: "Rain of arrows slowing and damaging enemies" },
-    e: { name: "Moon Stride", cd: 10, type: "buff", desc: "Cleanse and +60% movement speed" },
-    r: { name: "Hidden Moonlight", cd: 24, type: "ultimate", desc: "Max attack speed surge and bonus attack damage" }
+    q: { name: "Moon Arrow", cd: 3.5, type: "multishot", range: 380, indicator: "cone", desc: "Fires 3 empowered moon split arrows dealing 260 burst" },
+    w: { name: "Arrow of Eclipse", cd: 6, type: "aoe", radius: 70, range: 440, indicator: "circle_aoe", desc: "Rain of moonlight arrows dealing 340 burst and slow" },
+    e: { name: "Moon Stride", cd: 9, type: "buff", desc: "Cleanse and +70% movement speed" },
+    r: { name: "Hidden Moonlight", cd: 22, type: "ultimate", desc: "Max attack speed surge (+120%), +40% speed, and +70 ATK" }
   },
   layla: {
-    q: { name: "Malefic Bomb", cd: 4, type: "laser", range: 400, indicator: "line", desc: "High-speed piercing laser beam" },
-    w: { name: "Void Projectile", cd: 6, type: "aoe", radius: 55, range: 420, indicator: "circle_aoe", desc: "Energy ball explosive blast" },
-    e: { name: "Range Mastery", cd: 11, type: "buff", desc: "+120 attack range and +25% move speed" },
-    r: { name: "Destruction Rush", cd: 28, type: "ultimate", range: 800, indicator: "line", desc: "Massive cannon laser down the lane" }
+    q: { name: "Malefic Bomb", cd: 3.5, type: "laser", range: 480, indicator: "line", desc: "High-speed piercing laser dealing 360 physical burst" },
+    w: { name: "Void Projectile", cd: 5.5, type: "aoe", radius: 65, range: 460, indicator: "circle_aoe", desc: "Explosive energy ball dealing 310 AOE burst and slow" },
+    e: { name: "Range Mastery", cd: 10, type: "buff", desc: "+140 attack range, +35% move speed, and +45 ATK" },
+    r: { name: "Destruction Rush", cd: 24, type: "laser", range: 920, indicator: "line", desc: "Massive cannon laser obliterating enemies down the lane for 880 damage" }
   },
   tigreal: {
     q: { name: "Attack Wave", cd: 5, type: "shockwave", range: 380, indicator: "line", desc: "Ground wave damaging and slowing enemies" },
@@ -23,10 +23,10 @@ const HERO_SKILLS = {
     r: { name: "Implosion", cd: 28, type: "ultimate_pull", desc: "Pulls all nearby enemies into Tigreal with a stun" }
   },
   angela: {
-    q: { name: "Love Waves", cd: 3.5, type: "wave_heal", range: 380, indicator: "line", desc: "Heals hero and damages enemies in a line" },
-    w: { name: "Puppet String", cd: 8, type: "targeted_cc", range: 340, indicator: "target", desc: "Tethers enemy, immobilizing them after 1s" },
-    e: { name: "Love Motion", cd: 9, type: "buff", desc: "+45% movement speed burst" },
-    r: { name: "Heartguard", cd: 28, type: "ultimate_shield", desc: "Massive 700 HP shield and +30 ATK" }
+    q: { name: "Love Waves", cd: 3.0, type: "wave_heal", range: 420, indicator: "line", desc: "Magical love wave restoring 240 HP and dealing 290 magic burst" },
+    w: { name: "Puppet String", cd: 7, type: "targeted_cc", range: 380, indicator: "target", desc: "Tethers enemy, dealing 340 magic damage and immobilizing for 1.2s" },
+    e: { name: "Love Motion", cd: 8, type: "buff", desc: "+60% move speed boost and self magic surge" },
+    r: { name: "Heartguard", cd: 25, type: "ultimate_shield", desc: "Empowers hero with 1100 HP shield and +75 magic attack" }
   },
   alucard: {
     q: { name: "Groundsplitter", cd: 5, type: "leap", range: 160, radius: 75, indicator: "circle_aoe", desc: "Leaps to cursor with greatsword slam" },
@@ -41,10 +41,10 @@ const HERO_SKILLS = {
     r: { name: "Lethal Counter", cd: 24, type: "ultimate_execute", range: 120, radius: 85, indicator: "circle_aoe", desc: "Slams axe down dealing heavy execute damage" }
   },
   gusion: {
-    q: { name: "Sword Spike", cd: 4, type: "dagger_teleport", range: 380, indicator: "line", desc: "Throws dagger; recast dashes behind target" },
-    w: { name: "Shadowblade", cd: 5, type: "dagger_fan", range: 350, indicator: "cone", desc: "Throws fan of 5 daggers that return" },
-    e: { name: "Incandescence", cd: 10, type: "dash_reset", range: 130, indicator: "dash", desc: "Dashes and instantly refreshes Q and W" },
-    r: { name: "Blade Barrage", cd: 22, type: "ultimate_storm", desc: "Unleashes rapid dagger storm in all directions" }
+    q: { name: "Sword Spike", cd: 3.5, type: "dagger_teleport", range: 420, indicator: "line", desc: "Throws piercing dagger dealing 320 damage; recast dashes behind target" },
+    w: { name: "Shadowblade", cd: 4.5, type: "dagger_fan", range: 380, indicator: "cone", desc: "Throws fan of 5 high-damage daggers dealing 210 each (1050+ burst) and return" },
+    e: { name: "Incandescence", cd: 9, type: "dash_reset", range: 140, indicator: "dash", desc: "Dashes forward and immediately resets Q and W cooldowns" },
+    r: { name: "Blade Barrage", cd: 20, type: "ultimate_storm", desc: "Unleashes 12 hyper-velocity blades in all directions dealing 280 burst each" }
   },
   saber: {
     q: { name: "Orbiting Swords", cd: 6, type: "swords_orbit", desc: "Spawns 4 spinning swords that strike enemies" },
@@ -53,18 +53,21 @@ const HERO_SKILLS = {
     r: { name: "Triple Sweep", cd: 26, type: "ultimate_execute", range: 260, indicator: "target", desc: "Locks onto target, knocks airborne with 3 slashes" }
   },
   pharsa: {
-    q: { name: "Curse of Crow", cd: 5, type: "aoe", radius: 50, range: 420, indicator: "circle_aoe", desc: "Crow mark stunning enemy on next attack" },
-    w: { name: "Energy Impact", cd: 5, type: "laser", range: 450, indicator: "line", desc: "Wide magical burst beam" },
-    e: { name: "Wings by Wings", cd: 12, type: "buff_fly", desc: "Transforms into flying crow with +80% move speed" },
-    r: { name: "Air Strike", cd: 28, type: "ultimate_meteor", range: 550, radius: 70, indicator: "circle_aoe", desc: "Bombards 4 consecutive air strikes at cursor" }
+    q: { name: "Curse of Crow", cd: 4.5, type: "aoe", radius: 60, range: 460, indicator: "circle_aoe", desc: "Crow mark dealing 310 magic damage and stunning enemies" },
+    w: { name: "Energy Impact", cd: 4.5, type: "laser", range: 500, indicator: "line", desc: "High-voltage magical burst laser dealing 420 damage" },
+    e: { name: "Wings by Wings", cd: 10, type: "buff_fly", desc: "Transforms into flying crow with +90% movement speed" },
+    r: { name: "Air Strike", cd: 25, type: "ultimate_meteor", range: 600, radius: 80, indicator: "circle_aoe", desc: "Bombards 4 massive consecutive meteor strikes dealing 460 damage each" }
   },
   nana: {
-    q: { name: "Magic Boomerang", cd: 4, type: "boomerang", range: 420, indicator: "line", desc: "Throws boomerang forward that damages and returns" },
-    w: { name: "Molina Smooch", cd: 9, type: "trap_morph", range: 400, radius: 50, indicator: "circle_aoe", desc: "Places Molina trap that morphs enemy into a cat" },
-    e: { name: "Molina Sprint", cd: 8, type: "buff", desc: "+50% move speed burst and heal" },
-    r: { name: "Molina Blitz", cd: 26, type: "ultimate_paws", range: 500, radius: 70, indicator: "circle_aoe", desc: "Summons 3 giant consecutive paw ground slams" }
+    q: { name: "Magic Boomerang", cd: 3.5, type: "boomerang", range: 460, indicator: "line", desc: "Throws giant magic boomerang dealing 320 magic damage outbound & return" },
+    w: { name: "Molina Smooch", cd: 7.5, type: "trap_morph", range: 420, radius: 60, indicator: "circle_aoe", desc: "Molina trap transforming enemy into cat, dealing 310 magic damage & slow" },
+    e: { name: "Molina Sprint", cd: 7, type: "buff", desc: "+60% move speed burst and 250 HP heal" },
+    r: { name: "Molina Blitz", cd: 24, type: "ultimate_paws", range: 540, radius: 78, indicator: "circle_aoe", desc: "Summons 3 giant consecutive paw ground slams dealing 440 magic burst each" }
   }
 };
+
+if (typeof window !== "undefined") window.HERO_SKILLS = HERO_SKILLS;
+if (typeof global !== "undefined") global.HERO_SKILLS = HERO_SKILLS;
 
 class SkillManager {
   constructor() {
@@ -76,6 +79,7 @@ class SkillManager {
       speedBoost: 0,
       attackSpeedBoost: 0,
       bonusDamage: 0,
+      bonusDamageTimer: 0,
       shield: 0,
       lifesteal: 0,
       isFlying: false,
@@ -237,10 +241,10 @@ class SkillManager {
     // Execute skill mechanics
     switch (skill.type) {
       case "multishot": {
-        // Fire 3 arrows oriented towards cursor / targets
+        // Miya Moon Arrow: 3 empowered split arrows dealing heavy burst (260 base)
         let fired = 0;
         const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
-        const candidates = enemies.filter(e => getDistance(hero.x, hero.y, e.x, e.y) <= 340);
+        const candidates = enemies.filter(e => getDistance(hero.x, hero.y, e.x, e.y) <= 380);
 
         // Prioritize enemies closest to cursor aim point
         candidates.sort((a, b) => {
@@ -254,9 +258,9 @@ class SkillManager {
             const ed = getDistance(hero.x, hero.y, e.x, e.y) || 1;
             this.activeProjectiles.push({
               x: hero.x, y: hero.y,
-              vx: ((e.x - hero.x) / ed) * 520,
-              vy: ((e.y - hero.y) / ed) * 520,
-              radius: 4, damage: Math.round(180 * dmgMultiplier), team: hero.team, color: "#f1c40f", life: 0.8
+              vx: ((e.x - hero.x) / ed) * 580,
+              vy: ((e.y - hero.y) / ed) * 580,
+              radius: 5, damage: Math.round(260 * dmgMultiplier), team: hero.team, color: "#f1c40f", life: 0.85
             });
             fired++;
           }
@@ -270,9 +274,9 @@ class SkillManager {
             const a = baseAngle + angles[i];
             this.activeProjectiles.push({
               x: hero.x, y: hero.y,
-              vx: Math.cos(a) * 520,
-              vy: Math.sin(a) * 520,
-              radius: 4, damage: Math.round(180 * dmgMultiplier), team: hero.team, color: "#f1c40f", life: 0.8
+              vx: Math.cos(a) * 580,
+              vy: Math.sin(a) * 580,
+              radius: 5, damage: Math.round(260 * dmgMultiplier), team: hero.team, color: "#f1c40f", life: 0.85
             });
           }
         }
@@ -280,31 +284,76 @@ class SkillManager {
       }
 
       case "laser": {
-        // High speed piercing laser
-        const beamRange = slot === "r" ? 800 : 400;
-        const beamDmg = slot === "r" ? 520 : 220;
+        // High speed piercing laser / energy beam
+        let beamRange = 440;
+        let beamDmg = 280;
+        let beamWidth = 14;
+        let beamColor = "#3498db";
+
+        if (hero.id === "layla") {
+          if (slot === "r") {
+            beamRange = 920;
+            beamDmg = 880;
+            beamWidth = 28;
+            beamColor = "#ffd700";
+          } else {
+            beamRange = 480;
+            beamDmg = 360;
+            beamWidth = 16;
+            beamColor = "#e67e22";
+          }
+        } else if (hero.id === "pharsa") {
+          beamRange = 500;
+          beamDmg = 420;
+          beamWidth = 18;
+          beamColor = "#9b59b6";
+        } else if (slot === "r") {
+          beamRange = 800;
+          beamDmg = 520;
+          beamWidth = 22;
+          beamColor = "#e74c3c";
+        }
+
         this.activeAOEs.push({
           type: "beam",
           startX: hero.x, startY: hero.y,
           endX: hero.x + dirX * beamRange, endY: hero.y + dirY * beamRange,
-          width: slot === "r" ? 22 : 12,
+          width: beamWidth,
           damage: Math.round(beamDmg * dmgMultiplier),
           team: hero.team,
-          color: slot === "r" ? "#e74c3c" : "#3498db",
-          life: 0.35, maxLife: 0.35
+          color: beamColor,
+          life: 0.4, maxLife: 0.4
         });
         break;
       }
 
       case "aoe": {
-        // AOE blast at cursor
+        // AOE blast at cursor (Miya W, Layla W, Pharsa Q)
+        let radius = skill.radius || 60;
+        let baseDmg = 260;
+        let color = "rgba(155, 89, 182, 0.55)";
+
+        if (hero.id === "miya") {
+          baseDmg = 340;
+          radius = 70;
+          color = "rgba(241, 196, 15, 0.55)";
+        } else if (hero.id === "layla") {
+          baseDmg = 310;
+          radius = 65;
+          color = "rgba(230, 126, 34, 0.55)";
+        } else if (hero.id === "pharsa") {
+          baseDmg = 320;
+          radius = 65;
+          color = "rgba(142, 68, 173, 0.6)";
+        }
+
         this.activeAOEs.push({
           type: "circle",
           x: targetX, y: targetY,
-          radius: skill.radius || 55,
-          damage: Math.round(190 * dmgMultiplier),
+          radius: radius,
+          damage: Math.round(baseDmg * dmgMultiplier),
           team: hero.team,
-          color: "rgba(155, 89, 182, 0.45)",
+          color: color,
           life: 0.8, maxLife: 0.8
         });
         break;
@@ -431,24 +480,50 @@ class SkillManager {
       }
 
       case "wave_heal": {
-        hero.hp = Math.min(hero.maxHp, hero.hp + Math.round(150 * dmgMultiplier));
+        const healAmt = Math.round(240 * dmgMultiplier);
+        hero.hp = Math.min(hero.maxHp, hero.hp + healAmt);
+        if (combatTexts) {
+          combatTexts.push({ x: hero.x, y: hero.y - 20, text: `+${healAmt} HP`, color: "#2ecc71", life: 1, maxLife: 1 });
+        }
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,
-          vx: dirX * 420, vy: dirY * 420,
-          radius: 14, damage: Math.round(180 * dmgMultiplier), team: hero.team, color: "#f39c12", life: 0.9
+          vx: dirX * 460, vy: dirY * 460,
+          radius: 15, damage: Math.round(290 * dmgMultiplier), team: hero.team, color: "#ff69b4", life: 0.9
+        });
+        break;
+      }
+
+      case "targeted_cc": {
+        // Angela Puppet String: magical burst & bind
+        this.activeProjectiles.push({
+          x: hero.x, y: hero.y,
+          vx: dirX * 480, vy: dirY * 480,
+          radius: 12, damage: Math.round(340 * dmgMultiplier), team: hero.team, color: "#e91e63", life: 0.9,
+          isCC: true, ccDuration: 1.2
         });
         break;
       }
 
       case "dagger_fan": {
+        // Gusion Shadowblade: 5 daggers dealing shotgun burst blade damage
         for (let i = -2; i <= 2; i++) {
-          const angle = Math.atan2(dirY, dirX) + (i * 0.18);
+          const angle = Math.atan2(dirY, dirX) + (i * 0.16);
           this.activeProjectiles.push({
             x: hero.x, y: hero.y,
-            vx: Math.cos(angle) * 440, vy: Math.sin(angle) * 440,
-            radius: 5, damage: Math.round(95 * dmgMultiplier), team: hero.team, color: "#e74c3c", life: 0.8
+            vx: Math.cos(angle) * 520, vy: Math.sin(angle) * 520,
+            radius: 6, damage: Math.round(210 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 0.8
           });
         }
+        break;
+      }
+
+      case "dagger_teleport": {
+        // Gusion Sword Spike: sharp dagger dealing heavy burst blade damage
+        this.activeProjectiles.push({
+          x: hero.x, y: hero.y,
+          vx: dirX * 620, vy: dirY * 620,
+          radius: 8, damage: Math.round(320 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 0.85
+        });
         break;
       }
 
@@ -471,10 +546,34 @@ class SkillManager {
       }
 
       case "boomerang": {
+        // Nana Magic Boomerang: hurls magical boomerang dealing high burst
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,
-          vx: dirX * 400, vy: dirY * 400,
-          radius: 8, damage: Math.round(175 * dmgMultiplier), team: hero.team, color: "#2ecc71", life: 1.2
+          vx: dirX * 460, vy: dirY * 460,
+          radius: 12, damage: Math.round(320 * dmgMultiplier), team: hero.team, color: "#2ecc71", life: 1.1
+        });
+        break;
+      }
+
+      case "trap_morph": {
+        // Nana Molina Smooch: summons Molina trap that bursts & morphs/stuns
+        this.activeAOEs.push({
+          type: "circle",
+          x: targetX, y: targetY,
+          radius: 65,
+          damage: Math.round(310 * dmgMultiplier),
+          team: hero.team,
+          color: "rgba(243, 156, 18, 0.6)",
+          life: 0.7, maxLife: 0.7
+        });
+        const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
+        enemies.forEach(e => {
+          if (getDistance(targetX, targetY, e.x, e.y) <= 65) {
+            const isBossOrTurret = e.isTurret || e.isBoss || (objectives && (e === objectives.turtle || e === objectives.lord));
+            if (!isBossOrTurret && typeof e.applyStun === "function") {
+              e.applyStun(1.2, combatTexts);
+            }
+          }
         });
         break;
       }
@@ -524,25 +623,65 @@ class SkillManager {
         radius: 20, damage: Math.round(420 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 1.2
       });
     } else if (type === "ultimate_storm") {
-      for (let i = 0; i < 10; i++) {
-        const angle = (Math.PI * 2 / 10) * i;
+      // Gusion Blade Barrage: dashes forward, resets Q & W cooldowns, and fires 12 ring blades
+      const origX = hero.x;
+      const origY = hero.y;
+      const mapMaxX = map ? map.width * map.tileSize : 1280;
+      const mapMaxY = map ? map.height * map.tileSize : 720;
+      let destX = clamp(hero.x + dirX * 120, 60, mapMaxX - 60);
+      let destY = clamp(hero.y + dirY * 120, 60, mapMaxY - 60);
+      const safePos = this.resolveTurretCollision(destX, destY, map, origX, origY);
+      hero.x = safePos.x;
+      hero.y = safePos.y;
+      hero.targetX = hero.x;
+      hero.targetY = hero.y;
+      this.cooldowns.q = 0;
+      this.cooldowns.w = 0;
+
+      if (particles) {
+        if (particles.spawnSlash) particles.spawnSlash(origX, origY, destX, destY, "#9b59b6", 48);
+        particles.spawnBurst(destX, destY, "#ffd700", 16, 160);
+      }
+      if (sound && sound.playSlash) sound.playSlash();
+
+      for (let i = 0; i < 12; i++) {
+        const angle = (Math.PI * 2 / 12) * i;
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,
-          vx: Math.cos(angle) * 420, vy: Math.sin(angle) * 420,
-          radius: 5, damage: Math.round(120 * dmgMultiplier), team: hero.team, color: "#e74c3c", life: 0.9
+          vx: Math.cos(angle) * 460, vy: Math.sin(angle) * 460,
+          radius: 6, damage: Math.round(280 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 0.95
         });
       }
-    } else if (type === "ultimate_meteor" || type === "ultimate_paws") {
+    } else if (type === "ultimate_meteor") {
+      // Pharsa Feathered Air Strike: 4 massive consecutive magical artillery meteor bombardments
+      for (let i = 0; i < 4; i++) {
+        this.activeAOEs.push({
+          type: "circle",
+          x: targetX + (i % 2 === 0 ? -1 : 1) * (i * 18),
+          y: targetY + (i > 1 ? 1 : -1) * (i * 14),
+          radius: 90,
+          damage: Math.round(460 * dmgMultiplier),
+          team: hero.team,
+          color: "rgba(142, 68, 173, 0.65)",
+          delay: i * 0.3,
+          life: 0.65, maxLife: 0.65
+        });
+      }
+    } else if (type === "ultimate_paws") {
+      // Nana Molina Blitz: 3 giant consecutive magical paw ground slams with mini-stun
       for (let i = 0; i < 3; i++) {
         this.activeAOEs.push({
           type: "circle",
-          x: targetX + (i - 1) * 35, y: targetY + (i - 1) * 20,
-          radius: 70,
-          damage: Math.round(260 * dmgMultiplier),
+          x: targetX + (i - 1) * 32,
+          y: targetY + (i - 1) * 18,
+          radius: 85,
+          damage: Math.round(440 * dmgMultiplier),
           team: hero.team,
-          color: "rgba(155, 89, 182, 0.6)",
-          delay: i * 0.25,
-          life: 0.6, maxLife: 0.6
+          color: "rgba(230, 126, 34, 0.65)",
+          delay: i * 0.28,
+          life: 0.6, maxLife: 0.6,
+          isStun: true,
+          stunDuration: 0.5
         });
       }
     } else if (type === "ultimate_pull") {
@@ -584,12 +723,28 @@ class SkillManager {
         particles.spawnBurst(hero.x, hero.y, "#3498db", 20, 150);
       }
     } else if (type === "ultimate_shield") {
-      this.activeBuffs.shield = 750;
-      this.activeBuffs.bonusDamage = 35;
+      // Angela Heartguard: massive 1100 shield + bonus magical attack boost
+      const shieldAmt = Math.round(1100 * dmgMultiplier);
+      this.activeBuffs.shield = shieldAmt;
+      this.activeBuffs.bonusDamage = Math.round(75 * dmgMultiplier);
+      this.activeBuffs.bonusDamageTimer = 6.0;
+      this.activeBuffs.speedBoost = 2.5;
+      if (combatTexts) {
+        combatTexts.push({ x: hero.x, y: hero.y - 25, text: `+${shieldAmt} SHIELD`, color: "#3498db", life: 1.5, maxLife: 1.5 });
+      }
+      if (particles) {
+        particles.spawnRing(hero.x, hero.y, 50, "#ff69b4", 0.8);
+      }
     } else {
-      // General Ultimate buff
-      this.activeBuffs.attackSpeedBoost = 1.8;
-      this.activeBuffs.speedBoost = 2.0;
+      // Miya Hidden Moonlight & General Ultimate surge
+      this.activeBuffs.attackSpeedBoost = 2.2;
+      this.activeBuffs.speedBoost = 2.5;
+      this.activeBuffs.bonusDamage = 70;
+      this.activeBuffs.bonusDamageTimer = 5.0;
+      if (particles) {
+        particles.spawnRing(hero.x, hero.y, 45, "#f1c40f", 0.6);
+        particles.spawnBurst(hero.x, hero.y, "#ffffff", 14, 120);
+      }
     }
   }
 
@@ -601,7 +756,7 @@ class SkillManager {
         enemies.push(b);
       }
     });
-    if (minions) {
+    if (minions && Array.isArray(minions)) {
       minions.forEach(m => {
         if (m.team !== hero.team && m.hp > 0) enemies.push(m);
       });
@@ -687,6 +842,12 @@ class SkillManager {
     if (this.activeBuffs.speedBoost > 0) this.activeBuffs.speedBoost = Math.max(0, this.activeBuffs.speedBoost - dt);
     if (this.activeBuffs.attackSpeedBoost > 0) this.activeBuffs.attackSpeedBoost = Math.max(0, this.activeBuffs.attackSpeedBoost - dt);
     if (this.activeBuffs.lifesteal > 0) this.activeBuffs.lifesteal = Math.max(0, this.activeBuffs.lifesteal - dt);
+    if (this.activeBuffs.bonusDamageTimer > 0) {
+      this.activeBuffs.bonusDamageTimer = Math.max(0, this.activeBuffs.bonusDamageTimer - dt);
+      if (this.activeBuffs.bonusDamageTimer === 0) {
+        this.activeBuffs.bonusDamage = 0;
+      }
+    }
 
     // Cyclone spin ticks (Balmond W)
     if (this.cycloneTimer > 0) {
@@ -713,6 +874,12 @@ class SkillManager {
       for (const e of enemies) {
         if (getDistance(p.x, p.y, e.x, e.y) <= (p.radius + (e.radius || 15))) {
           this.applySkillDamage(e, p.damage, hero, combatTexts, gameStats, scoreboard, sound, particles);
+          if (p.isCC && typeof e.applyStun === "function") {
+            const isBossOrTurret = e.isTurret || e.isBoss || (objectives && (e === objectives.turtle || e === objectives.lord));
+            if (!isBossOrTurret) {
+              e.applyStun(p.ccDuration || 1.0, combatTexts);
+            }
+          }
           hit = true;
           break;
         }
@@ -746,6 +913,12 @@ class SkillManager {
 
           if (inRange) {
             this.applySkillDamage(e, aoe.damage, hero, combatTexts, gameStats, scoreboard, sound, particles);
+            if (aoe.isStun && typeof e.applyStun === "function") {
+              const isBossOrTurret = e.isTurret || e.isBoss || (objectives && (e === objectives.turtle || e === objectives.lord));
+              if (!isBossOrTurret) {
+                e.applyStun(aoe.stunDuration || 0.5, combatTexts);
+              }
+            }
           }
         });
         aoe.damage = 0; // dealt once
@@ -817,3 +990,6 @@ class SkillManager {
     });
   }
 }
+
+if (typeof window !== "undefined") window.SkillManager = SkillManager;
+if (typeof global !== "undefined") global.SkillManager = SkillManager;

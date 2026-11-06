@@ -50,12 +50,8 @@ class BotHero {
     this.attackCooldown = 0.9;
     this.attackTimer = 0;
 
-    // Skills cooldowns
-    this.skills = {
-      q: { name: "Skill 1", cd: 0, maxCd: 5, damage: 90, range: 220 },
-      w: { name: "Skill 2", cd: 0, maxCd: 8, damage: 140, range: 180 },
-      r: { name: "Ultimate", cd: 0, maxCd: 25, damage: 320, range: 250 }
-    };
+    // Hero-specific signature burst and magical skills
+    this.skills = this.initHeroSkills(heroData);
 
     // State: "LANING", "COMBAT", "RETREAT", "CLASH", "OBJECTIVE", "DEAD"
     this.state = "LANING";
@@ -101,6 +97,83 @@ class BotHero {
     this.skillPoints = 1;
     this.skillLevels = { q: 1, w: 0, e: 0, r: 0 };
     this.passiveExpTimer = 0;
+  }
+
+  initHeroSkills(heroData) {
+    const heroId = (heroData && heroData.id) ? heroData.id.toLowerCase() : "default";
+
+    // Signature kit presets with custom burst and magical damages
+    const signatureKits = {
+      gusion: {
+        q: { name: "Sword Spike", cd: 0, maxCd: 5, damage: 320, range: 350 },
+        w: { name: "Shadowblade", cd: 0, maxCd: 6, damage: 600, range: 300 },
+        r: { name: "Blade Barrage", cd: 0, maxCd: 20, damage: 880, range: 360 }
+      },
+      layla: {
+        q: { name: "Malefic Bomb", cd: 0, maxCd: 4, damage: 360, range: 480 },
+        w: { name: "Void Projectile", cd: 0, maxCd: 7, damage: 310, range: 420 },
+        r: { name: "Destruction Rush", cd: 0, maxCd: 22, damage: 880, range: 550 }
+      },
+      miya: {
+        q: { name: "Moon Arrow", cd: 0, maxCd: 5, damage: 480, range: 420 },
+        w: { name: "Arrow of Eclipse", cd: 0, maxCd: 7, damage: 340, range: 380 },
+        r: { name: "Hidden Moonlight", cd: 0, maxCd: 24, damage: 420, range: 320 }
+      },
+      angela: {
+        q: { name: "Love Waves", cd: 0, maxCd: 5, damage: 290, range: 360 },
+        w: { name: "Puppet String", cd: 0, maxCd: 8, damage: 340, range: 320 },
+        r: { name: "Heartguard", cd: 0, maxCd: 25, damage: 460, range: 400 }
+      },
+      pharsa: {
+        q: { name: "Curse of Crow", cd: 0, maxCd: 5, damage: 320, range: 440 },
+        w: { name: "Energy Impact", cd: 0, maxCd: 6, damage: 420, range: 480 },
+        r: { name: "Feathered Air Strike", cd: 0, maxCd: 24, damage: 1280, range: 520 }
+      },
+      nana: {
+        q: { name: "Magic Boomerang", cd: 0, maxCd: 5, damage: 320, range: 420 },
+        w: { name: "Molina Smooch", cd: 0, maxCd: 8, damage: 310, range: 340 },
+        r: { name: "Molina Blitz", cd: 0, maxCd: 22, damage: 1020, range: 400 }
+      },
+      tigreal: {
+        q: { name: "Attack Wave", cd: 0, maxCd: 5, damage: 220, range: 250 },
+        w: { name: "Sacred Hammer", cd: 0, maxCd: 8, damage: 260, range: 180 },
+        r: { name: "Implosion", cd: 0, maxCd: 25, damage: 420, range: 200 }
+      },
+      alucard: {
+        q: { name: "Groundsplitter", cd: 0, maxCd: 6, damage: 280, range: 240 },
+        w: { name: "Whirling Smash", cd: 0, maxCd: 5, damage: 260, range: 180 },
+        r: { name: "Fission Wave", cd: 0, maxCd: 22, damage: 480, range: 320 }
+      },
+      balmond: {
+        q: { name: "Soul Lock", cd: 0, maxCd: 6, damage: 220, range: 220 },
+        w: { name: "Cyclone Sweep", cd: 0, maxCd: 5, damage: 280, range: 160 },
+        r: { name: "Lethal Counter", cd: 0, maxCd: 20, damage: 580, range: 220 }
+      },
+      saber: {
+        q: { name: "Flying Sword", cd: 0, maxCd: 5, damage: 240, range: 280 },
+        w: { name: "Charge", cd: 0, maxCd: 6, damage: 220, range: 200 },
+        r: { name: "Triple Sweep", cd: 0, maxCd: 22, damage: 620, range: 240 }
+      }
+    };
+
+    if (signatureKits[heroId]) {
+      return JSON.parse(JSON.stringify(signatureKits[heroId]));
+    }
+
+    if (typeof HERO_SKILLS !== "undefined" && HERO_SKILLS[heroId]) {
+      const hs = HERO_SKILLS[heroId];
+      return {
+        q: { name: hs.q.name, cd: 0, maxCd: hs.q.cooldown, damage: 220, range: hs.q.range || 220 },
+        w: { name: hs.w.name, cd: 0, maxCd: hs.w.cooldown, damage: 260, range: hs.w.range || 200 },
+        r: { name: hs.r.name, cd: 0, maxCd: hs.r.cooldown, damage: 520, range: hs.r.range || 320 }
+      };
+    }
+
+    return {
+      q: { name: "Skill 1", cd: 0, maxCd: 5, damage: 160, range: 220 },
+      w: { name: "Skill 2", cd: 0, maxCd: 8, damage: 220, range: 180 },
+      r: { name: "Ultimate", cd: 0, maxCd: 25, damage: 450, range: 250 }
+    };
   }
 
   gainExp(amount, combatTexts, particles, sound) {
@@ -632,6 +705,16 @@ class BotHero {
       } else {
         targetHero.hp -= this.skills.q.damage;
       }
+      if (combatTexts) {
+        combatTexts.push({
+          x: targetHero.x,
+          y: targetHero.y - 20,
+          text: `[${this.team}] ${this.skills.q.name.toUpperCase()} -${this.skills.q.damage}!`,
+          color: "#f39c12",
+          life: 1.0,
+          maxLife: 1.0
+        });
+      }
     }
     // Cast Skill 2 (W)
     else if (this.skills.w.cd <= 0 && dist <= this.skills.w.range) {
@@ -642,6 +725,21 @@ class BotHero {
         targetHero.takeDamage(this.skills.w.damage, this, combatTexts, particles, sound, scoreboard);
       } else {
         targetHero.hp -= this.skills.w.damage;
+      }
+      // Angela Puppet String or Nana Molina morph stun CC
+      const hid = (this.heroData && this.heroData.id) ? this.heroData.id.toLowerCase() : "";
+      if ((hid === "angela" || hid === "nana" || hid === "tigreal") && typeof targetHero.applyStun === "function") {
+        targetHero.applyStun(1.0, combatTexts);
+      }
+      if (combatTexts) {
+        combatTexts.push({
+          x: targetHero.x,
+          y: targetHero.y - 20,
+          text: `[${this.team}] ${this.skills.w.name.toUpperCase()} -${this.skills.w.damage}!`,
+          color: "#e67e22",
+          life: 1.0,
+          maxLife: 1.0
+        });
       }
     }
 
@@ -758,12 +856,12 @@ class BotHero {
     // Cast Q or W to fast-clear wave when clustered
     if (clusterCount >= 2 && nearestMinion && minDist <= 240) {
       if (this.skills.q.cd <= 0) {
-        this.skills.q.cd = 6.0;
-        if (sound) sound.playSkill();
+        this.skills.q.cd = this.skills.q.maxCd;
+        if (sound) sound.playSkill("q");
         nearestMinion.hp -= this.skills.q.damage;
       } else if (this.skills.w.cd <= 0) {
-        this.skills.w.cd = 7.0;
-        if (sound) sound.playSkill();
+        this.skills.w.cd = this.skills.w.maxCd;
+        if (sound) sound.playSkill("w");
         nearestMinion.hp -= this.skills.w.damage;
       }
     }
@@ -1015,3 +1113,6 @@ class BotHero {
     ctx.restore();
   }
 }
+
+if (typeof window !== "undefined") window.BotHero = BotHero;
+if (typeof global !== "undefined") global.BotHero = BotHero;
