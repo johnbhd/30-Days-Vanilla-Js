@@ -47,64 +47,10 @@ canvas {
 
 .top-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: flex-start;
   width: 100%;
   pointer-events: none;
-}
-
-/* Match Status Panel (Clock, Wave, Crystals, Bot Revive) */
-.match-status-panel {
-  pointer-events: auto;
-  background: rgba(16, 25, 47, 0.88);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(78, 204, 163, 0.35);
-  border-radius: 6px;
-  padding: 6px 10px;
-  width: clamp(140px, 20vw, 205px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
-  user-select: none;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.match-status-header {
-  font-size: clamp(0.72rem, 1.2vw, 0.82rem);
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.2px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.match-crystals-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: clamp(0.66rem, 1.1vw, 0.74rem);
-  font-weight: 600;
-  padding-top: 3px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.crystal-tag.blue-tag {
-  color: #4ecca3;
-}
-
-.crystal-tag.red-tag {
-  color: #e74c3c;
-}
-
-.bot-revive-hud {
-  font-size: clamp(0.64rem, 1.0vw, 0.72rem);
-  font-weight: 700;
-  color: #ff6b6b;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding-top: 2px;
 }
 
 .top-right-column {
@@ -112,7 +58,7 @@ canvas {
   flex-direction: column;
   gap: 6px;
   align-items: flex-end;
-  width: clamp(160px, 22vw, 205px);
+  width: 205px;
   pointer-events: none;
 }
 
@@ -1235,15 +1181,11 @@ canvas {
     padding: 8px;
   }
   .top-row {
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: flex-start;
   }
-  .match-status-panel {
-    width: clamp(130px, 28vw, 175px);
-    padding: 5px 8px;
-  }
   .top-right-column {
-    width: clamp(155px, 34vw, 190px);
+    width: clamp(155px, 35vw, 190px);
     margin-top: 0;
     gap: 4px;
   }
@@ -1292,15 +1234,8 @@ canvas {
   .ui-overlay {
     padding: 5px;
   }
-  .match-status-panel {
-    width: clamp(115px, 40vw, 145px);
-    padding: 4px 6px;
-  }
-  .match-status-header {
-    font-size: 0.68rem;
-  }
-  .match-crystals-row {
-    font-size: 0.62rem;
+  .top-row {
+    justify-content: flex-end;
   }
   .top-right-column {
     width: clamp(135px, 48vw, 165px);

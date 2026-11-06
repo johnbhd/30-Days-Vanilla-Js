@@ -94,6 +94,50 @@ class Renderer {
   renderUI(hero, matchTime, waveCount, blueCrystal, redCrystal, gameStats, enemyBot) {
     this.ctx.save();
 
+    // Top-left Match Status HUD (Clock & Wave Card on Canvas)
+    const hudX = 14;
+    const hudY = 14;
+    const hudWidth = 205;
+    const hasBotDead = enemyBot && enemyBot.isDead;
+    const hudHeight = hasBotDead ? 68 : 52;
+
+    this.ctx.fillStyle = "rgba(16, 25, 47, 0.88)";
+    if (this.ctx.roundRect) {
+      this.ctx.beginPath();
+      this.ctx.roundRect(hudX, hudY, hudWidth, hudHeight, 6);
+      this.ctx.fill();
+    } else {
+      this.ctx.fillRect(hudX, hudY, hudWidth, hudHeight);
+    }
+    this.ctx.strokeStyle = "rgba(78, 204, 163, 0.35)";
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeRect(hudX, hudY, hudWidth, hudHeight);
+
+    const minutes = Math.floor(matchTime / 60);
+    const seconds = Math.floor(matchTime % 60).toString().padStart(2, "0");
+    this.ctx.fillStyle = "#ffffff";
+    this.ctx.font = "bold 12px sans-serif";
+    this.ctx.textAlign = "left";
+    this.ctx.fillText(`⏱️ ${minutes}:${seconds}  •  Wave ${waveCount}`, hudX + 10, hudY + 20);
+
+    const bHp = blueCrystal ? Math.max(0, blueCrystal.crystalHp) : 5000;
+    const rHp = redCrystal ? Math.max(0, redCrystal.crystalHp) : 5000;
+    this.ctx.font = "11px sans-serif";
+    this.ctx.fillStyle = "#4ecca3";
+    this.ctx.fillText(`Blue: ${bHp}`, hudX + 10, hudY + 38);
+
+    this.ctx.fillStyle = "#e74c3c";
+    this.ctx.textAlign = "right";
+    this.ctx.fillText(`Red: ${rHp}`, hudX + hudWidth - 10, hudY + 38);
+
+    // Enemy Bot Respawn Status in HUD
+    if (hasBotDead) {
+      this.ctx.fillStyle = "#ff6b6b";
+      this.ctx.font = "bold 11px sans-serif";
+      this.ctx.textAlign = "left";
+      this.ctx.fillText(`💀 [BOT] Reviving in ${Math.ceil(enemyBot.respawnTimer)}s`, hudX + 10, hudY + 56);
+    }
+
     // Player Hero Respawn Countdown Banner (Top-Center)
     if (hero && hero.isDead) {
       const bannerW = 280;

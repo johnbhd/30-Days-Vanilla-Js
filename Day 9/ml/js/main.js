@@ -554,37 +554,6 @@ function loop(currentTime) {
       }
     });
 
-    // 6b. Update Match Status Card (Clock, Wave, Crystals, Bot Revive)
-    const clockWaveEl = document.getElementById("matchClockWaveDisplay");
-    if (clockWaveEl) {
-      const minutes = Math.floor(matchTime / 60);
-      const seconds = Math.floor(matchTime % 60).toString().padStart(2, "0");
-      clockWaveEl.innerHTML = `<i class="fa-regular fa-clock"></i> ${minutes}:${seconds} • Wave ${minionManager.waveCount}`;
-    }
-
-    const blueBase = map.bases.find(b => b.team === "BLUE");
-    const redBase = map.bases.find(b => b.team === "RED");
-
-    const blueHpEl = document.getElementById("blueCrystalHpText");
-    if (blueHpEl && blueBase) {
-      blueHpEl.textContent = Math.max(0, blueBase.crystalHp);
-    }
-    const redHpEl = document.getElementById("redCrystalHpText");
-    if (redHpEl && redBase) {
-      redHpEl.textContent = Math.max(0, redBase.crystalHp);
-    }
-
-    const botReviveHud = document.getElementById("botReviveHud");
-    const botReviveSecs = document.getElementById("botReviveSecs");
-    if (botReviveHud && botReviveSecs) {
-      if (enemyBot && enemyBot.isDead) {
-        botReviveHud.classList.remove("hidden");
-        botReviveSecs.textContent = Math.ceil(enemyBot.respawnTimer);
-      } else {
-        botReviveHud.classList.add("hidden");
-      }
-    }
-
     // 7. Update Gold and Shop HUD
     itemShop.updateShopUI(gameStats);
 
@@ -602,6 +571,9 @@ function loop(currentTime) {
     }
 
     // 9. Win / Loss Condition
+    const blueBase = map.bases.find(b => b.team === "BLUE");
+    const redBase = map.bases.find(b => b.team === "RED");
+
     if (redBase && redBase.crystalHp <= 0) {
       showGameOver(true);
     } else if (blueBase && blueBase.crystalHp <= 0) {
