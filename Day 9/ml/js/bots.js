@@ -61,8 +61,6 @@ class BotHero {
     this.recallMax = 2.0;
     this.recallCooldown = 0;
     this.recentDamageTimer = 0;
-    this.turretThreatTimer = 0;
-    this.lastTurretAlert = 0;
 
     // Stun crowd-control
     this.stunTimer = 0;
@@ -123,14 +121,10 @@ class BotHero {
     }
 
     this.recentDamageTimer = 4.0;
-    if (source && (source.isTurret || source.isCrystal)) {
-      this.turretThreatTimer = 4.0;
-    }
-
     this.hp -= amount;
 
-    // If bot HP is low or under turret threat, immediately start running away towards base!
-    if (this.hp < this.maxHp * 0.35 || this.turretThreatTimer > 0) {
+    // If bot HP is low (< 28%), retreat towards Red Base on foot!
+    if (this.hp < this.maxHp * 0.28) {
       this.state = "RETREAT";
       this.targetX = this.spawnX;
       this.targetY = this.spawnY;
@@ -279,7 +273,6 @@ class BotHero {
     this.attackTimer = Math.max(0, this.attackTimer - dt);
     this.recallCooldown = Math.max(0, this.recallCooldown - dt);
     this.recentDamageTimer = Math.max(0, this.recentDamageTimer - dt);
-    this.turretThreatTimer = Math.max(0, this.turretThreatTimer - dt);
     this.skills.q.cd = Math.max(0, this.skills.q.cd - dt);
     this.skills.w.cd = Math.max(0, this.skills.w.cd - dt);
     this.skills.r.cd = Math.max(0, this.skills.r.cd - dt);
@@ -307,86 +300,46 @@ class BotHero {
     }
 
     // 4. Decision Tree
-    // Priority 1: Turret Threat Check - intelligent tower aggro & dive avoidance
-    const isUnderTurretThreat = this.checkTurretSafety(map, minionManager, combatTexts);
-
-    // If very low HP or under turret threat -> RETREAT to Red Base (or Recall if safe)
-    if (this.hp < this.maxHp * 0.35 || isUnderTurretThreat) {
+    // If low HP (< 28%) -> RETREAT to Red Base (or Recall if safe)
+    if (this.hp < this.maxHp * 0.28) {
       this.state = "RETREAT";
 
-      if (!isUnderTurretThreat) {
-        let distToPlayer = Infinity;
-        if (player && !player.isDead && player.hp > 0) {
-          distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
-        }
-
-        // Check if Blue minions are nearby (within 240px)
-        let nearBlueMinion = false;
-        if (minionManager && minionManager.minions) {
-          nearBlueMinion = minionManager.minions.some(m => m.team === "BLUE" && m.hp > 0 && Math.hypot(m.x - this.x, m.y - this.y) < 240);
-        }
-
-        // Check if any Blue turret is within 220px
-        let nearBlueTurret = false;
-        if (map && map.turrets) {
-          nearBlueTurret = map.turrets.some(t => t.team === "BLUE" && !t.destroyed && Math.hypot(t.worldX - this.x, t.worldY - this.y) < 220);
-        }
-
-        const isSafeToRecall = !this.isRecalling &&
-                              this.recallCooldown <= 0 &&
-                              this.recentDamageTimer <= 0 &&
-                              this.turretThreatTimer <= 0 &&
-                              distToPlayer > 420 &&
-                              !nearBlueMinion &&
-                              !nearBlueTurret &&
-                              distToRedBase > 280;
-
-        if (isSafeToRecall) {
-          this.isRecalling = true;
-          this.recallTimer = this.recallMax;
-          this.targetX = this.x;
-          this.targetY = this.y;
-          if (sound && sound.playRecall) {
-            sound.playRecall();
-          }
-          if (combatTexts) {
-            combatTexts.push({
-              x: this.x,
-              y: this.y - 30,
-              text: "[BOT] RECALLING...",
-              color: "#ff6b81",
-              life: 0.9,
-              maxLife: 0.9
-            });
-          }
-          return;
-        }
-
-        // Under attack, recently damaged, or unsafe -> FLEE towards Red Base on foot!
-        this.targetX = this.spawnX;
-        this.targetY = this.spawnY;
-
-        // Defensive peel while fleeing: if player is pursuing closely (< 180px), cast peel skill
-        if (distToPlayer < 180 && player && !player.isDead && player.hp > 0) {
-          if (this.skills.q.cd <= 0) {
-            this.skills.q.cd = this.skills.q.maxCd;
-            player.hp -= this.skills.q.damage;
-            if (sound) sound.playSkill("q");
-            if (particles) particles.spawnBurst(player.x, player.y, "#f39c12", 8, 100);
-            if (combatTexts) {
-              combatTexts.push({ x: player.x, y: player.y - 20, text: `-${this.skills.q.damage}`, color: "#f39c12", life: 0.8, maxLife: 0.8 });
-            }
-          } else if (this.skills.w.cd <= 0) {
-            this.skills.w.cd = this.skills.w.maxCd;
-            player.hp -= this.skills.w.damage;
-            if (sound) sound.playSkill("w");
-            if (particles) particles.spawnRing(this.x, this.y, 45, "#e67e22", 0.35);
-            if (combatTexts) {
-              combatTexts.push({ x: player.x, y: player.y - 20, text: `-${this.skills.w.damage}`, color: "#e67e22", life: 0.8, maxLife: 0.8 });
-            }
-          }
-        }
+      let distToPlayer = Infinity;
+      if (player && !player.isDead && player.hp > 0) {
+        distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
       }
+
+      // Safe to recall ONLY if not in combat, not recently damaged, far from player, and far from base
+      const isSafeToRecall = !this.isRecalling &&
+                            this.recallCooldown <= 0 &&
+                            this.recentDamageTimer <= 0 &&
+                            distToPlayer > 360 &&
+                            distToRedBase > 260;
+
+      if (isSafeToRecall) {
+        this.isRecalling = true;
+        this.recallTimer = this.recallMax;
+        this.targetX = this.x;
+        this.targetY = this.y;
+        if (sound && sound.playRecall) {
+          sound.playRecall();
+        }
+        if (combatTexts) {
+          combatTexts.push({
+            x: this.x,
+            y: this.y - 30,
+            text: "[BOT] RECALLING...",
+            color: "#ff6b81",
+            life: 0.9,
+            maxLife: 0.9
+          });
+        }
+        return;
+      }
+
+      // If unsafe, damaged, or interrupted, FLEE to Red Base on foot!
+      this.targetX = this.spawnX;
+      this.targetY = this.spawnY;
     } else {
       // Check Player proximity
       let distToPlayer = Infinity;
@@ -734,7 +687,7 @@ class BotHero {
     } else {
       // 2. Check for Blue Turrets in range to attack
       let nearTurret = null;
-      if (map && map.turrets && this.turretThreatTimer <= 0) {
+      if (map && map.turrets) {
         nearTurret = map.turrets.find(t => t.team === "BLUE" && !t.destroyed && Math.hypot(t.worldX - this.x, t.worldY - this.y) <= this.attackRange + 20);
       }
 
@@ -763,97 +716,6 @@ class BotHero {
         }
       }
     }
-  }
-
-  checkTurretSafety(map, minionManager, combatTexts) {
-    if (!map || this.isDead || this.hp <= 0) return false;
-
-    // Check Blue Turrets
-    let threatTurret = null;
-    let minTurretDist = Infinity;
-
-    if (map.turrets) {
-      for (let i = 0; i < map.turrets.length; i++) {
-        const t = map.turrets[i];
-        if (t.destroyed || t.team !== "BLUE") continue;
-        const d = Math.hypot(t.worldX - this.x, t.worldY - this.y);
-        const threatRange = (t.range || 160) + 30; // 190px danger boundary
-        if (d <= threatRange) {
-          if (d < minTurretDist) {
-            minTurretDist = d;
-            threatTurret = t;
-          }
-        }
-      }
-    }
-
-    // Check Blue Base Crystal defense
-    let threatBase = null;
-    if (map.bases) {
-      for (let i = 0; i < map.bases.length; i++) {
-        const b = map.bases[i];
-        if (b.crystalHp <= 0 || b.team !== "BLUE") continue;
-        const d = Math.hypot(b.worldX - this.x, b.worldY - this.y);
-        if (d <= (b.defenseRange || 210) + 30) {
-          threatBase = b;
-          break;
-        }
-      }
-    }
-
-    const threatSource = threatTurret || threatBase;
-    if (!threatSource) return false;
-
-    // Check if friendly RED minions are tanking inside threatSource range
-    let redMinionsTanking = 0;
-    const defenseRadius = threatSource.range || threatSource.defenseRange || 160;
-    if (minionManager && minionManager.minions) {
-      for (let i = 0; i < minionManager.minions.length; i++) {
-        const m = minionManager.minions[i];
-        if (m.team === "RED" && m.hp > 0) {
-          const md = Math.hypot(threatSource.worldX - m.x, threatSource.worldY - m.y);
-          if (md <= defenseRadius) {
-            redMinionsTanking++;
-          }
-        }
-      }
-    }
-
-    // Danger condition:
-    // 1. Bot was hit by turret/crystal recently (turretThreatTimer > 0)
-    // 2. OR no Red minions are tanking the tower
-    // 3. OR bot HP is low (< 45%)
-    const inDanger = (this.turretThreatTimer > 0) || (redMinionsTanking === 0) || (this.hp < this.maxHp * 0.45);
-
-    if (inDanger) {
-      if (this.isRecalling) {
-        this.isRecalling = false;
-        this.recallTimer = 0;
-        this.recallCooldown = 5.0;
-      }
-
-      this.state = "RETREAT";
-
-      // Flee away from turret towards Red side
-      const safeX = Math.max(this.x + 150, threatSource.worldX + defenseRadius + 50);
-      this.targetX = Math.min(this.spawnX, safeX);
-      this.targetY = this.laneY;
-
-      if (combatTexts && (!this.lastTurretAlert || Date.now() - this.lastTurretAlert > 3000)) {
-        this.lastTurretAlert = Date.now();
-        combatTexts.push({
-          x: this.x,
-          y: this.y - 32,
-          text: "[BOT] FLEEING TURRET!",
-          color: "#ff4757",
-          life: 1.2,
-          maxLife: 1.2
-        });
-      }
-      return true;
-    }
-
-    return false;
   }
 
   stepMovement(dt, map) {
