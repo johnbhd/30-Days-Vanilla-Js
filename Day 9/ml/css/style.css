@@ -1504,10 +1504,16 @@ canvas {
     border: none !important;
     box-shadow: none !important;
   }
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
   canvas {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
+    will-change: transform;
+    transform: translateZ(0);
   }
   .ui-overlay {
     padding: 8px;
@@ -1525,8 +1531,7 @@ canvas {
   .hero-panel {
     width: 100%;
     padding: 4px 6px;
-    background: rgba(12, 18, 34, 0.68);
-    backdrop-filter: blur(6px);
+    background: rgba(12, 18, 34, 0.92);
     border: 1px solid rgba(78, 204, 163, 0.25);
     border-radius: 8px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
@@ -1791,6 +1796,10 @@ canvas {
     margin: 0;
     padding: 0;
   }
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
   .game-wrapper {
     width: 100vw !important;
     height: 100vh !important;
@@ -1805,6 +1814,8 @@ canvas {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
+    will-change: transform;
+    transform: translateZ(0);
   }
   .hero-select-overlay {
     position: fixed;
@@ -1838,6 +1849,10 @@ canvas {
     margin: 0;
     padding: 0;
   }
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
   .game-wrapper {
     width: 100vw !important;
     height: 100vh !important;
@@ -1852,6 +1867,8 @@ canvas {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
+    will-change: transform;
+    transform: translateZ(0);
   }
   .hero-select-overlay {
     position: fixed;

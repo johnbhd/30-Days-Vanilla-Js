@@ -178,6 +178,61 @@ class GameMap {
         this.createTurret(pos.x, lane.y, "RED", lane.name, pos.tier);
       });
     });
+
+    // 7. Pre-render static ground tiles to an offscreen canvas for 60 FPS mobile performance
+    this.initOffscreen();
+  }
+
+  /**
+   * Pre-renders the 1280x960 tile grid to an offscreen buffer.
+   * Reduces 1,500+ canvas draw calls per frame to a single fast GPU drawImage blit.
+   */
+  initOffscreen() {
+    if (typeof document === "undefined" || typeof document.createElement !== "function") return;
+    if (!this.offscreenCanvas) {
+      try {
+        this.offscreenCanvas = document.createElement("canvas");
+      } catch (e) {
+        this.offscreenCanvas = null;
+        return;
+      }
+    }
+    if (!this.offscreenCanvas || typeof this.offscreenCanvas.getContext !== "function") {
+      this.offscreenCanvas = null;
+      return;
+    }
+    this.offscreenCanvas.width = this.width * this.tileSize;
+    this.offscreenCanvas.height = this.height * this.tileSize;
+    const offCtx = this.offscreenCanvas.getContext("2d");
+    if (!offCtx) return;
+
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const tileId = this.grid[y][x];
+        const color = this.getTileColor(x, y);
+        const sx = x * this.tileSize;
+        const sy = y * this.tileSize;
+
+        if (tileId === MAP_TILES.BASE_BLUE.id) {
+          offCtx.fillStyle = "#162a45";
+          offCtx.fillRect(sx, sy, this.tileSize, this.tileSize);
+          offCtx.strokeStyle = "rgba(0, 210, 211, 0.22)";
+          offCtx.lineWidth = 1;
+          offCtx.strokeRect(sx, sy, this.tileSize, this.tileSize);
+        } else if (tileId === MAP_TILES.BASE_RED.id) {
+          offCtx.fillStyle = "#3d1418";
+          offCtx.fillRect(sx, sy, this.tileSize, this.tileSize);
+          offCtx.strokeStyle = "rgba(231, 76, 60, 0.18)";
+          offCtx.lineWidth = 1;
+          offCtx.strokeRect(sx, sy, this.tileSize, this.tileSize);
+        } else {
+          offCtx.fillStyle = color;
+          offCtx.fillRect(sx, sy, this.tileSize, this.tileSize);
+          offCtx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+          offCtx.strokeRect(sx, sy, this.tileSize, this.tileSize);
+        }
+      }
+    }
   }
 
   createTurret(tx, ty, team, lane, tier) {
@@ -230,6 +285,7 @@ class GameMap {
       if (turret.hp <= 0) {
         turret.destroyed = true;
         this.grid[turret.y][turret.x] = MAP_TILES.LANE.id;
+        this.initOffscreen();
         if (combatTexts) {
           combatTexts.push({
             x: turret.worldX,
@@ -479,38 +535,47 @@ class GameMap {
   }
 
   render(ctx, camera) {
-    const startX = Math.floor(camera.x / this.tileSize);
-    const endX = Math.min(this.width, Math.floor((camera.x + GAME.CANVAS_WIDTH) / this.tileSize) + 1);
-    const startY = Math.floor(camera.y / this.tileSize);
-    const endY = Math.min(this.height, Math.floor((camera.y + GAME.CANVAS_HEIGHT) / this.tileSize) + 1);
+    // Fill background with dark void color for areas outside map boundaries
+    ctx.fillStyle = "#0a0f1e";
+    ctx.fillRect(0, 0, ctx.canvas ? ctx.canvas.width : GAME.CANVAS_WIDTH, ctx.canvas ? ctx.canvas.height : GAME.CANVAS_HEIGHT);
 
-    for (let y = startY; y < endY; y++) {
-      for (let x = startX; x < endX; x++) {
-        const tileId = this.grid[y][x];
-        const color = this.getTileColor(x, y);
-        const sx = x * this.tileSize - camera.x;
-        const sy = y * this.tileSize - camera.y;
+    // Fast GPU blit of pre-rendered tile grid (reduces 1,500 draw calls to 1)
+    if (this.offscreenCanvas) {
+      ctx.drawImage(this.offscreenCanvas, -camera.x, -camera.y);
+    } else {
+      const cW = ctx.canvas ? ctx.canvas.width : GAME.CANVAS_WIDTH;
+      const cH = ctx.canvas ? ctx.canvas.height : GAME.CANVAS_HEIGHT;
+      const startX = Math.max(0, Math.floor(camera.x / this.tileSize));
+      const endX = Math.min(this.width, Math.ceil((camera.x + cW) / this.tileSize) + 1);
+      const startY = Math.max(0, Math.floor(camera.y / this.tileSize));
+      const endY = Math.min(this.height, Math.ceil((camera.y + cH) / this.tileSize) + 1);
 
-        if (tileId === MAP_TILES.BASE_BLUE.id) {
-          // Sapphire Blue Base tiles with contrasting tactical cyan borders
-          ctx.fillStyle = "#162a45";
-          ctx.fillRect(sx, sy, this.tileSize, this.tileSize);
-          ctx.strokeStyle = "rgba(0, 210, 211, 0.22)";
-          ctx.lineWidth = 1;
-          ctx.strokeRect(sx, sy, this.tileSize, this.tileSize);
-        } else if (tileId === MAP_TILES.BASE_RED.id) {
-          // Dark Crimson Red Base tiles
-          ctx.fillStyle = "#3d1418";
-          ctx.fillRect(sx, sy, this.tileSize, this.tileSize);
-          ctx.strokeStyle = "rgba(231, 76, 60, 0.18)";
-          ctx.lineWidth = 1;
-          ctx.strokeRect(sx, sy, this.tileSize, this.tileSize);
-        } else {
-          ctx.fillStyle = color;
-          ctx.fillRect(sx, sy, this.tileSize, this.tileSize);
-          // Subtle tile boundaries
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
-          ctx.strokeRect(sx, sy, this.tileSize, this.tileSize);
+      for (let y = startY; y < endY; y++) {
+        for (let x = startX; x < endX; x++) {
+          if (!this.grid[y]) continue;
+          const tileId = this.grid[y][x];
+          const color = this.getTileColor(x, y);
+          const sx = x * this.tileSize - camera.x;
+          const sy = y * this.tileSize - camera.y;
+
+          if (tileId === MAP_TILES.BASE_BLUE.id) {
+            ctx.fillStyle = "#162a45";
+            ctx.fillRect(sx, sy, this.tileSize, this.tileSize);
+            ctx.strokeStyle = "rgba(0, 210, 211, 0.22)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(sx, sy, this.tileSize, this.tileSize);
+          } else if (tileId === MAP_TILES.BASE_RED.id) {
+            ctx.fillStyle = "#3d1418";
+            ctx.fillRect(sx, sy, this.tileSize, this.tileSize);
+            ctx.strokeStyle = "rgba(231, 76, 60, 0.18)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(sx, sy, this.tileSize, this.tileSize);
+          } else {
+            ctx.fillStyle = color;
+            ctx.fillRect(sx, sy, this.tileSize, this.tileSize);
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+            ctx.strokeRect(sx, sy, this.tileSize, this.tileSize);
+          }
         }
       }
     }

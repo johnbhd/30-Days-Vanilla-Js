@@ -73,6 +73,21 @@ const settingsOverlay = document.getElementById("settingsOverlay");
 const openSettingsBtn = document.getElementById("openSettingsBtn");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const soundVolumeSlider = document.getElementById("soundVolumeSlider");
+
+// Cached Ability & Recall DOM elements for 60 FPS performance
+const recallBtnEl = document.getElementById("btnRecall");
+const cdOverlayEls = {
+  q: document.getElementById("cdOverlayQ"),
+  w: document.getElementById("cdOverlayW"),
+  e: document.getElementById("cdOverlayE"),
+  r: document.getElementById("cdOverlayR")
+};
+const skillBtnEls = {
+  q: document.getElementById("btnSkillQ"),
+  w: document.getElementById("btnSkillW"),
+  e: document.getElementById("btnSkillE"),
+  r: document.getElementById("btnSkillR")
+};
 const muteToggleBtn = document.getElementById("muteToggleBtn");
 const particleQualitySelect = document.getElementById("particleQualitySelect");
 
@@ -203,9 +218,66 @@ function startMatch() {
     <p><strong>B</strong> recall | <strong>P</strong> shop | <strong>TAB</strong> scoreboard</p>
   `;
 
-  // Snap camera
-  camera.x = clamp(selectedHero.x - GAME.CANVAS_WIDTH / 2, 0, map.width * map.tileSize - GAME.CANVAS_WIDTH);
-  camera.y = clamp(selectedHero.y - GAME.CANVAS_HEIGHT / 2, 0, map.height * map.tileSize - GAME.CANVAS_HEIGHT);
+  // Snap camera directly to hero
+  updateCamera(true);
+}
+
+/**
+ * Smoothly centers camera on selectedHero with dynamic aspect-ratio support.
+ * Ensures the hero is always visible and followed across the map in full-screen portrait and landscape.
+ */
+function updateCamera(snap = false) {
+  if (!selectedHero) return;
+
+  const mapWidth = map.width * map.tileSize;
+  const mapHeight = map.height * map.tileSize;
+
+  let viewW = GAME.CANVAS_WIDTH;
+  let viewH = GAME.CANVAS_HEIGHT;
+
+  if (typeof window !== "undefined" && canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const style = window.getComputedStyle(canvas);
+    if (style && style.objectFit === "cover" && rect.width > 0 && rect.height > 0) {
+      const canvasAspect = GAME.CANVAS_WIDTH / GAME.CANVAS_HEIGHT;
+      const rectAspect = rect.width / rect.height;
+      if (rectAspect < canvasAspect) {
+        // Mobile portrait or narrow screen: height matches, width is cropped
+        const scale = rect.height / GAME.CANVAS_HEIGHT;
+        viewW = rect.width / scale;
+        viewH = GAME.CANVAS_HEIGHT;
+      } else {
+        // Wide landscape: width matches, height is cropped
+        const scale = rect.width / GAME.CANVAS_WIDTH;
+        viewW = GAME.CANVAS_WIDTH;
+        viewH = rect.height / scale;
+      }
+    }
+  }
+
+  const targetX = selectedHero.x - GAME.CANVAS_WIDTH / 2;
+  const targetY = selectedHero.y - GAME.CANVAS_HEIGHT / 2;
+
+  let minCamX = -(GAME.CANVAS_WIDTH - viewW) / 2;
+  let maxCamX = mapWidth - (GAME.CANVAS_WIDTH + viewW) / 2;
+  let minCamY = -(GAME.CANVAS_HEIGHT - viewH) / 2;
+  let maxCamY = mapHeight - (GAME.CANVAS_HEIGHT + viewH) / 2;
+
+  if (minCamX > maxCamX) { const m = (minCamX + maxCamX) / 2; minCamX = m; maxCamX = m; }
+  if (minCamY > maxCamY) { const m = (minCamY + maxCamY) / 2; minCamY = m; maxCamY = m; }
+
+  const clampedX = clamp(targetX, minCamX, maxCamX);
+  const clampedY = clamp(targetY, minCamY, maxCamY);
+
+  if (snap) {
+    camera.x = clampedX;
+    camera.y = clampedY;
+  } else {
+    camera.x += (clampedX - camera.x) * cameraLerp;
+    camera.y += (clampedY - camera.y) * cameraLerp;
+    camera.x = clamp(camera.x, minCamX, maxCamX);
+    camera.y = clamp(camera.y, minCamY, maxCamY);
+  }
 }
 
 function updateAbilitiesDock(heroId) {
@@ -617,11 +689,7 @@ function loop(currentTime) {
       selectedHero.update(map, dt, minionManager.minions, combatTexts, gameStats, skillManager, itemShop, objectiveManager, enemyBot, sound, particles, scoreboard);
 
       // Camera follow hero
-      camera.x += (selectedHero.x - GAME.CANVAS_WIDTH / 2 - camera.x) * cameraLerp;
-      camera.y += (selectedHero.y - GAME.CANVAS_HEIGHT / 2 - camera.y) * cameraLerp;
-
-      camera.x = clamp(camera.x, 0, map.width * map.tileSize - GAME.CANVAS_WIDTH);
-      camera.y = clamp(camera.y, 0, map.height * map.tileSize - GAME.CANVAS_HEIGHT);
+      updateCamera(false);
     }
 
     // 1b. Enemy Bot Hero update
@@ -642,27 +710,27 @@ function loop(currentTime) {
     map.updateCombat(dt, selectedHero, minionManager.minions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager);
 
     // 6. Update Ability Cooldown & Recall UI Overlays
-    const recallBtnEl = document.getElementById("btnRecall");
     if (recallBtnEl && selectedHero) {
       if (selectedHero.isRecalling) {
         recallBtnEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${selectedHero.recallTimer.toFixed(1)}s`;
         recallBtnEl.classList.add("channeling");
-      } else {
+      } else if (recallBtnEl.classList.contains("channeling")) {
         recallBtnEl.innerHTML = `<i class="fa-solid fa-house"></i> Recall`;
         recallBtnEl.classList.remove("channeling");
       }
     }
 
     ["q", "w", "e", "r"].forEach(slot => {
-      const overlayEl = document.getElementById(`cdOverlay${slot.toUpperCase()}`);
-      const btnEl = document.getElementById(`btnSkill${slot.toUpperCase()}`);
+      const overlayEl = cdOverlayEls[slot];
+      const btnEl = skillBtnEls[slot];
       if (overlayEl && btnEl) {
         const cd = skillManager.cooldowns[slot];
         if (cd > 0) {
           overlayEl.classList.remove("hidden");
-          overlayEl.textContent = cd.toFixed(1);
+          const text = cd.toFixed(1);
+          if (overlayEl.textContent !== text) overlayEl.textContent = text;
           btnEl.classList.add("cooling-down");
-        } else {
+        } else if (btnEl.classList.contains("cooling-down")) {
           overlayEl.classList.add("hidden");
           btnEl.classList.remove("cooling-down");
         }
