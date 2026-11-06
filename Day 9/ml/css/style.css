@@ -903,17 +903,46 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  z-index: 10;
+  justify-content: flex-start;
+  z-index: 100;
   pointer-events: auto;
   backdrop-filter: blur(4px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  padding: 24px 16px 40px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(78, 204, 163, 0.4) transparent;
+}
+
+.hero-select-overlay::-webkit-scrollbar {
+  width: 6px;
+}
+
+.hero-select-overlay::-webkit-scrollbar-track {
+  background: rgba(16, 25, 47, 0.5);
+}
+
+.hero-select-overlay::-webkit-scrollbar-thumb {
+  background: rgba(78, 204, 163, 0.4);
+  border-radius: 4px;
+}
+
+.hero-select-overlay::-webkit-scrollbar-thumb:hover {
+  background: rgba(78, 204, 163, 0.7);
 }
 
 .select-container {
   text-align: center;
   max-width: 960px;
   width: 95%;
-  padding: 20px;
+  padding: 12px 10px 24px;
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .select-container h1 {
@@ -934,6 +963,7 @@ canvas {
   grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .hero-card {
@@ -946,12 +976,18 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .hero-card:hover {
   border-color: #4ecca3;
   background: rgba(30, 45, 80, 1);
   transform: translateY(-3px);
+}
+
+.hero-card:active {
+  transform: scale(0.97);
 }
 
 .hero-card.selected {
@@ -1001,6 +1037,9 @@ canvas {
 .select-footer {
   display: flex;
   justify-content: center;
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 16px;
 }
 
 .start-button {
@@ -1014,12 +1053,19 @@ canvas {
   cursor: pointer;
   transition: all 0.2s;
   min-width: 220px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .start-button:hover:not(:disabled) {
   background: #38ef7d;
   box-shadow: 0 0 15px rgba(78, 204, 163, 0.5);
   transform: translateY(-1px);
+}
+
+.start-button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 0 10px rgba(78, 204, 163, 0.6);
 }
 
 .start-button:disabled {
@@ -1337,8 +1383,64 @@ canvas {
 
 /* Responsive scaling */
 @media (max-width: 768px) {
+  .hero-select-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 200;
+    padding: 16px 12px calc(32px + env(safe-area-inset-bottom, 16px));
+  }
+  .select-container {
+    width: 100%;
+    max-width: 580px;
+    padding: 8px 6px 20px;
+    margin: 0 auto;
+  }
+  .select-container h1 {
+    font-size: 1.55rem;
+    margin-bottom: 4px;
+  }
+  .select-container p {
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+  }
   .hero-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .hero-card {
+    padding: 8px 6px;
+    border-radius: 8px;
+  }
+  .hero-portrait {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 6px;
+  }
+  .hero-card h3 {
+    font-size: 0.85rem;
+  }
+  .hero-card .role {
+    font-size: 0.68rem;
+  }
+  .hero-card .lane {
+    font-size: 0.60rem;
+  }
+  .select-footer {
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 24px;
+  }
+  .start-button {
+    width: 100%;
+    max-width: 280px;
+    min-height: 48px;
+    font-size: 0.95rem;
+    padding: 12px 20px;
   }
   .ui-overlay {
     padding: 8px;
@@ -1433,6 +1535,53 @@ canvas {
 }
 
 @media (max-width: 480px) {
+  .hero-select-overlay {
+    padding: 12px 8px calc(40px + env(safe-area-inset-bottom, 24px));
+  }
+  .select-container {
+    width: 100%;
+    padding: 4px 2px 24px;
+  }
+  .select-container h1 {
+    font-size: 1.35rem;
+    margin-bottom: 3px;
+  }
+  .select-container p {
+    font-size: 0.78rem;
+    margin-bottom: 10px;
+  }
+  .hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .hero-card {
+    padding: 6px 4px;
+  }
+  .hero-portrait {
+    width: 38px;
+    height: 38px;
+    margin-bottom: 4px;
+  }
+  .hero-card h3 {
+    font-size: 0.78rem;
+  }
+  .hero-card .role {
+    font-size: 0.62rem;
+  }
+  .hero-card .lane {
+    font-size: 0.55rem;
+  }
+  .select-footer {
+    margin-top: 8px;
+    margin-bottom: 28px;
+  }
+  .start-button {
+    max-width: 260px;
+    min-height: 44px;
+    font-size: 0.88rem;
+    padding: 10px 16px;
+  }
   .ui-overlay {
     padding: 5px;
   }
@@ -1530,5 +1679,80 @@ canvas {
     max-width: 28px;
     line-height: 1;
     display: block;
+  }
+}
+
+/* Ensure full-screen scrollable hero select on mobile portrait devices */
+@media (orientation: portrait) {
+  .hero-select-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 200;
+  }
+}
+
+/* Ensure compact layout and smooth scrolling on landscape mobile phones */
+@media (orientation: landscape) and (max-height: 600px) {
+  .hero-select-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 200;
+    padding: 10px 12px calc(18px + env(safe-area-inset-bottom, 12px));
+  }
+  .select-container {
+    max-width: 760px;
+    padding: 4px 6px 14px;
+    margin: 0 auto;
+  }
+  .select-container h1 {
+    font-size: 1.20rem;
+    margin-bottom: 2px;
+  }
+  .select-container p {
+    font-size: 0.72rem;
+    margin-bottom: 6px;
+  }
+  .hero-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+    width: 100%;
+  }
+  .hero-card {
+    padding: 5px 3px;
+    border-radius: 6px;
+  }
+  .hero-portrait {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 3px;
+  }
+  .hero-card h3 {
+    font-size: 0.72rem;
+    margin-bottom: 1px;
+  }
+  .hero-card .role {
+    font-size: 0.58rem;
+  }
+  .hero-card .lane {
+    font-size: 0.52rem;
+  }
+  .select-footer {
+    margin-top: 6px;
+    margin-bottom: 12px;
+  }
+  .start-button {
+    max-width: 230px;
+    min-height: 36px;
+    font-size: 0.82rem;
+    padding: 6px 16px;
   }
 }

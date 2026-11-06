@@ -101,6 +101,11 @@ function buildHeroGrid() {
       startBtn.disabled = false;
       startBtn.textContent = `Start Match as ${hero.name}`;
       updateHeroUI(hero);
+
+      // On mobile or smaller viewports, smoothly ensure start button is visible
+      if (window.innerWidth <= 768 || window.innerHeight <= 600) {
+        startBtn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     });
 
     card.addEventListener("dblclick", () => {
@@ -325,6 +330,7 @@ if (changeHeroBtn) {
   changeHeroBtn.addEventListener("click", () => {
     gameState = "SELECT";
     selectOverlay.classList.remove("hidden");
+    if (selectOverlay) selectOverlay.scrollTop = 0;
   });
 }
 
