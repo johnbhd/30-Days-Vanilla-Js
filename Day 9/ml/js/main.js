@@ -8,7 +8,7 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
 const camera = { x: 0, y: 0 };
-let map = new Map(GAME.MAP.WIDTH, GAME.MAP.HEIGHT, GAME.TILE_SIZE);
+let map = new GameMap(GAME.MAP.WIDTH, GAME.MAP.HEIGHT, GAME.TILE_SIZE);
 const renderer = new Renderer(canvas);
 let minionManager = new MinionManager();
 let skillManager = new SkillManager();
@@ -253,7 +253,7 @@ function triggerSkill(slot) {
 }
 
 function resetGame() {
-  map = new Map(GAME.MAP.WIDTH, GAME.MAP.HEIGHT, GAME.TILE_SIZE);
+  map = new GameMap(GAME.MAP.WIDTH, GAME.MAP.HEIGHT, GAME.TILE_SIZE);
   minionManager = new MinionManager();
   skillManager = new SkillManager();
   objectiveManager = new ObjectiveManager();

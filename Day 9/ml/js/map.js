@@ -15,11 +15,11 @@ const MAP_TILES = {
   BASE:      { id: 4, color: "#162a45", walkable: true }
 };
 
-class Map {
-  constructor(width, height, tileSize) {
-    this.width = width;
-    this.height = height;
-    this.tileSize = tileSize;
+class GameMap {
+  constructor(width = 32, height = 24, tileSize = 40) {
+    this.width = width || (typeof GAME !== "undefined" && GAME.MAP ? GAME.MAP.WIDTH : 32);
+    this.height = height || (typeof GAME !== "undefined" && GAME.MAP ? GAME.MAP.HEIGHT : 24);
+    this.tileSize = tileSize || (typeof GAME !== "undefined" ? GAME.TILE_SIZE : 40);
     this.grid = [];
     this.turrets = [];
     this.bases = [];
@@ -64,13 +64,17 @@ class Map {
     // Blue Base Connector (x = 2..4, y = 5..19)
     for (let y = 5; y <= 19; y++) {
       for (let x = 2; x <= 4; x++) {
-        this.grid[y][x] = MAP_TILES.LANE.id;
+        if (y >= 0 && y < this.height && x >= 0 && x < this.width && this.grid[y]) {
+          this.grid[y][x] = MAP_TILES.LANE.id;
+        }
       }
     }
     // Red Base Connector (x = 27..29, y = 5..19)
     for (let y = 5; y <= 19; y++) {
       for (let x = 27; x <= 29; x++) {
-        this.grid[y][x] = MAP_TILES.LANE.id;
+        if (y >= 0 && y < this.height && x >= 0 && x < this.width && this.grid[y]) {
+          this.grid[y][x] = MAP_TILES.LANE.id;
+        }
       }
     }
 
@@ -681,3 +685,6 @@ class Map {
     });
   }
 }
+
+if (typeof window !== "undefined") window.GameMap = GameMap;
+if (typeof global !== "undefined") global.GameMap = GameMap;
