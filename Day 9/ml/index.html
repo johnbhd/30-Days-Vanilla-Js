@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <!-- Toast Notification Container -->
+  <div id="gameToastContainer" class="game-toast-container"></div>
+
   <div class="game-wrapper">
     <canvas id="gameCanvas" width="1280" height="720"></canvas>
 
@@ -34,8 +37,22 @@
         <div class="shop-catalog" id="shopCatalog">
           <!-- Populated from ITEM_CATALOG -->
         </div>
+        <div class="shop-inventory-section">
+          <div class="shop-inventory-header">
+            <span><i class="fa-solid fa-shield-halved" style="color: #4ecca3;"></i> Your Equipped Items (Click to Sell for 50% Gold):</span>
+            <span id="shopInvCount" class="shop-inv-count">0/6 Slots</span>
+          </div>
+          <div class="shop-inventory-grid" id="shopInventoryGrid">
+            <div class="shop-inv-item empty" id="shopInvSlot0"><span class="empty-slot-label">Empty Slot 1</span></div>
+            <div class="shop-inv-item empty" id="shopInvSlot1"><span class="empty-slot-label">Empty Slot 2</span></div>
+            <div class="shop-inv-item empty" id="shopInvSlot2"><span class="empty-slot-label">Empty Slot 3</span></div>
+            <div class="shop-inv-item empty" id="shopInvSlot3"><span class="empty-slot-label">Empty Slot 4</span></div>
+            <div class="shop-inv-item empty" id="shopInvSlot4"><span class="empty-slot-label">Empty Slot 5</span></div>
+            <div class="shop-inv-item empty" id="shopInvSlot5"><span class="empty-slot-label">Empty Slot 6</span></div>
+          </div>
+        </div>
         <div class="shop-footer">
-          <p>Press <strong>P</strong> or click anywhere outside to close shop. Items sell back for 70% value.</p>
+          <p>Press <strong>P</strong> or click anywhere outside to close shop. Items sell back for 50% gold value (-50%).</p>
         </div>
       </div>
     </div>

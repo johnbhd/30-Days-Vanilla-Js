@@ -349,6 +349,72 @@ class SoundEngine {
     osc.stop(t + 0.26);
   }
 
+  playBuyItem() {
+    if (this.muted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+
+    // Sparkling 4-tone ascending purchase arpeggio (C6 -> E6 -> G6 -> C7)
+    const notes = [1046.50, 1318.51, 1567.98, 2093.00];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, t + idx * 0.05);
+
+      gain.gain.setValueAtTime(0.22, t + idx * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.05 + 0.32);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(t + idx * 0.05);
+      osc.stop(t + idx * 0.05 + 0.33);
+    });
+
+    // High metallic coin clink
+    const clink = this.ctx.createOscillator();
+    const clinkGain = this.ctx.createGain();
+    clink.type = "sine";
+    clink.frequency.setValueAtTime(2800, t);
+    clink.frequency.exponentialRampToValueAtTime(1400, t + 0.12);
+    clinkGain.gain.setValueAtTime(0.18, t);
+    clinkGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    clink.connect(clinkGain);
+    clinkGain.connect(this.masterGain);
+    clink.start(t);
+    clink.stop(t + 0.13);
+  }
+
+  playSellItem() {
+    if (this.muted) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    // Descending 2-tone refund chime (G6 -> C6)
+    const notes = [1567.98, 1046.50];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, t + idx * 0.06);
+
+      gain.gain.setValueAtTime(0.22, t + idx * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.06 + 0.22);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(t + idx * 0.06);
+      osc.stop(t + idx * 0.06 + 0.23);
+    });
+  }
+
   playTurret() {
     if (this.muted) return;
     this.ensureContext();

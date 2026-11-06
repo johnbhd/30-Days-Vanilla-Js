@@ -161,13 +161,65 @@ function buildShopCatalog() {
     const buyBtn = card.querySelector(".shop-buy-btn");
     buyBtn.addEventListener("click", () => {
       if (selectedHero) {
-        itemShop.buyItem(item.id, selectedHero, gameStats, combatTexts);
+        const success = itemShop.buyItem(item.id, selectedHero, gameStats, combatTexts);
+        if (success) {
+          if (sound && sound.playBuyItem) sound.playBuyItem();
+          else if (sound && sound.playCoin) sound.playCoin();
+          showToast(`Purchased <strong>${item.name}</strong> <span class="game-toast-gold">(-${item.cost}g)</span>`, item.icon, "#4ecca3");
+        }
         updateShopState();
       }
     });
 
     shopCatalog.appendChild(card);
   });
+}
+
+function showToast(message, iconHtml = null, borderColor = "#4ecca3") {
+  const container = document.getElementById("gameToastContainer");
+  if (!container || typeof document.createElement !== "function") return;
+
+  const toast = document.createElement("div");
+  toast.className = "game-toast";
+  if (borderColor) {
+    toast.style.borderColor = borderColor;
+  }
+
+  const iconPart = iconHtml ? `<span class="game-toast-icon">${iconHtml}</span>` : `<span class="game-toast-icon" style="color:${borderColor}"><i class="fa-solid fa-circle-check"></i></span>`;
+  toast.innerHTML = `${iconPart}<span class="game-toast-text">${message}</span>`;
+
+  container.appendChild(toast);
+
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => {
+      toast.classList.add("show");
+    });
+  } else {
+    toast.classList.add("show");
+  }
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+    toast.classList.add("fade-out");
+    setTimeout(() => {
+      if (toast.parentElement) toast.parentElement.removeChild(toast);
+    }, 320);
+  }, 2400);
+}
+
+function sellInventoryItem(slotIndex) {
+  if (!selectedHero) return;
+  const itemToSell = itemShop.inventory[slotIndex];
+  if (!itemToSell) return;
+
+  const refund = Math.floor(itemToSell.cost * 0.50);
+  const success = itemShop.sellItem(slotIndex, selectedHero, gameStats, combatTexts);
+  if (success) {
+    if (sound && sound.playSellItem) sound.playSellItem();
+    else if (sound && sound.playCoin) sound.playCoin();
+    showToast(`Sold <strong>${itemToSell.name}</strong> <span class="game-toast-gold">(+${refund}g)</span> <span style="font-size:0.75rem;color:#e74c3c">(-50%)</span>`, itemToSell.icon, "#ffd700");
+    updateShopState();
+  }
 }
 
 function updateShopState() {
@@ -544,15 +596,19 @@ if (particleQualitySelect) {
   });
 }
 
-// Click inventory slot to sell item
+// Click inventory slot to sell item (minus 50% gold value)
 for (let i = 0; i < 6; i++) {
   const slotEl = document.getElementById(`invSlot${i}`);
   if (slotEl) {
     slotEl.addEventListener("click", () => {
-      if (selectedHero) {
-        itemShop.sellItem(i, selectedHero, gameStats);
-        updateShopState();
-      }
+      sellInventoryItem(i);
+    });
+  }
+
+  const shopSlotEl = document.getElementById(`shopInvSlot${i}`);
+  if (shopSlotEl) {
+    shopSlotEl.addEventListener("click", () => {
+      sellInventoryItem(i);
     });
   }
 }

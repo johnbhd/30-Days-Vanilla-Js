@@ -92,15 +92,28 @@ class ItemShop {
     return true;
   }
 
-  sellItem(slotIndex, hero, gameStats) {
+  sellItem(slotIndex, hero, gameStats, combatTexts) {
     if (slotIndex < 0 || slotIndex >= this.inventory.length) return false;
 
     const item = this.inventory[slotIndex];
-    const refund = Math.floor(item.cost * 0.7);
+    // Minus 50% gold value (50% refund)
+    const refund = Math.floor(item.cost * 0.50);
     gameStats.gold += refund;
 
     this.inventory.splice(slotIndex, 1);
     this.recalculateHeroStats(hero);
+
+    if (combatTexts && hero) {
+      combatTexts.push({
+        x: hero.x,
+        y: hero.y - 25,
+        text: `SOLD ${item.name.toUpperCase()} (+${refund}g)!`,
+        color: "#ffd700",
+        life: 1.2,
+        maxLife: 1.2
+      });
+    }
+
     this.updateShopUI(gameStats);
     return true;
   }
@@ -129,23 +142,57 @@ class ItemShop {
   }
 
   updateShopUI(gameStats) {
-    // 1. Update gold display
+    // 1. Update gold display on both HUD and Shop Modal
     const goldDisplay = document.getElementById("playerGoldDisplay");
     if (goldDisplay) {
       goldDisplay.textContent = `${gameStats.gold || 0}g`;
     }
+    const shopGold = document.getElementById("shopGoldText");
+    if (shopGold) {
+      shopGold.textContent = `${gameStats.gold || 0}g`;
+    }
 
-    // 2. Update inventory HUD slots
+    // 2. Update HUD inventory slots
     for (let i = 0; i < 6; i++) {
       const slotEl = document.getElementById(`invSlot${i}`);
       if (slotEl) {
         if (i < this.inventory.length) {
           const item = this.inventory[i];
-          slotEl.innerHTML = `<span title="${item.name}: ${item.desc}">${item.icon}</span>`;
+          const refund = Math.floor(item.cost * 0.50);
+          slotEl.innerHTML = `<span title="${item.name}: ${item.desc} (Click to sell: +${refund}g)">${item.icon}</span>`;
           slotEl.className = "inv-slot filled";
         } else {
           slotEl.innerHTML = "";
           slotEl.className = "inv-slot empty";
+          slotEl.removeAttribute("title");
+        }
+      }
+    }
+
+    // 3. Update shop modal equipped items tray if present
+    const shopInvCount = document.getElementById("shopInvCount");
+    if (shopInvCount) {
+      shopInvCount.textContent = `${this.inventory.length}/${this.maxSlots} Slots`;
+    }
+
+    for (let i = 0; i < 6; i++) {
+      const shopSlotEl = document.getElementById(`shopInvSlot${i}`);
+      if (shopSlotEl) {
+        if (i < this.inventory.length) {
+          const item = this.inventory[i];
+          const refund = Math.floor(item.cost * 0.50);
+          shopSlotEl.innerHTML = `
+            <div class="shop-inv-icon">${item.icon}</div>
+            <div class="shop-inv-meta">
+              <span class="shop-inv-name">${item.name}</span>
+              <span class="shop-inv-refund"><i class="fa-solid fa-coins"></i> +${refund}g <span class="sell-loss-tag">(-50%)</span></span>
+            </div>
+            <button class="shop-inv-sell-btn" data-slot="${i}" title="Sell for ${refund}g (-50%)"><i class="fa-solid fa-trash-can"></i> Sell</button>
+          `;
+          shopSlotEl.className = "shop-inv-item filled";
+        } else {
+          shopSlotEl.innerHTML = `<span class="empty-slot-label">Empty Slot ${i + 1}</span>`;
+          shopSlotEl.className = "shop-inv-item empty";
         }
       }
     }
