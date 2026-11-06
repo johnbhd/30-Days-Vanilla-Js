@@ -27,7 +27,22 @@ const GAME = {
     INTERVAL: 25, // seconds between waves
     INITIAL_DELAY: 2 // seconds before first wave
   },
-  HERO_RESPAWN_TIME: 10 // seconds for both Player and Bot hero respawn
+  HERO_RESPAWN_TIME: 10, // seconds for both Player and Bot hero respawn
+  MAX_HERO_LEVEL: 15,
+  LEVEL_EXP: [0, 100, 220, 360, 520, 700, 900, 1120, 1360, 1620, 1900, 2200, 2520, 2860, 3220],
+  STAT_GROWTH: {
+    hpPerLevel: 65,
+    atkPerLevel: 4.5,
+    defPerLevel: 2
+  },
+  EXP_REWARDS: {
+    minion: 45,
+    hero: 220,
+    turret: 180,
+    turtle: 300,
+    lord: 450,
+    passivePerSec: 2
+  }
 };
 
 /**

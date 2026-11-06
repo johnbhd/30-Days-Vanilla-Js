@@ -44,8 +44,62 @@ class Hero {
     // Stun crowd-control
     this.stunTimer = 0;
 
+    // Progression & Leveling (Levels 1 to 15)
+    this.level = 1;
+    this.exp = 0;
+    this.maxExp = (typeof GAME !== "undefined" && GAME.LEVEL_EXP) ? GAME.LEVEL_EXP[1] : 100;
+    this.skillPoints = 1; // Start with 1 skill point
+    this.skillLevels = { q: 1, w: 0, e: 0, r: 0 };
+    this.passiveExpTimer = 0;
+
     // Load sprite
     this.loadSprite();
+  }
+
+  gainExp(amount, combatTexts, particles, sound) {
+    if (this.isDead || this.level >= 15) return false;
+    this.exp += amount;
+
+    const maxLvl = (typeof GAME !== "undefined" && GAME.MAX_HERO_LEVEL) ? GAME.MAX_HERO_LEVEL : 15;
+    const expTable = (typeof GAME !== "undefined" && GAME.LEVEL_EXP) ? GAME.LEVEL_EXP : [0, 100, 220, 360, 520, 700, 900, 1120, 1360, 1620, 1900, 2200, 2520, 2860, 3220];
+
+    let leveledUp = false;
+    while (this.level < maxLvl && this.exp >= this.maxExp) {
+      this.exp -= this.maxExp;
+      this.level++;
+      this.skillPoints++;
+      leveledUp = true;
+
+      const hpBoost = (typeof GAME !== "undefined" && GAME.STAT_GROWTH) ? GAME.STAT_GROWTH.hpPerLevel : 65;
+      const atkBoost = (typeof GAME !== "undefined" && GAME.STAT_GROWTH) ? GAME.STAT_GROWTH.atkPerLevel : 4.5;
+      this.maxHp += hpBoost;
+      this.hp = Math.min(this.maxHp, this.hp + hpBoost * 1.5);
+      this.attackDamage += atkBoost;
+
+      this.maxExp = expTable[this.level] || (this.maxExp * 1.25);
+    }
+
+    if (leveledUp) {
+      if (particles) {
+        particles.spawnRing(this.x, this.y, 50, "#ffd700", 0.6);
+        particles.spawnBurst(this.x, this.y, "#ffd700", 20, 150);
+      }
+      if (sound && sound.playLevelUp) {
+        sound.playLevelUp();
+      }
+      if (combatTexts) {
+        combatTexts.push({
+          x: this.x,
+          y: this.y - 35,
+          text: `LEVEL UP! Lv.${this.level}`,
+          color: "#ffd700",
+          life: 1.8,
+          maxLife: 1.8
+        });
+      }
+      return true;
+    }
+    return false;
   }
 
   async loadSprite() {
@@ -398,6 +452,13 @@ class Hero {
       return; // Do not walk or auto-attack while channeling recall
     }
 
+    // Passive EXP gain over time (+2 EXP/s)
+    this.passiveExpTimer = (this.passiveExpTimer || 0) + dt;
+    if (this.passiveExpTimer >= 1.0) {
+      this.passiveExpTimer -= 1.0;
+      this.gainExp(2, combatTexts, particles, sound);
+    }
+
     // Movement with speed boosts
     let currentSpeed = this.speed;
     if (skillManager && skillManager.activeBuffs && skillManager.activeBuffs.speedBoost > 0) {
@@ -624,6 +685,7 @@ class Hero {
               scoreboard.addCS("player");
               scoreboard.addGold("player", bounty);
             }
+            this.gainExp(GAME.EXP_REWARDS.minion, combatTexts, particles, sound);
             if (combatTexts) {
               combatTexts.push({
                 x: tx,
@@ -731,10 +793,27 @@ class Hero {
     ctx.lineWidth = 1;
     ctx.strokeRect(sx - barWidth / 2, sy - this.radius - 14, barWidth, barHeight);
 
+    // Level badge next to health bar
+    const lvl = this.level || 1;
+    ctx.fillStyle = "rgba(10, 15, 30, 0.9)";
+    ctx.beginPath();
+    ctx.arc(sx - barWidth / 2 - 7, sy - this.radius - 11.5, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#ffd700";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = "#ffd700";
+    ctx.font = "bold 8px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${lvl}`, sx - barWidth / 2 - 7, sy - this.radius - 11);
+
     // Name label
     ctx.fillStyle = "#fff";
     ctx.font = "bold 11px sans-serif";
     ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
     ctx.fillText(this.name, sx, sy - this.radius - 18);
 
     // Recall Channeling Gauge & Portal Aura

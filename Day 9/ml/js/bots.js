@@ -80,6 +80,122 @@ class BotHero {
 
     // Auto-item timer
     this.itemCheckTimer = 5;
+
+    // Progression & Leveling (Levels 1 to 15)
+    this.level = 1;
+    this.exp = 0;
+    this.maxExp = (typeof GAME !== "undefined" && GAME.LEVEL_EXP) ? GAME.LEVEL_EXP[1] : 100;
+    this.skillPoints = 1; // Start with 1 skill point
+    this.skillLevels = { q: 1, w: 0, e: 0, r: 0 };
+    this.passiveExpTimer = 0;
+  }
+
+  gainExp(amount, combatTexts, particles, sound) {
+    if (this.isDead || this.level >= 15) return false;
+    this.exp += amount;
+
+    const maxLvl = (typeof GAME !== "undefined" && GAME.MAX_HERO_LEVEL) ? GAME.MAX_HERO_LEVEL : 15;
+    const expTable = (typeof GAME !== "undefined" && GAME.LEVEL_EXP) ? GAME.LEVEL_EXP : [0, 100, 220, 360, 520, 700, 900, 1120, 1360, 1620, 1900, 2200, 2520, 2860, 3220];
+
+    let leveledUp = false;
+    while (this.level < maxLvl && this.exp >= this.maxExp) {
+      this.exp -= this.maxExp;
+      this.level++;
+      this.skillPoints++;
+      leveledUp = true;
+
+      const hpBoost = (typeof GAME !== "undefined" && GAME.STAT_GROWTH) ? GAME.STAT_GROWTH.hpPerLevel : 65;
+      const atkBoost = (typeof GAME !== "undefined" && GAME.STAT_GROWTH) ? GAME.STAT_GROWTH.atkPerLevel : 4.5;
+      this.maxHp += hpBoost;
+      this.hp = Math.min(this.maxHp, this.hp + hpBoost * 1.5);
+      this.attackDamage += atkBoost;
+
+      this.maxExp = expTable[this.level] || (this.maxExp * 1.25);
+
+      // Auto-allocate skill point
+      this.autoAllocateSkill();
+    }
+
+    if (leveledUp) {
+      if (particles) {
+        particles.spawnRing(this.x, this.y, 45, "#e74c3c", 0.6);
+        particles.spawnBurst(this.x, this.y, "#ff4757", 18, 140);
+      }
+      if (combatTexts) {
+        combatTexts.push({
+          x: this.x,
+          y: this.y - 35,
+          text: `[BOT] LEVEL UP! Lv.${this.level}`,
+          color: "#ff6b81",
+          life: 1.8,
+          maxLife: 1.8
+        });
+      }
+      return true;
+    }
+    return false;
+  }
+
+  autoAllocateSkill() {
+    while (this.skillPoints > 0) {
+      // Priority 1: Ultimate (R) at Lv 4, 8, 12 up to rank 3
+      const rReqLevel = this.skillLevels.r === 0 ? 4 : (this.skillLevels.r === 1 ? 8 : 12);
+      if (this.level >= rReqLevel && this.skillLevels.r < 3) {
+        this.skillLevels.r++;
+        this.skillPoints--;
+        this.skills.r.damage = Math.round(this.skills.r.damage * 1.22);
+        this.skills.r.maxCd = Math.max(12, this.skills.r.maxCd - 1.5);
+        continue;
+      }
+
+      // Priority 2: Q -> W balanced allocation
+      if (this.skillLevels.q <= this.skillLevels.w && this.skillLevels.q < 5) {
+        this.skillLevels.q++;
+        this.skillPoints--;
+        this.skills.q.damage = Math.round(this.skills.q.damage * 1.22);
+        this.skills.q.maxCd = Math.max(3, this.skills.q.maxCd - 0.4);
+      } else if (this.skillLevels.w < 5) {
+        this.skillLevels.w++;
+        this.skillPoints--;
+        this.skills.w.damage = Math.round(this.skills.w.damage * 1.22);
+        this.skills.w.maxCd = Math.max(4, this.skills.w.maxCd - 0.4);
+      } else if (this.skillLevels.q < 5) {
+        this.skillLevels.q++;
+        this.skillPoints--;
+        this.skills.q.damage = Math.round(this.skills.q.damage * 1.22);
+        this.skills.q.maxCd = Math.max(3, this.skills.q.maxCd - 0.4);
+      } else {
+        break; // All non-ultimate skills maxed
+      }
+    }
+  }
+
+  getLaneFrontlineBoundary(map) {
+    if (!map || !map.turrets) return 140;
+
+    // Find active Blue turrets in this bot's assigned lane
+    let laneTurrets = map.turrets.filter(t => t.team === "BLUE" && !t.destroyed && t.lane === this.lane);
+    if (laneTurrets.length === 0) {
+      laneTurrets = map.turrets.filter(t => t.team === "BLUE" && !t.destroyed);
+    }
+
+    if (laneTurrets.length === 0) {
+      return 160; // All lane turrets down, can push to base crystal
+    }
+
+    // Frontline turret is the one with highest worldX (furthest into the lane towards RED side)
+    let frontlineTurret = laneTurrets[0];
+    for (let i = 1; i < laneTurrets.length; i++) {
+      if (laneTurrets[i].worldX > frontlineTurret.worldX) {
+        frontlineTurret = laneTurrets[i];
+      }
+    }
+
+    // Outer turret (3rd) is at x=540 -> cutoff = 460px.
+    // Inner turret (2nd) is at x=420 -> cutoff = 340px.
+    // Base turret (1st) is at x=260 -> cutoff = 180px.
+    // The bot will dive around the frontline tower, but will NOT chase deep past this cutoff.
+    return frontlineTurret.worldX - 80;
   }
 
   async loadSprite() {
@@ -277,8 +393,13 @@ class BotHero {
     this.skills.w.cd = Math.max(0, this.skills.w.cd - dt);
     this.skills.r.cd = Math.max(0, this.skills.r.cd - dt);
 
-    // 3. Passive Gold & Auto-Items
+    // 3. Passive Gold & EXP Trickle
     this.gold += dt * 5;
+    this.passiveExpTimer = (this.passiveExpTimer || 0) + dt;
+    if (this.passiveExpTimer >= 1.0) {
+      this.passiveExpTimer -= 1.0;
+      this.gainExp(2, combatTexts, particles, sound);
+    }
     this.itemCheckTimer -= dt;
     if (this.itemCheckTimer <= 0) {
       this.itemCheckTimer = 6;
@@ -358,10 +479,12 @@ class BotHero {
         }
       }
 
-      if (distToPlayer < 300) {
-        // Player is nearby -> COMBAT
+      const chaseCutoff = this.getLaneFrontlineBoundary(map);
+
+      if (distToPlayer < 300 && player.x >= chaseCutoff) {
+        // Player is nearby and within frontline dive limit -> COMBAT
         this.state = "COMBAT";
-        this.engagePlayer(player, distToPlayer, dt, combatTexts, sound, particles, scoreboard);
+        this.engagePlayer(player, distToPlayer, dt, combatTexts, sound, particles, scoreboard, map);
       } else if (lordTarget) {
         // Defend against Opposing Summoned Lord
         this.state = "COMBAT";
@@ -381,10 +504,20 @@ class BotHero {
     this.stepMovement(dt, map);
   }
 
-  engagePlayer(player, dist, dt, combatTexts, sound, particles, scoreboard) {
-    // Position: stay in attack range
+  engagePlayer(player, dist, dt, combatTexts, sound, particles, scoreboard, map) {
+    const chaseCutoff = this.getLaneFrontlineBoundary(map);
+
+    // Frontline dive cutoff: If player retreated behind their inner towers or base, stop chasing!
+    if (player.x < chaseCutoff) {
+      this.state = "LANING";
+      this.targetX = Math.max(this.x, chaseCutoff + 30);
+      this.targetY = this.laneY;
+      return;
+    }
+
+    // Position: stay in attack range, but never advance past chaseCutoff
     if (dist > this.attackRange * 0.85) {
-      this.targetX = player.x;
+      this.targetX = Math.max(player.x, chaseCutoff + 15);
       this.targetY = player.y;
     } else if (dist < this.attackRange * 0.35) {
       // Kite backwards slightly
@@ -704,14 +837,15 @@ class BotHero {
           }
         }
       } else {
-        // 3. March down assigned lane towards Blue Base!
+        // 3. March down assigned lane towards frontline / Blue Base!
+        const chaseCutoff = this.getLaneFrontlineBoundary(map);
         if (Math.abs(this.y - this.laneY) > 20 && this.x > 1050) {
           // Navigate to lane entry inside Red Base
           this.targetX = this.x;
           this.targetY = this.laneY;
         } else {
-          // March down the lane towards Blue Base (x: 120)
-          this.targetX = 120;
+          // March down the lane towards frontline cutoff (do not march blindly past defended towers)
+          this.targetX = Math.max(chaseCutoff + 25, 120);
           this.targetY = this.laneY;
         }
       }
@@ -834,6 +968,22 @@ class BotHero {
     ctx.strokeStyle = "rgba(255,255,255,0.4)";
     ctx.lineWidth = 1;
     ctx.strokeRect(sx - barWidth / 2, sy - this.radius - 14, barWidth, barHeight);
+
+    // Overhead Level badge next to health bar
+    const lvl = this.level || 1;
+    ctx.fillStyle = "rgba(20, 5, 10, 0.9)";
+    ctx.beginPath();
+    ctx.arc(sx - barWidth / 2 - 7, sy - this.radius - 11.5, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#e74c3c";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = "#ff6b81";
+    ctx.font = "bold 8px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${lvl}`, sx - barWidth / 2 - 7, sy - this.radius - 11);
 
     // Bot Label
     ctx.fillStyle = "#ff6b6b";

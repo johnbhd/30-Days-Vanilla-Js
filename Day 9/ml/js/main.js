@@ -188,6 +188,7 @@ function startMatch() {
   // Update abilities dock with hero's kit
   updateAbilitiesDock(chosenHeroData.id);
   updateHeroUI(chosenHeroData);
+  updateHeroProgressionUI(selectedHero, skillManager);
   updateShopState();
 
   scoreboard.stats.player.gold = gameStats.gold;
@@ -406,6 +407,15 @@ if (recallBtn) {
   if (btn) {
     btn.addEventListener("click", () => triggerSkill(slot));
   }
+  const upBtn = document.getElementById(`upBtn${slot.toUpperCase()}`);
+  if (upBtn) {
+    upBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (selectedHero) {
+        skillManager.upgradeSkill(slot, selectedHero, combatTexts, sound);
+      }
+    });
+  }
 });
 
 // Keyboard controls
@@ -461,6 +471,93 @@ function updateHeroUI(hero) {
   if (nameEl) nameEl.textContent = hero.name;
   if (roleEl) roleEl.innerHTML = `${getRoleIcon(hero.role)} ${hero.role}`;
   if (laneEl) laneEl.innerHTML = `<i class="fa-solid fa-route" style="color:#4ecca3"></i> ${hero.lane}`;
+}
+
+function updateHeroProgressionUI(hero, skillMgr) {
+  if (!hero) return;
+
+  // Level Badge & EXP Bar in Hero Card
+  const lvlBadge = document.getElementById("heroLevelBadge");
+  const expBar = document.getElementById("heroExpBar");
+  const expText = document.getElementById("heroExpText");
+
+  if (lvlBadge) lvlBadge.textContent = hero.level || 1;
+
+  if (expBar && expText) {
+    const maxLvl = (typeof GAME !== "undefined" && GAME.MAX_HERO_LEVEL) ? GAME.MAX_HERO_LEVEL : 15;
+    if (hero.level >= maxLvl) {
+      expBar.style.width = "100%";
+      expText.textContent = "MAX LEVEL";
+    } else {
+      const pct = Math.max(0, Math.min(100, (hero.exp / hero.maxExp) * 100));
+      expBar.style.width = `${pct}%`;
+      expText.textContent = `EXP ${hero.exp} / ${hero.maxExp}`;
+    }
+  }
+
+  // Skill Points Badge in Abilities Header
+  const ptsBadge = document.getElementById("skillPointsBadge");
+  const ptsCount = document.getElementById("skillPointsCount");
+  const keysHint = document.getElementById("skillsKeysHint");
+
+  if (ptsBadge && ptsCount) {
+    if (hero.skillPoints > 0) {
+      ptsBadge.classList.remove("hidden");
+      ptsCount.textContent = hero.skillPoints;
+      if (keysHint) keysHint.classList.add("hidden");
+    } else {
+      ptsBadge.classList.add("hidden");
+      if (keysHint) keysHint.classList.remove("hidden");
+    }
+  }
+
+  // Upgrade Buttons (+), Rank Pips & Locked states for Q, W, E, R
+  ["q", "w", "e", "r"].forEach(slot => {
+    const upBtn = document.getElementById(`upBtn${slot.toUpperCase()}`);
+    const btnEl = document.getElementById(`btnSkill${slot.toUpperCase()}`);
+    const pipsContainer = document.getElementById(`pipsSkill${slot.toUpperCase()}`);
+    const rank = hero.skillLevels ? (hero.skillLevels[slot] || 0) : 1;
+
+    // Rank pips update
+    if (pipsContainer) {
+      const pips = pipsContainer.querySelectorAll(".rank-pip");
+      pips.forEach((pip, idx) => {
+        if (idx < rank) {
+          pip.classList.add("active");
+        } else {
+          pip.classList.remove("active");
+        }
+      });
+    }
+
+    // Locked state: if rank is 0, skill cannot be cast yet
+    if (btnEl) {
+      if (rank === 0) {
+        btnEl.classList.add("skill-locked");
+      } else {
+        btnEl.classList.remove("skill-locked");
+      }
+    }
+
+    // Eligibility to upgrade
+    if (upBtn) {
+      let canUpgrade = false;
+      if (hero.skillPoints > 0) {
+        if (slot === "r") {
+          const reqLevel = rank === 0 ? 4 : (rank === 1 ? 8 : 12);
+          canUpgrade = rank < 3 && hero.level >= reqLevel;
+        } else {
+          canUpgrade = rank < 5;
+        }
+      }
+
+      if (canUpgrade) {
+        upBtn.classList.remove("hidden");
+      } else {
+        upBtn.classList.add("hidden");
+      }
+    }
+  });
 }
 
 // Main game loop
@@ -553,6 +650,9 @@ function loop(currentTime) {
         }
       }
     });
+
+    // 6b. Update Hero Progression & Skill Upgrades UI
+    updateHeroProgressionUI(selectedHero, skillManager);
 
     // 7. Update Gold and Shop HUD
     itemShop.updateShopUI(gameStats);

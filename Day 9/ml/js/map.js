@@ -236,9 +236,18 @@ class Map {
             maxLife: 2.0
           });
         }
-        if (gameStats && turret.team === "RED") {
-          gameStats.turretsDestroyed++;
-          gameStats.gold += 250;
+        if (turret.team === "RED") {
+          if (gameStats) {
+            gameStats.turretsDestroyed++;
+            gameStats.gold += 250;
+          }
+          if (hero && hero.gainExp) {
+            hero.gainExp(GAME.EXP_REWARDS.turret, combatTexts, particles, sound);
+          }
+        } else if (turret.team === "BLUE") {
+          if (enemyBot && enemyBot.gainExp) {
+            enemyBot.gainExp(GAME.EXP_REWARDS.turret, combatTexts, particles, sound);
+          }
         }
         return;
       }
@@ -441,6 +450,9 @@ class Map {
             if (scoreboard) {
               if (p.target.team) scoreboard.addCS("player");
               scoreboard.addGold("player", bounty);
+            }
+            if (hero && hero.gainExp) {
+              hero.gainExp(GAME.EXP_REWARDS.minion, combatTexts, particles, sound);
             }
             if (combatTexts) {
               combatTexts.push({

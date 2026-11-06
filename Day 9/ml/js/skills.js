@@ -90,8 +90,67 @@ class SkillManager {
     return HERO_SKILLS[heroId] || HERO_SKILLS.miya;
   }
 
-  canCast(slot) {
-    return this.cooldowns[slot] <= 0;
+  canCast(slot, hero) {
+    if (this.cooldowns[slot] > 0) return false;
+    if (hero && hero.skillLevels && hero.skillLevels[slot] === 0) return false;
+    return true;
+  }
+
+  upgradeSkill(slot, hero, combatTexts, sound) {
+    if (!hero || hero.skillPoints <= 0) return false;
+    const heroSkills = this.getSkillsForHero(hero.id);
+    const skill = heroSkills[slot];
+    if (!skill) return false;
+
+    if (!hero.skillLevels) {
+      hero.skillLevels = { q: 1, w: 0, e: 0, r: 0 };
+    }
+
+    const currentRank = hero.skillLevels[slot] || 0;
+    const isUlt = slot === "r";
+    const maxRank = isUlt ? 3 : 5;
+
+    if (currentRank >= maxRank) return false;
+
+    // Ultimate unlock requirements: Rank 1 at Lv 4, Rank 2 at Lv 8, Rank 3 at Lv 12
+    if (isUlt) {
+      const requiredHeroLevel = (currentRank + 1) * 4;
+      if (hero.level < requiredHeroLevel) {
+        if (combatTexts) {
+          combatTexts.push({
+            x: hero.x,
+            y: hero.y - 30,
+            text: `UNLOCKS AT LV.${requiredHeroLevel}`,
+            color: "#e74c3c",
+            life: 1.0,
+            maxLife: 1.0
+          });
+        }
+        return false;
+      }
+    }
+
+    hero.skillLevels[slot] = currentRank + 1;
+    hero.skillPoints--;
+
+    if (sound && sound.playSkillUpgrade) {
+      sound.playSkillUpgrade();
+    } else if (sound && sound.playLevelUp) {
+      sound.playLevelUp();
+    }
+
+    if (combatTexts) {
+      combatTexts.push({
+        x: hero.x,
+        y: hero.y - 32,
+        text: `${skill.name.toUpperCase()} RANK ${hero.skillLevels[slot]}!`,
+        color: isUlt ? "#ffd700" : "#4ecca3",
+        life: 1.2,
+        maxLife: 1.2
+      });
+    }
+
+    return true;
   }
 
   resolveTurretCollision(destX, destY, map, origX, origY) {
@@ -118,14 +177,19 @@ class SkillManager {
   }
 
   castSkill(slot, hero, targetX, targetY, map, minions, objectives, combatTexts, gameStats, enemyBot, sound, particles) {
-    if (!hero || hero.hp <= 0 || !this.canCast(slot)) return false;
+    if (!hero || hero.hp <= 0 || !this.canCast(slot, hero)) return false;
 
     const heroSkills = this.getSkillsForHero(hero.id);
     const skill = heroSkills[slot];
     if (!skill) return false;
 
-    this.cooldowns[slot] = skill.cd;
-    this.maxCooldowns[slot] = skill.cd;
+    const rank = (hero.skillLevels && hero.skillLevels[slot]) ? hero.skillLevels[slot] : 1;
+    const dmgMultiplier = 1 + (rank - 1) * 0.22;
+    const cdReduction = (rank - 1) * 0.4;
+    const actualCd = Math.max(1.5, skill.cd - cdReduction);
+
+    this.cooldowns[slot] = actualCd;
+    this.maxCooldowns[slot] = actualCd;
 
     const dx = targetX - hero.x;
     const dy = targetY - hero.y;
@@ -167,7 +231,7 @@ class SkillManager {
               x: hero.x, y: hero.y,
               vx: ((e.x - hero.x) / ed) * 520,
               vy: ((e.y - hero.y) / ed) * 520,
-              radius: 4, damage: 180, team: hero.team, color: "#f1c40f", life: 0.8
+              radius: 4, damage: Math.round(180 * dmgMultiplier), team: hero.team, color: "#f1c40f", life: 0.8
             });
             fired++;
           }
@@ -183,7 +247,7 @@ class SkillManager {
               x: hero.x, y: hero.y,
               vx: Math.cos(a) * 520,
               vy: Math.sin(a) * 520,
-              radius: 4, damage: 180, team: hero.team, color: "#f1c40f", life: 0.8
+              radius: 4, damage: Math.round(180 * dmgMultiplier), team: hero.team, color: "#f1c40f", life: 0.8
             });
           }
         }
@@ -199,7 +263,7 @@ class SkillManager {
           startX: hero.x, startY: hero.y,
           endX: hero.x + dirX * beamRange, endY: hero.y + dirY * beamRange,
           width: slot === "r" ? 22 : 12,
-          damage: beamDmg,
+          damage: Math.round(beamDmg * dmgMultiplier),
           team: hero.team,
           color: slot === "r" ? "#e74c3c" : "#3498db",
           life: 0.35, maxLife: 0.35
@@ -213,7 +277,7 @@ class SkillManager {
           type: "circle",
           x: targetX, y: targetY,
           radius: skill.radius || 55,
-          damage: 190,
+          damage: Math.round(190 * dmgMultiplier),
           team: hero.team,
           color: "rgba(155, 89, 182, 0.45)",
           life: 0.8, maxLife: 0.8
@@ -223,12 +287,12 @@ class SkillManager {
 
       case "buff": {
         this.activeBuffs.speedBoost = 2.5;
-        hero.hp = Math.min(hero.maxHp, hero.hp + 100);
+        hero.hp = Math.min(hero.maxHp, hero.hp + Math.round(100 * dmgMultiplier));
         break;
       }
 
       case "shield": {
-        this.activeBuffs.shield = 450;
+        this.activeBuffs.shield = Math.round(450 * dmgMultiplier);
         break;
       }
 
@@ -271,7 +335,7 @@ class SkillManager {
           type: "circle",
           x: destX, y: destY,
           radius: 75,
-          damage: 240,
+          damage: Math.round(240 * dmgMultiplier),
           team: hero.team,
           color: "rgba(230, 126, 34, 0.5)",
           life: 0.5, maxLife: 0.5
@@ -284,7 +348,7 @@ class SkillManager {
           type: "circle",
           x: hero.x, y: hero.y,
           radius: skill.radius || 70,
-          damage: 220,
+          damage: Math.round(220 * dmgMultiplier),
           team: hero.team,
           color: "rgba(192, 57, 43, 0.5)",
           life: 0.4, maxLife: 0.4
@@ -311,7 +375,7 @@ class SkillManager {
           type: "circle",
           x: hero.x, y: hero.y,
           radius: 50,
-          damage: 180,
+          damage: Math.round(180 * dmgMultiplier),
           team: hero.team,
           color: "rgba(52, 152, 219, 0.4)",
           life: 0.3, maxLife: 0.3
@@ -325,9 +389,9 @@ class SkillManager {
       }
 
       case "heal": {
-        hero.hp = Math.min(hero.maxHp, hero.hp + 280);
+        hero.hp = Math.min(hero.maxHp, hero.hp + Math.round(280 * dmgMultiplier));
         if (combatTexts) {
-          combatTexts.push({ x: hero.x, y: hero.y - 20, text: "+280 HP", color: "#2ecc71", life: 1, maxLife: 1 });
+          combatTexts.push({ x: hero.x, y: hero.y - 20, text: `+${Math.round(280 * dmgMultiplier)} HP`, color: "#2ecc71", life: 1, maxLife: 1 });
         }
         break;
       }
@@ -336,17 +400,17 @@ class SkillManager {
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,
           vx: dirX * 380, vy: dirY * 380,
-          radius: 12, damage: 190, team: hero.team, color: "#3498db", life: 1.0
+          radius: 12, damage: Math.round(190 * dmgMultiplier), team: hero.team, color: "#3498db", life: 1.0
         });
         break;
       }
 
       case "wave_heal": {
-        hero.hp = Math.min(hero.maxHp, hero.hp + 150);
+        hero.hp = Math.min(hero.maxHp, hero.hp + Math.round(150 * dmgMultiplier));
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,
           vx: dirX * 420, vy: dirY * 420,
-          radius: 14, damage: 180, team: hero.team, color: "#f39c12", life: 0.9
+          radius: 14, damage: Math.round(180 * dmgMultiplier), team: hero.team, color: "#f39c12", life: 0.9
         });
         break;
       }
@@ -357,7 +421,7 @@ class SkillManager {
           this.activeProjectiles.push({
             x: hero.x, y: hero.y,
             vx: Math.cos(angle) * 440, vy: Math.sin(angle) * 440,
-            radius: 5, damage: 95, team: hero.team, color: "#e74c3c", life: 0.8
+            radius: 5, damage: Math.round(95 * dmgMultiplier), team: hero.team, color: "#e74c3c", life: 0.8
           });
         }
         break;
@@ -385,7 +449,7 @@ class SkillManager {
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,
           vx: dirX * 400, vy: dirY * 400,
-          radius: 8, damage: 175, team: hero.team, color: "#2ecc71", life: 1.2
+          radius: 8, damage: Math.round(175 * dmgMultiplier), team: hero.team, color: "#2ecc71", life: 1.2
         });
         break;
       }
@@ -398,7 +462,7 @@ class SkillManager {
       case "ultimate_meteor":
       case "ultimate_pull":
       case "ultimate_shield": {
-        this.executeUltimate(skill.type, hero, targetX, targetY, dirX, dirY, map, minions, objectives, combatTexts, enemyBot, sound, particles, gameStats);
+        this.executeUltimate(skill.type, hero, targetX, targetY, dirX, dirY, map, minions, objectives, combatTexts, enemyBot, sound, particles, gameStats, dmgMultiplier);
         break;
       }
 
@@ -406,7 +470,7 @@ class SkillManager {
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,
           vx: dirX * 420, vy: dirY * 420,
-          radius: 8, damage: 200, team: hero.team, color: "#4ecca3", life: 1.0
+          radius: 8, damage: Math.round(200 * dmgMultiplier), team: hero.team, color: "#4ecca3", life: 1.0
         });
         break;
       }
@@ -415,14 +479,14 @@ class SkillManager {
     return true;
   }
 
-  executeUltimate(type, hero, targetX, targetY, dirX, dirY, map, minions, objectives, combatTexts, enemyBot, sound, particles, gameStats) {
+  executeUltimate(type, hero, targetX, targetY, dirX, dirY, map, minions, objectives, combatTexts, enemyBot, sound, particles, gameStats, dmgMultiplier = 1) {
     if (type === "ultimate_execute") {
       // Execute slam
       this.activeAOEs.push({
         type: "circle",
         x: hero.x + dirX * 60, y: hero.y + dirY * 60,
         radius: 85,
-        damage: 480,
+        damage: Math.round(480 * dmgMultiplier),
         team: hero.team,
         color: "rgba(231, 76, 60, 0.6)",
         life: 0.6, maxLife: 0.6
@@ -432,7 +496,7 @@ class SkillManager {
       this.activeProjectiles.push({
         x: hero.x, y: hero.y,
         vx: dirX * 500, vy: dirY * 500,
-        radius: 20, damage: 420, team: hero.team, color: "#9b59b6", life: 1.2
+        radius: 20, damage: Math.round(420 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 1.2
       });
     } else if (type === "ultimate_storm") {
       for (let i = 0; i < 10; i++) {
@@ -440,7 +504,7 @@ class SkillManager {
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,
           vx: Math.cos(angle) * 420, vy: Math.sin(angle) * 420,
-          radius: 5, damage: 120, team: hero.team, color: "#e74c3c", life: 0.9
+          radius: 5, damage: Math.round(120 * dmgMultiplier), team: hero.team, color: "#e74c3c", life: 0.9
         });
       }
     } else if (type === "ultimate_meteor" || type === "ultimate_paws") {
@@ -449,7 +513,7 @@ class SkillManager {
           type: "circle",
           x: targetX + (i - 1) * 35, y: targetY + (i - 1) * 20,
           radius: 70,
-          damage: 260,
+          damage: Math.round(260 * dmgMultiplier),
           team: hero.team,
           color: "rgba(155, 89, 182, 0.6)",
           delay: i * 0.25,
@@ -565,6 +629,9 @@ class SkillManager {
         if (scoreboard) {
           if (e.team) scoreboard.addCS("player");
           scoreboard.addGold("player", bounty);
+        }
+        if (hero && hero.gainExp) {
+          hero.gainExp(GAME.EXP_REWARDS.minion, combatTexts, null, null);
         }
         if (combatTexts) {
           combatTexts.push({

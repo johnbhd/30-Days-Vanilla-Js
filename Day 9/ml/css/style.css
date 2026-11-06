@@ -102,6 +102,35 @@ canvas {
   letter-spacing: 0.3px;
 }
 
+.skill-points-badge {
+  font-size: 0.60rem;
+  font-weight: 800;
+  color: #ffd700;
+  background: rgba(255, 215, 0, 0.16);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  border-radius: 4px;
+  padding: 1px 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  animation: pulseGold 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseGold {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(255, 215, 0, 0.4);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.9);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(255, 215, 0, 0.4);
+  }
+}
+
 .skills-keys-hint {
   font-size: 0.64rem;
   color: #94a3b8;
@@ -120,9 +149,92 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
   flex: 1;
   min-width: 0;
+  position: relative;
+}
+
+.skill-upgrade-btn {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffd700;
+  color: #1a1a2e;
+  border: 1.5px solid #fff;
+  font-size: 9px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.85);
+  transition: all 0.15s ease;
+  z-index: 5;
+  margin-bottom: 1px;
+  padding: 0;
+  animation: pulseUpgrade 1.0s infinite alternate ease-in-out;
+}
+
+.skill-upgrade-btn:hover {
+  transform: scale(1.22);
+  background: #fff;
+  color: #e67e22;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 1);
+}
+
+.ultimate-upgrade-btn {
+  background: #e94560;
+  color: #fff;
+  border-color: #ffd700;
+  box-shadow: 0 0 8px rgba(233, 69, 96, 0.9);
+}
+
+.ultimate-upgrade-btn:hover {
+  background: #ff6b81;
+  color: #fff;
+  box-shadow: 0 0 14px rgba(233, 69, 96, 1);
+}
+
+@keyframes pulseUpgrade {
+  from {
+    transform: scale(1.0);
+  }
+  to {
+    transform: scale(1.15);
+  }
+}
+
+.skill-rank-pips {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  margin: 1px 0 1px 0;
+}
+
+.rank-pip {
+  width: 4px;
+  height: 3px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.rank-pip.active {
+  background: #4ecca3;
+  box-shadow: 0 0 3px #4ecca3;
+}
+
+.ultimate-pips .rank-pip.active {
+  background: #ffd700;
+  box-shadow: 0 0 4px #ffd700;
+}
+
+.skill-circle-btn.skill-locked {
+  filter: grayscale(0.85) opacity(0.55);
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .skill-circle-btn {
@@ -239,10 +351,34 @@ canvas {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
-  padding-bottom: 3px;
+  margin-bottom: 3px;
+  padding-bottom: 2px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   gap: 4px;
+}
+
+.hero-header-top {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-lvl-circle {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #1a2744 0%, #0d172e 100%);
+  border: 1.5px solid #ffd700;
+  color: #ffd700;
+  font-size: 9px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.45);
 }
 
 .hero-panel-header h2 {
@@ -252,7 +388,8 @@ canvas {
   font-weight: 700;
   letter-spacing: 0.2px;
   white-space: nowrap;
-  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hero-badges {
@@ -281,6 +418,41 @@ canvas {
 .lane-badge {
   color: #4ecca3;
   border-color: rgba(78, 204, 163, 0.35);
+}
+
+/* EXP Progress Bar in Hero Card */
+.exp-bar-container {
+  width: 100%;
+  height: 7px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(78, 204, 163, 0.35);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  margin: 2px 0 3px 0;
+}
+
+.exp-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4ecca3 0%, #38ef7d 100%);
+  border-radius: 2px;
+  transition: width 0.25s ease;
+  box-shadow: 0 0 4px rgba(78, 204, 163, 0.6);
+}
+
+.exp-bar-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 6px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 .builds-header {
@@ -1183,6 +1355,26 @@ canvas {
   .hero-panel {
     width: 100%;
     padding: 4px 6px;
+  }
+  .hero-lvl-circle {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
+  .exp-bar-container {
+    height: 6px;
+  }
+  .exp-bar-text {
+    font-size: 5.5px;
+  }
+  .skill-upgrade-btn {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
+  .rank-pip {
+    width: 3px;
+    height: 2px;
   }
   .hero-panel-header h2 {
     font-size: 0.78rem;

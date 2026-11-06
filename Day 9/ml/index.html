@@ -120,11 +120,18 @@
         <div class="top-right-column">
           <div class="hero-panel" id="heroPanel">
             <div class="hero-panel-header">
-              <h2 id="heroName">Select a Hero</h2>
+              <div class="hero-header-top">
+                <span class="hero-lvl-circle" id="heroLevelBadge" title="Hero Level">1</span>
+                <h2 id="heroName">Select a Hero</h2>
+              </div>
               <div class="hero-badges">
                 <span id="heroRoleBadge" class="hero-badge role-badge"><i class="fa-solid fa-crosshairs"></i> -</span>
                 <span id="heroLaneBadge" class="hero-badge lane-badge"><i class="fa-solid fa-route"></i> -</span>
               </div>
+            </div>
+            <div class="exp-bar-container" title="EXP Progress to Next Level">
+              <div class="exp-bar-fill" id="heroExpBar"></div>
+              <span class="exp-bar-text" id="heroExpText">EXP 0 / 100</span>
             </div>
             <div class="builds-header">
               <span><i class="fa-solid fa-shield-halved"></i> Builds</span>
@@ -151,38 +158,69 @@
           <div class="hero-skills-panel" id="heroSkillsPanel">
             <div class="skills-panel-header">
               <span><i class="fa-solid fa-wand-magic-sparkles"></i> Abilities</span>
-              <span class="skills-keys-hint">Q • W • E • R</span>
+              <span class="skill-points-badge hidden" id="skillPointsBadge"><i class="fa-solid fa-plus"></i> <span id="skillPointsCount">0</span> Pts</span>
+              <span class="skills-keys-hint" id="skillsKeysHint">Q • W • E • R</span>
             </div>
             <div class="skills-tray" id="skillsTray">
               <div class="skill-slot-wrapper">
+                <button class="skill-upgrade-btn hidden" id="upBtnQ" data-slot="q" title="Upgrade Skill 1 (Q)"><i class="fa-solid fa-plus"></i></button>
                 <div class="skill-circle-btn" id="btnSkillQ" data-slot="q" title="Skill 1 (Q)">
                   <span class="skill-key-badge">Q</span>
                   <div class="skill-icon-wrap skill-icon-q"><i class="fa-solid fa-bolt"></i></div>
                   <div class="cooldown-overlay hidden" id="cdOverlayQ">0.0</div>
                 </div>
+                <div class="skill-rank-pips" id="pipsSkillQ">
+                  <span class="rank-pip active"></span>
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                </div>
                 <span class="skill-label" id="nameSkillQ">Skill 1</span>
               </div>
               <div class="skill-slot-wrapper">
+                <button class="skill-upgrade-btn hidden" id="upBtnW" data-slot="w" title="Upgrade Skill 2 (W)"><i class="fa-solid fa-plus"></i></button>
                 <div class="skill-circle-btn" id="btnSkillW" data-slot="w" title="Skill 2 (W)">
                   <span class="skill-key-badge">W</span>
                   <div class="skill-icon-wrap skill-icon-w"><i class="fa-solid fa-shield-halved"></i></div>
                   <div class="cooldown-overlay hidden" id="cdOverlayW">0.0</div>
                 </div>
+                <div class="skill-rank-pips" id="pipsSkillW">
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                </div>
                 <span class="skill-label" id="nameSkillW">Skill 2</span>
               </div>
               <div class="skill-slot-wrapper">
+                <button class="skill-upgrade-btn hidden" id="upBtnE" data-slot="e" title="Upgrade Skill 3 (E)"><i class="fa-solid fa-plus"></i></button>
                 <div class="skill-circle-btn" id="btnSkillE" data-slot="e" title="Skill 3 (E)">
                   <span class="skill-key-badge">E</span>
                   <div class="skill-icon-wrap skill-icon-e"><i class="fa-solid fa-wind"></i></div>
                   <div class="cooldown-overlay hidden" id="cdOverlayE">0.0</div>
                 </div>
+                <div class="skill-rank-pips" id="pipsSkillE">
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                </div>
                 <span class="skill-label" id="nameSkillE">Skill 3</span>
               </div>
               <div class="skill-slot-wrapper">
+                <button class="skill-upgrade-btn ultimate-upgrade-btn hidden" id="upBtnR" data-slot="r" title="Upgrade Ultimate (R)"><i class="fa-solid fa-plus"></i></button>
                 <div class="skill-circle-btn ultimate-circle-btn" id="btnSkillR" data-slot="r" title="Ultimate (R)">
                   <span class="skill-key-badge ultimate-key-badge">R</span>
                   <div class="skill-icon-wrap skill-icon-r"><i class="fa-solid fa-crown"></i></div>
                   <div class="cooldown-overlay hidden" id="cdOverlayR">0.0</div>
+                </div>
+                <div class="skill-rank-pips ultimate-pips" id="pipsSkillR">
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
+                  <span class="rank-pip"></span>
                 </div>
                 <span class="skill-label ultimate-label" id="nameSkillR">Ultimate</span>
               </div>

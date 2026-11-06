@@ -187,6 +187,9 @@ class ObjectiveManager {
           if (enemyBot) {
             enemyBot.gold += 300;
             enemyBot.shield = Math.max(enemyBot.shield || 0, 350);
+            if (enemyBot.gainExp) {
+              enemyBot.gainExp((typeof GAME !== "undefined" && GAME.EXP_REWARDS) ? GAME.EXP_REWARDS.turtle : 300, combatTexts, particles, sound);
+            }
           }
           if (combatTexts) {
             combatTexts.push({ x: this.turtle.x, y: this.turtle.y - 30, text: "[BOT] +300g & SHIELD!", color: "#ff6b81", life: 2.0, maxLife: 2.0 });
@@ -197,6 +200,9 @@ class ObjectiveManager {
           if (scoreboard) {
             scoreboard.addGold("player", 300);
             if (scoreboard.stats) scoreboard.stats.turtlesTaken++;
+          }
+          if (hero && hero.gainExp) {
+            hero.gainExp((typeof GAME !== "undefined" && GAME.EXP_REWARDS) ? GAME.EXP_REWARDS.turtle : 300, combatTexts, particles, sound);
           }
           if (skillManager) {
             skillManager.activeBuffs.shield = Math.max(skillManager.activeBuffs.shield, 350);
@@ -240,7 +246,12 @@ class ObjectiveManager {
         if (isBotSlay) {
           this.addAnnouncement("RED TEAM HAS AWAKENED THE LORD!", "#e74c3c");
           if (scoreboard) scoreboard.addGold("bot", 500);
-          if (enemyBot) enemyBot.gold += 500;
+          if (enemyBot) {
+            enemyBot.gold += 500;
+            if (enemyBot.gainExp) {
+              enemyBot.gainExp((typeof GAME !== "undefined" && GAME.EXP_REWARDS) ? GAME.EXP_REWARDS.lord : 450, combatTexts, particles, sound);
+            }
+          }
           if (combatTexts) {
             combatTexts.push({ x: this.lord.x, y: this.lord.y - 30, text: "[BOT] +500g & ENEMY LORD SUMMONED!", color: "#e74c3c", life: 2.5, maxLife: 2.5 });
           }
@@ -251,6 +262,9 @@ class ObjectiveManager {
           if (scoreboard) {
             scoreboard.addGold("player", 500);
             if (scoreboard.stats) scoreboard.stats.lordsTaken++;
+          }
+          if (hero && hero.gainExp) {
+            hero.gainExp((typeof GAME !== "undefined" && GAME.EXP_REWARDS) ? GAME.EXP_REWARDS.lord : 450, combatTexts, particles, sound);
           }
           if (combatTexts) {
             combatTexts.push({ x: this.lord.x, y: this.lord.y - 30, text: "+500g & ALLIED LORD SUMMONED!", color: "#ffd700", life: 2.5, maxLife: 2.5 });
