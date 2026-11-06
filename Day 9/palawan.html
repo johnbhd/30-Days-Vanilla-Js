@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palawan — The Last Frontier of the Philippines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ocean: {
+          50:'#eefcfb', 100:'#c9f7f4', 200:'#93eee9', 300:'#54ded9',
+          400:'#21c5c1', 500:'#0ba8a6', 600:'#078a8a', 700:'#0a6e6f',
+          800:'#0c5859', 900:'#0d494a', 950:'#022c2e'
+        },
+        sand: {
+          50:'#fdf9ef', 100:'#faf0d7', 200:'#f4dfae', 300:'#ecc87b',
+          400:'#e3ab47', 500:'#dc9327', 600:'#c4751d', 700:'#a3571a',
+          800:'#85461c', 900:'#6e3b1a'
+        }
+      },
+      fontFamily: {
+        display: ['"Playfair Display"', 'serif'],
+        body: ['Inter', 'sans-serif']
+      }
+    }
+  }
+}
+</script>
+<style>
+  body{font-family:'Inter',sans-serif;background:#022c2e;color:#e6fffe}
+  .font-display{font-family:'Playfair Display',serif}
+  .glass{background:rgba(2,44,46,.55);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08)}
+  .hero-overlay{background:linear-gradient(to bottom,rgba(2,44,46,.35),rgba(2,44,46,.55) 55%,#022c2e 100%)}
+  .reveal{opacity:0;transform:translateY(28px);transition:all .8s cubic-bezier(.2,.8,.2,1)}
+  .reveal.visible{opacity:1;transform:translateY(0)}
+  .nav-scrolled{background:rgba(2,44,46,.92);box-shadow:0 10px 40px rgba(0,0,0,.35)}
+  .text-shadow{text-shadow:0 4px 24px rgba(0,0,0,.45)}
+  .img-zoom img{transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+  .img-zoom:hover img{transform:scale(1.08)}
+  .chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+  ::-webkit-scrollbar{width:10px}
+  ::-webkit-scrollbar-track{background:#022c2e}
+  ::-webkit-scrollbar-thumb{background:#0ba8a6;border-radius:10px}
+</style>
+</head>
+<body class="font-body antialiased overflow-x-hidden">
+
+<!-- ===== NAVBAR ===== -->
+<nav id="navbar" class="fixed top-0 inset-x-0 z-50 transition-all duration-500">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8">
+    <div class="flex items-center justify-between h-20">
+      <a href="#home" class="flex items-center gap-3 group">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-ocean-400 to-ocean-700 grid place-items-center shadow-lg shadow-ocean-900/40 group-hover:rotate-6 transition-transform">
+          <i class="fa-solid fa-water text-white text-lg"></i>
+        </div>
+        <div class="leading-tight">
+          <span class="font-display text-xl font-bold tracking-wide text-white block">Palawan</span>
+          <span class="text-[10px] tracking-[.3em] uppercase text-ocean-200/80">The Last Frontier</span>
+        </div>
+      </a>
+
+      <div class="hidden lg:flex items-center gap-9 text-sm font-medium text-white/80">
+        <a href="#home" class="hover:text-ocean-300 transition">Home</a>
+        <a href="#about" class="hover:text-ocean-300 transition">About</a>
+        <a href="#destinations" class="hover:text-ocean-300 transition">Destinations</a>
+        <a href="#experiences" class="hover:text-ocean-300 transition">Experiences</a>
+        <a href="#gallery" class="hover:text-ocean-300 transition">Gallery</a>
+        <a href="#contact" class="hover:text-ocean-300 transition">Contact</a>
+      </div>
+
+      <div class="hidden lg:flex items-center gap-3">
+        <a href="#contact" class="px-5 py-2.5 rounded-full text-sm font-semibold text-white border border-white/20 hover:bg-white/10 transition">Plan a Trip</a>
+        <a href="#destinations" class="px-5 py-2.5 rounded-full text-sm font-semibold bg-sand-400 text-ocean-950 hover:bg-sand-300 transition shadow-lg shadow-sand-500/20">Explore Now</a>
+      </div>
+
+      <button id="menuBtn" class="lg:hidden w-11 h-11 grid place-items-center rounded-xl text-white border border-white/15 hover:bg-white/10 transition" aria-label="Open menu">
+        <i class="fa-solid fa-bars text-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobileMenu" class="lg:hidden hidden px-5 pb-6">
+    <div class="glass rounded-3xl p-4 flex flex-col gap-1 text-white/85">
+      <a href="#home" class="mobile-link px-4 py-3 rounded-xl hover:bg-white/10 transition"><i class="fa-solid fa-house w-5 text-ocean-300"></i> Home</a>
+      <a href="#about" class="mobile-link px-4 py-3 rounded-xl hover:bg-white/10 transition"><i class="fa-solid fa-circle-info w-5 text-ocean-300"></i> About</a>
+      <a href="#destinations" class="mobile-link px-4 py-3 rounded-xl hover:bg-white/10 transition"><i class="fa-solid fa-location-dot w-5 text-ocean-300"></i> Destinations</a>
+      <a href="#experiences" class="mobile-link px-4 py-3 rounded-xl hover:bg-white/10 transition"><i class="fa-solid fa-compass w-5 text-ocean-300"></i> Experiences</a>
+      <a href="#gallery" class="mobile-link px-4 py-3 rounded-xl hover:bg-white/10 transition"><i class="fa-solid fa-images w-5 text-ocean-300"></i> Gallery</a>
+      <a href="#contact" class="mobile-link px-4 py-3 rounded-xl hover:bg-white/10 transition"><i class="fa-solid fa-envelope w-5 text-ocean-300"></i> Contact</a>
+      <a href="#contact" class="mobile-link mt-2 text-center px-4 py-3 rounded-xl font-semibold bg-sand-400 text-ocean-950">Plan a Trip</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header id="home" class="relative min-h-screen flex items-center justify-center overflow-hidden">
+  <div class="absolute inset-0">
+    <img src="https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?auto=format&fit=crop&w=2000&q=80"
+         alt="Palawan limestone cliffs and turquoise water" class="w-full h-full object-cover">
+    <div class="absolute inset-0 hero-overlay"></div>
+  </div>
+
+  <div class="relative z-10 text-center px-5 pt-28 pb-16 max-w-5xl mx-auto">
+    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full chip text-xs sm:text-sm tracking-[.25em] uppercase text-ocean-100 mb-7">
+      <i class="fa-solid fa-star text-sand-400"></i> Philippines' Last Frontier
+    </div>
+
+    <h1 class="font-display text-5xl sm:text-7xl lg:text-8xl font-bold leading-[1.02] text-white text-shadow">
+      Discover <span class="italic text-ocean-200">Palawan</span>
+    </h1>
+    <p class="mt-6 text-base sm:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed">
+      Hidden lagoons, limestone giants, and some of the clearest waters on Earth.
+      Find your paradise in the island province voted the world's best.
+    </p>
+
+    <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="#destinations" class="w-full sm:w-auto px-8 py-4 rounded-full font-semibold bg-sand-400 text-ocean-950 hover:bg-sand-300 transition shadow-xl shadow-sand-500/25 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-compass"></i> Start Exploring
+      </a>
+      <a href="#gallery" class="w-full sm:w-auto px-8 py-4 rounded-full font-semibold text-white border border-white/25 hover:bg-white/10 transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-images"></i> View Gallery
+      </a>
+    </div>
+
+    <div class="mt-16 grid grid-cols-3 gap-4 sm:gap-10 max-w-2xl mx-auto">
+      <div class="text-center">
+        <div class="font-display text-3xl sm:text-4xl font-bold text-white">1,780</div>
+        <div class="text-[10px] sm:text-xs tracking-[.2em] uppercase text-white/60 mt-1">Islands</div>
+      </div>
+      <div class="text-center border-x border-white/15">
+        <div class="font-display text-3xl sm:text-4xl font-bold text-white">2</div>
+        <div class="text-[10px] sm:text-xs tracking-[.2em] uppercase text-white/60 mt-1">UNESCO Sites</div>
+      </div>
+      <div class="text-center">
+        <div class="font-display text-3xl sm:text-4xl font-bold text-white">27°C</div>
+        <div class="text-[10px] sm:text-xs tracking-[.2em] uppercase text-white/60 mt-1">Avg. Water</div>
+      </div>
+    </div>
+  </div>
+
+  <a href="#about" class="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/70 hover:text-white transition animate-bounce" aria-label="Scroll down">
+    <i class="fa-solid fa-chevron-down text-2xl"></i>
+  </a>
+</header>
+
+<!-- ===== ABOUT ===== -->
+<section id="about" class="relative py-24 sm:py-32">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8 grid lg:grid-cols-2 gap-14 items-center">
+    <div class="reveal order-2 lg:order-1">
+      <span class="text-sand-400 text-xs font-semibold tracking-[.3em] uppercase">Why Palawan</span>
+      <h2 class="font-display text-4xl sm:text-5xl font-bold text-white mt-4 leading-tight">
+        A paradise made of <span class="italic text-ocean-300">water, rock, and wonder</span>
+      </h2>
+      <p class="mt-6 text-white/70 leading-relaxed">
+        Stretching between the Sulu and South China Seas, Palawan is a 450-kilometre
+        archipelago of jade lagoons, ancient limestone cliffs, and rainforests teeming
+        with life. It's the kind of place where the horizon feels endless and every
+        cove hides a new story.
+      </p>
+      <p class="mt-4 text-white/70 leading-relaxed">
+        From the underground river of Puerto Princesa to the island-hop paradise of
+        El Nido and the world-class wrecks of Coron — Palawan is consistently ranked
+        among the best islands on the planet.
+      </p>
+
+      <div class="mt-8 grid sm:grid-cols-2 gap-4">
+        <div class="glass rounded-2xl p-5 flex items-start gap-4">
+          <div class="w-11 h-11 rounded-xl bg-ocean-500/20 grid place-items-center text-ocean-300 shrink-0"><i class="fa-solid fa-leaf"></i></div>
+          <div>
+            <h4 class="font-semibold text-white">Untouched Nature</h4>
+            <p class="text-sm text-white/55 mt-1">Protected reefs & rare wildlife</p>
+          </div>
+        </div>
+        <div class="glass rounded-2xl p-5 flex items-start gap-4">
+          <div class="w-11 h-11 rounded-xl bg-sand-400/20 grid place-items-center text-sand-300 shrink-0"><i class="fa-solid fa-umbrella-beach"></i></div>
+          <div>
+            <h4 class="font-semibold text-white">Pristine Beaches</h4>
+            <p class="text-sm text-white/55 mt-1">Powder sand & calm coves</p>
+          </div>
+        </div>
+        <div class="glass rounded-2xl p-5 flex items-start gap-4">
+          <div class="w-11 h-11 rounded-xl bg-ocean-500/20 grid place-items-center text-ocean-300 shrink-0"><i class="fa-solid fa-mask-snorkel"></i></div>
+          <div>
+            <h4 class="font-semibold text-white">World-Class Diving</h4>
+            <p class="text-sm text-white/55 mt-1">Reefs, wrecks & marine life</p>
+          </div>
+        </div>
+        <div class="glass rounded-2xl p-5 flex items-start gap-4">
+          <div class="w-11 h-11 rounded-xl bg-sand-400/20 grid place-items-center text-sand-300 shrink-0"><i class="fa-solid fa-utensils"></i></div>
+          <div>
+            <h4 class="font-semibold text-white">Local Flavours</h4>
+            <p class="text-sm text-white/55 mt-1">Fresh seafood & island cuisine</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal order-1 lg:order-2 relative">
+      <div class="img-zoom rounded-[2rem] overflow-hidden shadow-2xl shadow-black/50 border border-white/10">
+        <img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?auto=format&fit=crop&w=1200&q=80"
+             alt="Turquoise lagoon in Palawan" class="w-full h-[420px] sm:h-[520px] object-cover">
+      </div>
+      <div class="absolute -bottom-6 -left-6 glass rounded-2xl p-5 hidden sm:block">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-award text-sand-400 text-2xl"></i>
+          <div>
+            <div class="font-semibold text-white text-sm">World's Best Island</div>
+            <div class="text-xs text-white/55">Travel + Leisure Awards</div>
+          </div>
+        </div>
+      </div>
+      <div class="absolute -top-5 -right-5 w-24 h-24 rounded-full bg-sand-400/10 blur-2xl"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DESTINATIONS ===== -->
+<section id="destinations" class="relative py-24 sm:py-32 bg-ocean-950/60 border-y border-white/5">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8">
+    <div class="reveal text-center max-w-2xl mx-auto mb-16">
+      <span class="text-sand-400 text-xs font-semibold tracking-[.3em] uppercase">Where to Go</span>
+      <h2 class="font-display text-4xl sm:text-5xl font-bold text-white mt-4">Iconic Destinations</h2>
+      <p class="mt-4 text-white/65">Four corners of Palawan, each with its own kind of magic.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-7">
+      <!-- El Nido -->
+      <article class="reveal group relative rounded-[2rem] overflow-hidden h-[420px] sm:h-[460px] border border-white/10 img-zoom shadow-xl shadow-black/30">
+        <img src="https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1200&q=80"
+             alt="El Nido lagoon and limestone cliffs" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-ocean-950 via-ocean-950/30 to-transparent"></div>
+        <div class="absolute top-6 left-6 px-3 py-1.5 rounded-full chip text-[11px] tracking-widest uppercase text-white/85">Island Hopping</div>
+        <div class="absolute bottom-0 inset-x-0 p-7">
+          <h3 class="font-display text-3xl font-bold text-white">El Nido</h3>
+          <p class="text-white/70 text-sm mt-2 max-w-md">Dramatic karst cliffs, hidden lagoons, and the famous Big & Small Lagoon.</p>
+          <div class="mt-4 flex items-center gap-5 text-xs text-white/60">
+            <span><i class="fa-solid fa-location-dot text-sand-400 mr-1.5"></i>Northern Palawan</span>
+            <span><i class="fa-solid fa-clock text-sand-400 mr-1.5"></i>Best Nov–May</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Coron -->
+      <article class="reveal group relative rounded-[2rem] overflow-hidden h-[420px] sm:h-[460px] border border-white/10 img-zoom shadow-xl shadow-black/30">
+        <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80"
+             alt="Coron underwater and limestone scenery" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-ocean-950 via-ocean-950/30 to-transparent"></div>
+        <div class="absolute top-6 left-6 px-3 py-1.5 rounded-full chip text-[11px] tracking-widest uppercase text-white/85">Diving & Wrecks</div>
+        <div class="absolute bottom-0 inset-x-0 p-7">
+          <h3 class="font-display text-3xl font-bold text-white">Coron</h3>
+          <p class="text-white/70 text-sm mt-2 max-w-md">Kayangan Lake, WWII wrecks, and dramatic limestone islands.</p>
+          <div class="mt-4 flex items-center gap-5 text-xs text-white/60">
+            <span><i class="fa-solid fa-location-dot text-sand-400 mr-1.5"></i>Busuanga</span>
+            <span><i class="fa-solid fa-clock text-sand-400 mr-1.5"></i>Best Dec–May</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Puerto Princesa -->
+      <article class="reveal group relative rounded-[2rem] overflow-hidden h-[420px] sm:h-[460px] border border-white/10 img-zoom shadow-xl shadow-black/30">
+        <img src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=1200&q=80"
+             alt="Puerto Princesa beach" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-ocean-950 via-ocean-950/30 to-transparent"></div>
+        <div class="absolute top-6 left-6 px-3 py-1.5 rounded-full chip text-[11px] tracking-widest uppercase text-white/85">UNESCO Site</div>
+        <div class="absolute bottom-0 inset-x-0 p-7">
+          <h3 class="font-display text-3xl font-bold text-white">Puerto Princesa</h3>
+          <p class="text-white/70 text-sm mt-2 max-w-md">The Underground River, mangrove tours, and a laid-back capital.</p>
+          <div class="mt-4 flex items-center gap-5 text-xs text-white/60">
+            <span><i class="fa-solid fa-location-dot text-sand-400 mr-1.5"></i>Central Palawan</span>
+            <span><i class="fa-solid fa-clock text-sand-400 mr-1.5"></i>Year-round</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tubbataha -->
+      <article class="reveal group relative rounded-[2rem] overflow-hidden h-[420px] sm:h-[460px] border border-white/10 img-zoom shadow-xl shadow-black/30">
+        <img src="https://images.unsplash.com/photo-1583212292454-1fe6229603b7?auto=format&fit=crop&w=1200&q=80"
+             alt="Tubbataha reef marine life" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-ocean-950 via-ocean-950/30 to-transparent"></div>
+        <div class="absolute top-6 left-6 px-3 py-1.5 rounded-full chip text-[11px] tracking-widest uppercase text-white/85">Marine Park</div>
+        <div class="absolute bottom-0 inset-x-0 p-7">
+          <h3 class="font-display text-3xl font-bold text-white">Tubbataha Reefs</h3>
+          <p class="text-white/70 text-sm mt-2 max-w-md">A UNESCO marine wonder — sharks, coral gardens, and open-ocean diving.</p>
+          <div class="mt-4 flex items-center gap-5 text-xs text-white/60">
+            <span><i class="fa-solid fa-location-dot text-sand-400 mr-1.5"></i>Sulu Sea</span>
+            <span><i class="fa-solid fa-clock text-sand-400 mr-1.5"></i>Mar–Jun only</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===== EXPERIENCES ===== -->
+<section id="experiences" class="relative py-24 sm:py-32">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8">
+    <div class="reveal text-center max-w-2xl mx-auto mb-16">
+      <span class="text-sand-400 text-xs font-semibold tracking-[.3em] uppercase">Things to Do</span>
+      <h2 class="font-display text-4xl sm:text-5xl font-bold text-white mt-4">Unforgettable Experiences</h2>
+      <p class="mt-4 text-white/65">Adventure, calm, and everything in between.</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="reveal glass rounded-3xl p-7 hover:border-ocean-400/40 transition group">
+        <div class="w-14 h-14 rounded-2xl bg-ocean-500/15 grid place-items-center text-ocean-300 text-2xl mb-5 group-hover:scale-110 transition"><i class="fa-solid fa-ship"></i></div>
+        <h3 class="font-display text-xl font-semibold text-white">Island Hopping</h3>
+        <p class="text-sm text-white/60 mt-2 leading-relaxed">Hop between lagoons, sandbars, and secret beaches on a traditional bangka.</p>
+      </div>
+      <div class="reveal glass rounded-3xl p-7 hover:border-ocean-400/40 transition group">
+        <div class="w-14 h-14 rounded-2xl bg-sand-400/15 grid place-items-center text-sand-300 text-2xl mb-5 group-hover:scale-110 transition"><i class="fa-solid fa-mask-snorkel"></i></div>
+        <h3 class="font-display text-xl font-semibold text-white">Snorkelling & Diving</h3>
+        <p class="text-sm text-white/60 mt-2 leading-relaxed">Swim with turtles and explore coral gardens and WWII wrecks.</p>
+      </div>
+      <div class="reveal glass rounded-3xl p-7 hover:border-ocean-400/40 transition group">
+        <div class="w-14 h-14 rounded-2xl bg-ocean-500/15 grid place-items-center text-ocean-300 text-2xl mb-5 group-hover:scale-110 transition"><i class="fa-solid fa-water"></i></div>
+        <h3 class="font-display text-xl font-semibold text-white">Underground River</h3>
+        <p class="text-sm text-white/60 mt-2 leading-relaxed">Paddle into a cathedral of stalactites on a UNESCO-listed river.</p>
+      </div>
+      <div class="reveal glass rounded-3xl p-7 hover:border-ocean-400/40 transition group">
+        <div class="w-14 h-14 rounded-2xl bg-sand-400/15 grid place-items-center text-sand-300 text-2xl mb-5 group-hover:scale-110 transition"><i class="fa-solid fa-hiking"></i></div>
+        <h3 class="font-display text-xl font-semibold text-white">Jungle Treks</h3>
+        <p class="text-sm text-white/60 mt-2 leading-relaxed">Hike to hidden waterfalls and endemic wildlife in the interior.</p>
+      </div>
+      <div class="reveal glass rounded-3xl p-7 hover:border-ocean-400/40 transition group">
+        <div class="w-14 h-14 rounded-2xl bg-ocean-500/15 grid place-items-center text-ocean-300 text-2xl mb-5 group-hover:scale-110 transition"><i class="fa-solid fa-utensils"></i></div>
+        <h3 class="font-display text-xl font-semibold text-white">Island Food</h3>
+        <p class="text-sm text-white/60 mt-2 leading-relaxed">Fresh seafood, kinilaw, and local flavours by the shore.</p>
+      </div>
+      <div class="reveal glass rounded-3xl p-7 hover:border-ocean-400/40 transition group">
+        <div class="w-14 h-14 rounded-2xl bg-sand-400/15 grid place-items-center text-sand-300 text-2xl mb-5 group-hover:scale-110 transition"><i class="fa-solid fa-sun"></i></div>
+        <h3 class="font-display text-xl font-semibold text-white">Sunset Cruises</h3>
+        <p class="text-sm text-white/60 mt-2 leading-relaxed">Drift across glowing water as the sky turns gold and pink.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== GALLERY ===== -->
+<section id="gallery" class="relative py-24 sm:py-32 bg-ocean-950/60 border-y border-white/5">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8">
+    <div class="reveal text-center max-w-2xl mx-auto mb-16">
+      <span class="text-sand-400 text-xs font-semibold tracking-[.3em] uppercase">Postcards</span>
+      <h2 class="font-display text-4xl sm:text-5xl font-bold text-white mt-4">Moments in Palawan</h2>
+      <p class="mt-4 text-white/65">A glimpse of the places that stay with you.</p>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      <div class="reveal img-zoom col-span-2 row-span-2 rounded-3xl overflow-hidden border border-white/10 h-[300px] sm:h-[420px]">
+        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80" alt="Tropical beach" class="w-full h-full object-cover">
+      </div>
+      <div class="reveal img-zoom rounded-3xl overflow-hidden border border-white/10 h-[140px] sm:h-[200px]">
+        <img src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=800&q=80" alt="Beach shoreline" class="w-full h-full object-cover">
+      </div>
+      <div class="reveal img-zoom rounded-3xl overflow-hidden border border-white/10 h-[140px] sm:h-[200px]">
+        <img src="https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=800&q=80" alt="Beach with palm trees" class="w-full h-full object-cover">
+      </div>
+      <div class="reveal img-zoom rounded-3xl overflow-hidden border border-white/10 h-[140px] sm:h-[200px]">
+        <img src="https://images.unsplash.com/photo-1471922694854-ff1b63b20054?auto=format&fit=crop&w=800&q=80" alt="Tropical island" class="w-full h-full object-cover">
+      </div>
+      <div class="reveal img-zoom rounded-3xl overflow-hidden border border-white/10 h-[140px] sm:h-[200px]">
+        <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80" alt="Ocean underwater" class="w-full h-full object-cover">
+      </div>
+      <div class="reveal img-zoom col-span-2 rounded-3xl overflow-hidden border border-white/10 h-[160px] sm:h-[220px]">
+        <img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?auto=format&fit=crop&w=1200&q=80" alt="Lagoon" class="w-full h-full object-cover">
+      </div>
+      <div class="reveal img-zoom rounded-3xl overflow-hidden border border-white/10 h-[160px] sm:h-[220px]">
+        <img src="https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=800&q=80" alt="Island cliffs" class="w-full h-full object-cover">
+      </div>
+      <div class="reveal img-zoom rounded-3xl overflow-hidden border border-white/10 h-[160px] sm:h-[220px]">
+        <img src="https://images.unsplash.com/photo-1583212292454-1fe6229603b7?auto=format&fit=crop&w=800&q=80" alt="Marine life" class="w-full h-full object-cover">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TESTIMONIALS ===== -->
+<section class="relative py-24 sm:py-32">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8">
+    <div class="reveal text-center max-w-2xl mx-auto mb-16">
+      <span class="text-sand-400 text-xs font-semibold tracking-[.3em] uppercase">Traveller Stories</span>
+      <h2 class="font-display text-4xl sm:text-5xl font-bold text-white mt-4">Loved by Explorers</h2>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <figure class="reveal glass rounded-3xl p-7">
+        <div class="flex text-sand-400 gap-1 mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+        <blockquote class="text-white/75 text-sm leading-relaxed">"El Nido is unreal — the lagoons look like they were painted. Easily the most beautiful place I've ever swum."</blockquote>
+        <figcaption class="mt-5 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-ocean-500/30 grid place-items-center text-ocean-200 font-semibold">M</div>
+          <div><div class="text-sm font-semibold text-white">Maya R.</div><div class="text-xs text-white/50">Travelled Jan 2026</div></div>
+        </figcaption>
+      </figure>
+      <figure class="reveal glass rounded-3xl p-7">
+        <div class="flex text-sand-400 gap-1 mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+        <blockquote class="text-white/75 text-sm leading-relaxed">"Coron's wrecks and lakes were the highlight of our trip. We spent three days just island hopping and never got bored."</blockquote>
+        <figcaption class="mt-5 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-sand-400/30 grid place-items-center text-sand-200 font-semibold">J</div>
+          <div><div class="text-sm font-semibold text-white">James T.</div><div class="text-xs text-white/50">Travelled Mar 2026</div></div>
+        </figcaption>
+      </figure>
+      <figure class="reveal glass rounded-3xl p-7">
+        <div class="flex text-sand-400 gap-1 mb-4"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+        <blockquote class="text-white/75 text-sm leading-relaxed">"The Underground River felt like another world. Palawan balances adventure and calm better than anywhere."</blockquote>
+        <figcaption class="mt-5 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-ocean-500/30 grid place-items-center text-ocean-200 font-semibold">A</div>
+          <div><div class="text-sm font-semibold text-white">Ana L.</div><div class="text-xs text-white/50">Travelled Dec 2025</div></div>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA / CONTACT ===== -->
+<section id="contact" class="relative py-24 sm:py-32">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8">
+    <div class="reveal relative rounded-[2.5rem] overflow-hidden border border-white/10">
+      <img src="https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?auto=format&fit=crop&w=1600&q=80" alt="Palawan coast" class="absolute inset-0 w-full h-full object-cover">
+      <div class="absolute inset-0 bg-ocean-950/80"></div>
+      <div class="relative z-10 px-6 sm:px-14 py-16 sm:py-20 text-center">
+        <span class="text-sand-400 text-xs font-semibold tracking-[.3em] uppercase">Plan Your Escape</span>
+        <h2 class="font-display text-4xl sm:text-5xl font-bold text-white mt-4">Palawan is calling.</h2>
+        <p class="mt-4 text-white/70 max-w-xl mx-auto">Tell us when you're coming and we'll help you build the island trip of a lifetime.</p>
+
+        <form class="mt-8 max-w-xl mx-auto grid sm:grid-cols-2 gap-3 text-left" onsubmit="event.preventDefault(); this.reset(); document.getElementById('formMsg').classList.remove('hidden');">
+          <input type="text" required placeholder="Your name" class="w-full px-5 py-3.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:border-ocean-400 transition">
+          <input type="email" required placeholder="Email address" class="w-full px-5 py-3.5 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/40 focus:outline-none focus:border-ocean-400 transition">
+          <input type="date" class="w-full px-5 py-3.5 rounded-xl bg-white/10 border border-white/15 text-white/80 focus:outline-none focus:border-ocean-400 transition">
+          <select class="w-full px-5 py-3.5 rounded-xl bg-white/10 border border-white/15 text-white/80 focus:outline-none focus:border-ocean-400 transition">
+            <option class="text-ocean-950">El Nido</option>
+            <option class="text-ocean-950">Coron</option>
+            <option class="text-ocean-950">Puerto Princesa</option>
+            <option class="text-ocean-950">Tubbataha</option>
+          </select>
+          <button type="submit" class="sm:col-span-2 px-8 py-4 rounded-xl font-semibold bg-sand-400 text-ocean-950 hover:bg-sand-300 transition shadow-lg shadow-sand-500/20">
+            <i class="fa-solid fa-paper-plane mr-2"></i>Send Inquiry
+          </button>
+          <p id="formMsg" class="hidden sm:col-span-2 text-center text-sm text-ocean-300 mt-1"><i class="fa-solid fa-circle-check mr-1"></i>Thanks! We'll get back to you soon.</p>
+        </form>
+
+        <div class="mt-8 flex items-center justify-center gap-6 text-white/50 text-sm">
+          <span><i class="fa-solid fa-envelope text-sand-400 mr-2"></i>hello@visitpalawan.ph</span>
+          <span class="hidden sm:inline"><i class="fa-solid fa-phone text-sand-400 mr-2"></i>+63 48 000 1234</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<footer class="border-t border-white/10 bg-ocean-950/70">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8 py-14">
+    <div class="grid md:grid-cols-4 gap-10">
+      <div class="md:col-span-2">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-ocean-400 to-ocean-700 grid place-items-center"><i class="fa-solid fa-water text-white"></i></div>
+          <div>
+            <span class="font-display text-xl font-bold text-white block">Palawan</span>
+            <span class="text-[10px] tracking-[.3em] uppercase text-ocean-200/70">The Last Frontier</span>
+          </div>
+        </div>
+        <p class="mt-5 text-sm text-white/55 max-w-sm leading-relaxed">An island province of lagoons, reefs, and limestone giants. Discover why Palawan is consistently named among the world's best islands.</p>
+        <div class="flex gap-3 mt-6">
+          <a href="#" class="w-10 h-10 rounded-full glass grid place-items-center text-white/70 hover:text-white hover:border-ocean-400/40 transition"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" class="w-10 h-10 rounded-full glass grid place-items-center text-white/70 hover:text-white hover:border-ocean-400/40 transition"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="#" class="w-10 h-10 rounded-full glass grid place-items-center text-white/70 hover:text-white hover:border-ocean-400/40 transition"><i class="fa-brands fa-youtube"></i></a>
+          <a href="#" class="w-10 h-10 rounded-full glass grid place-items-center text-white/70 hover:text-white hover:border-ocean-400/40 transition"><i class="fa-brands fa-tiktok"></i></a>
+        </div>
+      </div>
+      <div>
+        <h4 class="text-xs font-semibold tracking-[.25em] uppercase text-white/80 mb-4">Explore</h4>
+        <ul class="space-y-2.5 text-sm text-white/55">
+          <li><a href="#destinations" class="hover:text-ocean-300 transition">El Nido</a></li>
+          <li><a href="#destinations" class="hover:text-ocean-300 transition">Coron</a></li>
+          <li><a href="#destinations" class="hover:text-ocean-300 transition">Puerto Princesa</a></li>
+          <li><a href="#destinations" class="hover:text-ocean-300 transition">Tubbataha</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-xs font-semibold tracking-[.25em] uppercase text-white/80 mb-4">Travel Info</h4>
+        <ul class="space-y-2.5 text-sm text-white/55">
+          <li><a href="#experiences" class="hover:text-ocean-300 transition">Things to Do</a></li>
+          <li><a href="#gallery" class="hover:text-ocean-300 transition">Gallery</a></li>
+          <li><a href="#contact" class="hover:text-ocean-300 transition">Plan a Trip</a></li>
+          <li><a href="#contact" class="hover:text-ocean-300 transition">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
+      <span>© 2026 Visit Palawan. All rights reserved.</span>
+      <span>Made with <i class="fa-solid fa-heart text-sand-400"></i> for the Philippines</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Navbar scroll effect
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('nav-scrolled', window.scrollY > 40);
+  });
+
+  // Mobile menu
+  const menuBtn = document.getElementById('menuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  menuBtn.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+    const icon = menuBtn.querySelector('i');
+    icon.classList.toggle('fa-bars');
+    icon.classList.toggle('fa-xmark');
+  });
+  document.querySelectorAll('.mobile-link').forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu.classList.add('hidden');
+      const icon = menuBtn.querySelector('i');
+      icon.classList.add('fa-bars');
+      icon.classList.remove('fa-xmark');
+    });
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
