@@ -309,7 +309,8 @@ class Map {
           damage: turret.damage,
           team: turret.team,
           color: turret.team === "BLUE" ? "#38ef7d" : "#ff4b2b",
-          radius: 5
+          radius: 5,
+          isTurret: true
         });
       }
     });
@@ -384,7 +385,8 @@ class Map {
           team: base.team,
           color: base.team === "BLUE" ? "#00d2d3" : "#ff4757",
           radius: 6,
-          isCrystal: true
+          isCrystal: true,
+          isTurret: true
         });
       }
     });
@@ -408,7 +410,7 @@ class Map {
       if (dist <= step || dist < 12) {
         // Hit target
         if (typeof p.target.takeDamage === "function") {
-          p.target.takeDamage(p.damage, { team: p.team }, combatTexts, particles, sound, scoreboard);
+          p.target.takeDamage(p.damage, { team: p.team, isTurret: !!p.isTurret, isCrystal: !!p.isCrystal }, combatTexts, particles, sound, scoreboard);
         } else {
           const prevHp = p.target.hp || 0;
           p.target.hp = Math.max(0, p.target.hp - p.damage);

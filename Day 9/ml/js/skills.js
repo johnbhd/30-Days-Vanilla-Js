@@ -94,6 +94,29 @@ class SkillManager {
     return this.cooldowns[slot] <= 0;
   }
 
+  resolveTurretCollision(destX, destY, map, origX, origY) {
+    if (!map || !map.turrets) return { x: destX, y: destY };
+    const minSafeDist = 38; // 40px tile half-diagonal is ~28.3px + hero radius (18px)
+    for (let i = 0; i < map.turrets.length; i++) {
+      const t = map.turrets[i];
+      if (t.destroyed) continue;
+      const d = Math.hypot(destX - t.worldX, destY - t.worldY);
+      if (d < minSafeDist) {
+        let angle;
+        if (d > 1) {
+          angle = Math.atan2(destY - t.worldY, destX - t.worldX);
+        } else if (origX !== undefined && origY !== undefined && Math.hypot(origX - t.worldX, origY - t.worldY) > 1) {
+          angle = Math.atan2(origY - t.worldY, origX - t.worldX);
+        } else {
+          angle = -Math.PI / 2;
+        }
+        destX = t.worldX + Math.cos(angle) * minSafeDist;
+        destY = t.worldY + Math.sin(angle) * minSafeDist;
+      }
+    }
+    return { x: destX, y: destY };
+  }
+
   castSkill(slot, hero, targetX, targetY, map, minions, objectives, combatTexts, gameStats, enemyBot, sound, particles) {
     if (!hero || hero.hp <= 0 || !this.canCast(slot)) return false;
 
@@ -220,8 +243,12 @@ class SkillManager {
         const origY = hero.y;
         const mapMaxX = map ? map.width * map.tileSize : 1280;
         const mapMaxY = map ? map.height * map.tileSize : 720;
-        const destX = clamp(hero.x + Math.cos(angle) * dashDist, 60, mapMaxX - 60);
-        const destY = clamp(hero.y + Math.sin(angle) * dashDist, 60, mapMaxY - 60);
+        let destX = clamp(hero.x + Math.cos(angle) * dashDist, 60, mapMaxX - 60);
+        let destY = clamp(hero.y + Math.sin(angle) * dashDist, 60, mapMaxY - 60);
+
+        const safePos = this.resolveTurretCollision(destX, destY, map, origX, origY);
+        destX = safePos.x;
+        destY = safePos.y;
 
         hero.x = destX;
         hero.y = destY;
@@ -268,8 +295,16 @@ class SkillManager {
       case "dash":
       case "dash_knock":
       case "dash_push": {
-        hero.x += dirX * 130;
-        hero.y += dirY * 130;
+        const origX = hero.x;
+        const origY = hero.y;
+        const mapMaxX = map ? map.width * map.tileSize : 1280;
+        const mapMaxY = map ? map.height * map.tileSize : 720;
+        let destX = clamp(hero.x + dirX * 130, 60, mapMaxX - 60);
+        let destY = clamp(hero.y + dirY * 130, 60, mapMaxY - 60);
+
+        const safePos = this.resolveTurretCollision(destX, destY, map, origX, origY);
+        hero.x = safePos.x;
+        hero.y = safePos.y;
         hero.targetX = hero.x;
         hero.targetY = hero.y;
         this.activeAOEs.push({
@@ -329,8 +364,18 @@ class SkillManager {
       }
 
       case "dash_reset": {
-        hero.x += dirX * 100;
-        hero.y += dirY * 100;
+        const origX = hero.x;
+        const origY = hero.y;
+        const mapMaxX = map ? map.width * map.tileSize : 1280;
+        const mapMaxY = map ? map.height * map.tileSize : 720;
+        let destX = clamp(hero.x + dirX * 100, 60, mapMaxX - 60);
+        let destY = clamp(hero.y + dirY * 100, 60, mapMaxY - 60);
+
+        const safePos = this.resolveTurretCollision(destX, destY, map, origX, origY);
+        hero.x = safePos.x;
+        hero.y = safePos.y;
+        hero.targetX = hero.x;
+        hero.targetY = hero.y;
         this.cooldowns.q = 0;
         this.cooldowns.w = 0;
         break;
@@ -419,8 +464,11 @@ class SkillManager {
           const isBossOrTurret = e.isTurret || e.isBoss || (objectives && (e === objectives.turtle || e === objectives.lord));
           if (!isBossOrTurret) {
             // Pull enemy directly into Tigreal's melee perimeter
-            e.x = hero.x + (Math.random() - 0.5) * 25;
-            e.y = hero.y + (Math.random() - 0.5) * 25;
+            const pullX = hero.x + (Math.random() - 0.5) * 25;
+            const pullY = hero.y + (Math.random() - 0.5) * 25;
+            const safePull = this.resolveTurretCollision(pullX, pullY, map, hero.x, hero.y);
+            e.x = safePull.x;
+            e.y = safePull.y;
             if (e.targetX !== undefined) {
               e.targetX = e.x;
               e.targetY = e.y;

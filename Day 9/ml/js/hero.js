@@ -272,6 +272,14 @@ class Hero {
   }
 
   checkWalkable(map, x, y) {
+    if (map && map.turrets) {
+      for (let i = 0; i < map.turrets.length; i++) {
+        const t = map.turrets[i];
+        if (!t.destroyed && Math.hypot(x - t.worldX, y - t.worldY) < 36) {
+          return false;
+        }
+      }
+    }
     const r = this.radius * 0.7;
     const points = [
       { x: x - r, y: y - r },
@@ -413,6 +421,25 @@ class Hero {
       }
       if (this.checkWalkable(map, this.x, nextY)) {
         this.y = nextY;
+      }
+    }
+
+    // Turret solid collision & unstuck separation
+    if (map && map.turrets) {
+      const minTurretDist = 38;
+      for (let i = 0; i < map.turrets.length; i++) {
+        const t = map.turrets[i];
+        if (t.destroyed) continue;
+        const td = Math.hypot(this.x - t.worldX, this.y - t.worldY);
+        if (td < minTurretDist) {
+          const pushAngle = td > 1 ? Math.atan2(this.y - t.worldY, this.x - t.worldX) : -Math.PI / 2;
+          this.x = t.worldX + Math.cos(pushAngle) * minTurretDist;
+          this.y = t.worldY + Math.sin(pushAngle) * minTurretDist;
+          if (Math.hypot(this.targetX - t.worldX, this.targetY - t.worldY) < 32) {
+            this.targetX = this.x;
+            this.targetY = this.y;
+          }
+        }
       }
     }
 
