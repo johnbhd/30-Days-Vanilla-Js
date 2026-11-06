@@ -214,7 +214,7 @@ class Map {
     return tile ? tile.color : "#2d5a27";
   }
 
-  updateCombat(dt, hero, minions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard) {
+  updateCombat(dt, hero, minions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager) {
     const candidateHeroes = [];
     if (hero && !hero.isDead && hero.hp > 0) candidateHeroes.push(hero);
     if (enemyBot && !enemyBot.isDead && enemyBot.hp > 0) candidateHeroes.push(enemyBot);
@@ -278,6 +278,15 @@ class Map {
           }
         });
 
+        // Opposing Summoned Lord in range (high priority siege target!)
+        if (objectiveManager && objectiveManager.summonedLord && !objectiveManager.summonedLord.isDead && objectiveManager.summonedLord.team !== turret.team) {
+          const lord = objectiveManager.summonedLord;
+          const d = getDistance(turret.worldX, turret.worldY, lord.x, lord.y);
+          if (d <= turret.range) {
+            enemies.push({ unit: lord, dist: d, priority: 1.2 });
+          }
+        }
+
         // Prioritize minions over heroes, closest distance first
         enemies.sort((a, b) => {
           if (a.priority !== b.priority) return a.priority - b.priority;
@@ -340,6 +349,15 @@ class Map {
             if (d <= base.defenseRange) baseEnemies.push({ unit: h, dist: d, priority: 1 });
           }
         });
+
+        // Opposing Summoned Lord invading base territory
+        if (objectiveManager && objectiveManager.summonedLord && !objectiveManager.summonedLord.isDead && objectiveManager.summonedLord.team !== base.team) {
+          const lord = objectiveManager.summonedLord;
+          const d = getDistance(base.worldX, base.worldY, lord.x, lord.y);
+          if (d <= base.defenseRange) {
+            baseEnemies.push({ unit: lord, dist: d, priority: 1.5 });
+          }
+        }
 
         baseEnemies.sort((a, b) => {
           if (a.priority !== b.priority) return a.priority - b.priority;

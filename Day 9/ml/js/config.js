@@ -26,7 +26,8 @@ const GAME = {
   WAVE: {
     INTERVAL: 25, // seconds between waves
     INITIAL_DELAY: 2 // seconds before first wave
-  }
+  },
+  HERO_RESPAWN_TIME: 10 // seconds for both Player and Bot hero respawn
 };
 
 /**
@@ -42,7 +43,7 @@ const HEROES = [
     lane: "Gold Lane",
     color: "#f1c40f",
     sprite: "assets/sprites/heroes/miya/",
-    stats: { hp: 750, atk: 110, spd: 3.2, range: 175 }
+    stats: { hp: 1650, atk: 110, spd: 3.2, range: 175 }
   },
   {
     id: "tigreal",
@@ -69,7 +70,7 @@ const HEROES = [
     lane: "Gold Lane",
     color: "#e67e22",
     sprite: "assets/sprites/heroes/layla/",
-    stats: { hp: 720, atk: 115, spd: 3.0, range: 185 }
+    stats: { hp: 1620, atk: 115, spd: 3.0, range: 185 }
   },
   {
     id: "angela",
@@ -78,7 +79,7 @@ const HEROES = [
     lane: "Roam",
     color: "#f39c12",
     sprite: "assets/sprites/heroes/angela/",
-    stats: { hp: 2000, atk: 80, spd: 2.6, range: 125 }
+    stats: { hp: 2000, atk: 80, spd: 2.6, range: 180 }
   },
   {
     id: "gusion",

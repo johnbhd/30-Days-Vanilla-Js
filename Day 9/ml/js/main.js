@@ -492,7 +492,7 @@ function loop(currentTime) {
     if (selectedHero) {
       if (Input.targetX !== null && Input.targetY !== null) {
         if (selectedHero.stunTimer <= 0) {
-          selectedHero.setTarget(Input.targetX, Input.targetY);
+          selectedHero.setTarget(Input.targetX, Input.targetY, map, minionManager.minions, objectiveManager, enemyBot);
         }
         if (!Input.isDragging) {
           Input.targetX = null;
@@ -511,11 +511,11 @@ function loop(currentTime) {
 
     // 1b. Enemy Bot Hero update
     if (enemyBot) {
-      enemyBot.update(dt, selectedHero, minionManager, map, combatTexts, sound, particles, scoreboard);
+      enemyBot.update(dt, selectedHero, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager);
     }
 
     // 2. Minions update (targeting both Player & Enemy Bot)
-    minionManager.update(dt, map, selectedHero, combatTexts, gameStats, enemyBot, sound, particles, scoreboard);
+    minionManager.update(dt, map, selectedHero, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager);
 
     // 3. Skills update
     skillManager.update(dt, selectedHero, map, minionManager.minions, objectiveManager, combatTexts, gameStats, enemyBot, scoreboard, sound, particles);
@@ -524,7 +524,7 @@ function loop(currentTime) {
     objectiveManager.update(dt, selectedHero, map, minionManager.minions, combatTexts, gameStats, skillManager, scoreboard, enemyBot, sound, particles);
 
     // 5. Turrets, Base Crystal & projectiles update (targeting both Player & Enemy Bot)
-    map.updateCombat(dt, selectedHero, minionManager.minions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard);
+    map.updateCombat(dt, selectedHero, minionManager.minions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager);
 
     // 6. Update Ability Cooldown & Recall UI Overlays
     const recallBtnEl = document.getElementById("btnRecall");

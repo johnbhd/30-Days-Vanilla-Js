@@ -33,7 +33,7 @@ class Hero {
     this.attackTarget = null;
     this.isDead = false;
     this.respawnTimer = 0;
-    this.respawnMax = 5;
+    this.respawnMax = (typeof GAME !== "undefined" && GAME.HERO_RESPAWN_TIME) ? GAME.HERO_RESPAWN_TIME : 10;
     this.baseHealTimer = 0;
 
     // Recall ability
@@ -136,7 +136,7 @@ class Hero {
     }
   }
 
-  setTarget(tx, ty) {
+  setTarget(tx, ty, map, minions, objectives, enemyBot) {
     if (this.stunTimer > 0) return; // Cannot move while stunned
     if (this.isRecalling) {
       const dist = Math.hypot(tx - this.x, ty - this.y);
@@ -147,6 +147,92 @@ class Hero {
       }
       return;
     }
+
+    // Check if player clicked directly on an enemy unit (click hit radius: 38px)
+    let clickedEnemy = null;
+    let minClickDist = 38;
+
+    if (enemyBot && !enemyBot.isDead && enemyBot.hp > 0 && enemyBot.team !== this.team) {
+      const cd = Math.hypot(enemyBot.x - tx, enemyBot.y - ty);
+      if (cd < minClickDist) {
+        minClickDist = cd;
+        clickedEnemy = enemyBot;
+      }
+    }
+
+    if (minions) {
+      minions.forEach(m => {
+        if (m.team !== this.team && !m.isDead && m.hp > 0) {
+          const cd = Math.hypot(m.x - tx, m.y - ty);
+          if (cd < minClickDist) {
+            minClickDist = cd;
+            clickedEnemy = m;
+          }
+        }
+      });
+    }
+
+    if (map && map.turrets) {
+      map.turrets.forEach(t => {
+        if (t.team !== this.team && !t.destroyed && t.hp > 0) {
+          const cd = Math.hypot(t.worldX - tx, t.worldY - ty);
+          if (cd < minClickDist + 12) {
+            minClickDist = cd;
+            clickedEnemy = t;
+          }
+        }
+      });
+    }
+
+    if (objectives) {
+      if (objectives.turtle && objectives.turtle.alive) {
+        const cd = Math.hypot(objectives.turtle.x - tx, objectives.turtle.y - ty);
+        if (cd < minClickDist + 12) {
+          minClickDist = cd;
+          clickedEnemy = objectives.turtle;
+        }
+      }
+      if (objectives.lord && objectives.lord.alive) {
+        const cd = Math.hypot(objectives.lord.x - tx, objectives.lord.y - ty);
+        if (cd < minClickDist + 12) {
+          minClickDist = cd;
+          clickedEnemy = objectives.lord;
+        }
+      }
+      if (objectives.summonedLord && !objectives.summonedLord.isDead && objectives.summonedLord.team !== this.team) {
+        const cd = Math.hypot(objectives.summonedLord.x - tx, objectives.summonedLord.y - ty);
+        if (cd < minClickDist + 12) {
+          minClickDist = cd;
+          clickedEnemy = objectives.summonedLord;
+        }
+      }
+    }
+
+    if (map && map.bases) {
+      const enemyBase = map.bases.find(b => b.team !== this.team && b.crystalHp > 0);
+      if (enemyBase) {
+        const cd = Math.hypot(enemyBase.worldX - tx, enemyBase.worldY - ty);
+        if (cd < minClickDist + 18) {
+          minClickDist = cd;
+          clickedEnemy = enemyBase;
+        }
+      }
+    }
+
+    if (clickedEnemy) {
+      this.attackTarget = clickedEnemy;
+      const enemyX = clickedEnemy.x !== undefined ? clickedEnemy.x : clickedEnemy.worldX;
+      const enemyY = clickedEnemy.y !== undefined ? clickedEnemy.y : clickedEnemy.worldY;
+      const distToEnemy = Math.hypot(enemyX - this.x, enemyY - this.y);
+
+      // If ranged and already in attack range, stop and attack immediately!
+      if (this.attackRange > 130 && distToEnemy <= this.attackRange) {
+        this.targetX = this.x;
+        this.targetY = this.y;
+        return;
+      }
+    }
+
     this.targetX = tx;
     this.targetY = ty;
   }
@@ -404,7 +490,7 @@ class Hero {
         });
       }
 
-      // River Bosses (Turtle / Lord)
+      // River Bosses (Turtle / Lord / Enemy Summoned Lord)
       if (objectives) {
         if (objectives.turtle && objectives.turtle.alive) {
           const d = getDistance(this.x, this.y, objectives.turtle.x, objectives.turtle.y);
@@ -413,6 +499,10 @@ class Hero {
         if (objectives.lord && objectives.lord.alive) {
           const d = getDistance(this.x, this.y, objectives.lord.x, objectives.lord.y);
           if (d <= this.attackRange) potentialTargets.push({ unit: objectives.lord, dist: d, priority: 3 });
+        }
+        if (objectives.summonedLord && !objectives.summonedLord.isDead && objectives.summonedLord.team !== this.team) {
+          const d = getDistance(this.x, this.y, objectives.summonedLord.x, objectives.summonedLord.y);
+          if (d <= this.attackRange + 15) potentialTargets.push({ unit: objectives.summonedLord, dist: d, priority: 1.2 });
         }
       }
 
@@ -425,7 +515,20 @@ class Hero {
         }
       }
 
-      potentialTargets.sort((a, b) => a.priority - b.priority || a.dist - b.dist);
+      // Cursor-directed aim: bias toward targets nearest to cursor pointer
+      const aimX = (typeof Input !== "undefined" && typeof camera !== "undefined") ? (Input.mouseX + camera.x) : this.x;
+      const aimY = (typeof Input !== "undefined" && typeof camera !== "undefined") ? (Input.mouseY + camera.y) : this.y;
+
+      potentialTargets.sort((a, b) => {
+        const ax = a.unit.x !== undefined ? a.unit.x : a.unit.worldX;
+        const ay = a.unit.y !== undefined ? a.unit.y : a.unit.worldY;
+        const bx = b.unit.x !== undefined ? b.unit.x : b.unit.worldX;
+        const by = b.unit.y !== undefined ? b.unit.y : b.unit.worldY;
+        const aimA = Math.hypot(ax - aimX, ay - aimY);
+        const aimB = Math.hypot(bx - aimX, by - aimY);
+        return (a.priority * 70 + aimA) - (b.priority * 70 + aimB);
+      });
+
       if (potentialTargets.length > 0) {
         this.attackTarget = potentialTargets[0].unit;
       }
@@ -448,19 +551,25 @@ class Hero {
       }
 
       if (isRanged) {
+        let projColor = "#f1c40f";
+        if (this.id === "angela") projColor = "#ff7675";
+        else if (this.id === "pharsa") projColor = "#9b59b6";
+        else if (this.id === "nana") projColor = "#2ecc71";
+        else if (this.id === "layla") projColor = "#3498db";
+
         if (particles) {
-          particles.spawnBurst(tx, ty, "#ffd700", 6, 80);
+          particles.spawnBurst(tx, ty, projColor, 6, 80);
         }
         if (map && map.projectiles) {
           map.projectiles.push({
             x: this.x,
             y: this.y,
             target: this.attackTarget,
-            speed: 450,
+            speed: 460,
             damage: this.attackDamage,
             team: this.team,
-            color: "#f1c40f",
-            radius: 4
+            color: projColor,
+            radius: this.id === "angela" ? 5 : 4
           });
         }
       } else {

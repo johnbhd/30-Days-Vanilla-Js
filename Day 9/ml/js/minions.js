@@ -54,14 +54,14 @@ class Minion {
     }
   }
 
-  update(dt, map, hero, allMinions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard) {
+  update(dt, map, hero, allMinions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager) {
     if (this.hp <= 0) {
       this.isDead = true;
       return;
     }
 
     // Boundary check
-    if (this.x < -40 || this.x > map.width * map.tileSize + 40 || this.y < -40 || this.y > map.height * map.tileSize + 40) {
+    if (map && (this.x < -40 || this.x > map.width * map.tileSize + 40 || this.y < -40 || this.y > map.height * map.tileSize + 40)) {
       this.isDead = true;
       return;
     }
@@ -98,6 +98,15 @@ class Minion {
           }
         }
       });
+
+      // Opposing Summoned Lord in range
+      if (objectiveManager && objectiveManager.summonedLord && !objectiveManager.summonedLord.isDead && objectiveManager.summonedLord.team !== this.team) {
+        const lord = objectiveManager.summonedLord;
+        const d = getDistance(this.x, this.y, lord.x, lord.y);
+        if (d <= this.attackRange + 55) {
+          targets.push({ unit: lord, dist: d, priority: 1.5 });
+        }
+      }
 
       // Enemy Hero (Player or Enemy Bot)
       const enemyHeroes = [];
@@ -336,7 +345,7 @@ class MinionManager {
     });
   }
 
-  update(dt, map, hero, combatTexts, gameStats, enemyBot, sound, particles, scoreboard) {
+  update(dt, map, hero, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager) {
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
       this.spawnWave();
@@ -357,7 +366,7 @@ class MinionManager {
     // Update each minion
     for (let i = this.minions.length - 1; i >= 0; i--) {
       const minion = this.minions[i];
-      minion.update(dt, map, hero, this.minions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard);
+      minion.update(dt, map, hero, this.minions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager);
       if (minion.isDead) {
         this.minions.splice(i, 1);
       }

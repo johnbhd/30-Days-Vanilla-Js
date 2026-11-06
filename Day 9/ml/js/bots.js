@@ -53,7 +53,7 @@ class BotHero {
     this.state = "LANING"; // "LANING", "COMBAT", "RETREAT", "DEAD"
     this.isDead = false;
     this.respawnTimer = 0;
-    this.respawnMax = 18; // 18 seconds respawn
+    this.respawnMax = (typeof GAME !== "undefined" && GAME.HERO_RESPAWN_TIME) ? GAME.HERO_RESPAWN_TIME : 10;
 
     // Recall ability
     this.isRecalling = false;
@@ -185,7 +185,7 @@ class BotHero {
     }
   }
 
-  update(dt, player, minionManager, map, combatTexts, sound, particles, scoreboard) {
+  update(dt, player, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager) {
     // 1. Respawn timer
     if (this.isDead) {
       this.respawnTimer -= dt;
@@ -321,14 +321,33 @@ class BotHero {
     } else {
       // Check Player proximity
       let distToPlayer = Infinity;
+      const playerAbsent = !player || player.isDead || player.hp <= 0 || player.isRecalling;
       if (player && !player.isDead && player.hp > 0) {
         distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
+      }
+
+      // Check for Opposing Summoned Lord invading Mid Lane
+      let lordTarget = null;
+      if (objectiveManager && objectiveManager.summonedLord && !objectiveManager.summonedLord.isDead && objectiveManager.summonedLord.team !== this.team) {
+        const lord = objectiveManager.summonedLord;
+        const distToLord = Math.hypot(lord.x - this.x, lord.y - this.y);
+        if (distToLord < 360) {
+          lordTarget = lord;
+        }
       }
 
       if (distToPlayer < 300) {
         // Player is nearby -> COMBAT
         this.state = "COMBAT";
         this.engagePlayer(player, distToPlayer, dt, combatTexts, sound, particles, scoreboard);
+      } else if (lordTarget) {
+        // Defend against Opposing Summoned Lord
+        this.state = "COMBAT";
+        this.engageLord(lordTarget, dt, combatTexts, sound, particles, scoreboard);
+      } else if (this.shouldContestObjective(playerAbsent, distToPlayer, objectiveManager)) {
+        // Bot is healthy & player absent -> contest Turtle or Lord!
+        this.state = "OBJECTIVE";
+        this.engageObjective(objectiveManager, dt, combatTexts, sound, particles, scoreboard);
       } else {
         // LANING: push lane or attack blue minions
         this.state = "LANING";
@@ -451,21 +470,164 @@ class BotHero {
     }
   }
 
+  shouldContestObjective(playerAbsent, distToPlayer, objectiveManager) {
+    if (!objectiveManager) return false;
+    // Must be healthy (> 65% HP) and not retreating
+    if (this.hp < this.maxHp * 0.65) return false;
+    // Player must be absent, dead, or far away (> 400px)
+    if (!playerAbsent && distToPlayer < 400) return false;
+
+    // Check if Turtle is alive
+    if (objectiveManager.turtle && objectiveManager.turtle.alive) {
+      return true;
+    }
+    // Check if Lord is alive
+    if (objectiveManager.lord && objectiveManager.lord.alive) {
+      return true;
+    }
+    return false;
+  }
+
+  engageObjective(objectiveManager, dt, combatTexts, sound, particles, scoreboard) {
+    if (!objectiveManager) return;
+    let targetBoss = null;
+    if (objectiveManager.turtle && objectiveManager.turtle.alive) {
+      targetBoss = objectiveManager.turtle;
+    } else if (objectiveManager.lord && objectiveManager.lord.alive) {
+      targetBoss = objectiveManager.lord;
+    }
+
+    if (!targetBoss) {
+      this.state = "LANING";
+      return;
+    }
+
+    const dist = Math.hypot(targetBoss.x - this.x, targetBoss.y - this.y);
+
+    // If bot HP falls below 35% during boss fight, back off!
+    if (this.hp < this.maxHp * 0.35) {
+      this.state = "RETREAT";
+      this.targetX = this.spawnX;
+      this.targetY = this.spawnY;
+      return;
+    }
+
+    // Approach boss pit
+    if (dist > this.attackRange * 0.85) {
+      this.targetX = targetBoss.x;
+      this.targetY = targetBoss.y;
+    } else {
+      this.targetX = this.x;
+      this.targetY = this.y;
+    }
+
+    // Basic attack against boss
+    if (dist <= this.attackRange + 25 && this.attackTimer <= 0) {
+      this.attackTimer = this.attackCooldown;
+      const isRanged = this.attackRange > 130;
+      if (sound) {
+        if (isRanged) sound.playShoot();
+        else if (sound.playSlash) sound.playSlash();
+        else sound.playAttack();
+      }
+      if (particles) {
+        if (!isRanged && particles.spawnSlash) {
+          particles.spawnSlash(this.x, this.y, targetBoss.x, targetBoss.y, this.color || "#e74c3c", 40);
+        }
+        particles.spawnBurst(targetBoss.x, targetBoss.y, "#fff", 6, 90);
+      }
+
+      if (typeof targetBoss.takeDamage === "function") {
+        targetBoss.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
+      } else {
+        targetBoss.hp = Math.max(0, targetBoss.hp - this.attackDamage);
+        targetBoss.lastAttacker = this;
+      }
+    }
+
+    // Cast Q or W against boss if available
+    if (dist <= 180) {
+      if (this.skills.q.cd <= 0) {
+        this.skills.q.cd = 6.0;
+        if (sound) sound.playSkill();
+        if (typeof targetBoss.takeDamage === "function") {
+          targetBoss.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
+        }
+      } else if (this.skills.w.cd <= 0) {
+        this.skills.w.cd = 7.0;
+        if (sound) sound.playSkill();
+        if (typeof targetBoss.takeDamage === "function") {
+          targetBoss.takeDamage(this.skills.w.damage, this, combatTexts, particles, sound, scoreboard);
+        }
+      }
+    }
+  }
+
+  engageLord(lord, dt, combatTexts, sound, particles, scoreboard) {
+    const dist = Math.hypot(lord.x - this.x, lord.y - this.y);
+    if (dist > this.attackRange * 0.85) {
+      this.targetX = lord.x;
+      this.targetY = lord.y;
+    } else {
+      this.targetX = this.x;
+      this.targetY = this.y;
+    }
+
+    if (dist <= this.attackRange + 25 && this.attackTimer <= 0) {
+      this.attackTimer = this.attackCooldown;
+      const isRanged = this.attackRange > 130;
+      if (sound) {
+        if (isRanged) sound.playShoot();
+        else if (sound.playSlash) sound.playSlash();
+        else sound.playAttack();
+      }
+      if (particles) {
+        particles.spawnBurst(lord.x, lord.y, "#fff", 6, 90);
+      }
+      if (typeof lord.takeDamage === "function") {
+        lord.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
+      }
+    }
+  }
+
   engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard) {
     // 1. Search for nearest Blue Minion
     let nearestMinion = null;
     let minDist = Infinity;
+    let clusterCount = 0;
 
     if (minionManager && minionManager.minions) {
       minionManager.minions.forEach(m => {
         if (m.team === "BLUE" && m.hp > 0) {
           const d = Math.hypot(m.x - this.x, m.y - this.y);
+          if (d < 240) clusterCount++;
           if (d < minDist) {
             minDist = d;
             nearestMinion = m;
           }
         }
       });
+    }
+
+    // Cast Q or W to fast-clear wave and push when >= 2 minions clustered
+    if (clusterCount >= 2 && nearestMinion && minDist <= 240) {
+      if (this.skills.q.cd <= 0) {
+        this.skills.q.cd = 6.0;
+        if (sound) sound.playSkill();
+        if (particles) particles.spawnBurst(nearestMinion.x, nearestMinion.y, this.color || "#e74c3c", 8, 110);
+        nearestMinion.hp -= this.skills.q.damage;
+        if (combatTexts) {
+          combatTexts.push({ x: nearestMinion.x, y: nearestMinion.y - 20, text: `-${this.skills.q.damage}`, color: "#ff4757", life: 0.7, maxLife: 0.7 });
+        }
+      } else if (this.skills.w.cd <= 0) {
+        this.skills.w.cd = 7.0;
+        if (sound) sound.playSkill();
+        if (particles) particles.spawnBurst(nearestMinion.x, nearestMinion.y, "#ffd700", 6, 90);
+        nearestMinion.hp -= this.skills.w.damage;
+        if (combatTexts) {
+          combatTexts.push({ x: nearestMinion.x, y: nearestMinion.y - 20, text: `-${this.skills.w.damage}`, color: "#ff4757", life: 0.7, maxLife: 0.7 });
+        }
+      }
     }
 
     if (nearestMinion && minDist < 350) {

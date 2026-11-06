@@ -159,7 +159,7 @@ class Renderer {
       this.ctx.strokeRect(bx, by, bannerW, bannerH);
 
       // Progress bar at bottom of banner
-      const maxT = hero.respawnMax || 5;
+      const maxT = hero.respawnMax || 10;
       const pct = Math.max(0, Math.min(1, 1 - (hero.respawnTimer / maxT)));
       this.ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
       this.ctx.fillRect(bx + 12, by + bannerH - 8, bannerW - 24, 4);

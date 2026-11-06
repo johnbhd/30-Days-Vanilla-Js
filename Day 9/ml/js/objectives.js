@@ -60,6 +60,98 @@ class ObjectiveManager {
 
     this.summonedLord = null;
     this.announcements = [];
+
+    const makeBossTakeDamage = (boss) => {
+      boss.takeDamage = function(amount, attacker, combatTexts, particles, sound) {
+        if (!this.alive || this.hp <= 0) return;
+        this.hp = Math.max(0, this.hp - amount);
+        this.lastAttacker = attacker;
+        if (particles && particles.spawnBurst) particles.spawnBurst(this.x, this.y, "#ffffff", 6, 90);
+        if (sound && sound.playHit) sound.playHit();
+        if (combatTexts) {
+          combatTexts.push({
+            x: this.x + (Math.random() - 0.5) * 16,
+            y: this.y - 20,
+            text: `-${Math.round(amount)}`,
+            color: (attacker && attacker.team === "BLUE") ? "#38ef7d" : "#ff4b2b",
+            life: 0.7,
+            maxLife: 0.7
+          });
+        }
+      };
+    };
+    makeBossTakeDamage(this.turtle);
+    makeBossTakeDamage(this.lord);
+  }
+
+  createSummonedLord(team = "BLUE") {
+    const isBlue = team === "BLUE";
+    const startX = isBlue ? 140 : 1220;
+    const waypoints = isBlue
+      ? [
+          { x: 140, y: 480 },
+          { x: 640, y: 480 },
+          { x: 1140, y: 480 },
+          { x: 1220, y: 480 }
+        ]
+      : [
+          { x: 1220, y: 480 },
+          { x: 640, y: 480 },
+          { x: 220, y: 480 },
+          { x: 140, y: 480 }
+        ];
+
+    return {
+      name: isBlue ? "Allied Lord" : "Enemy Lord",
+      team: team,
+      x: startX,
+      y: 480,
+      radius: 26,
+      hp: 3600,
+      maxHp: 3600,
+      speed: 55,
+      damage: 140,
+      range: 80,
+      cooldown: 1.2,
+      timer: 0,
+      target: null,
+      isDead: false,
+      waypoints: waypoints,
+      waypointIdx: 0,
+      takeDamage: function(amount, attacker, combatTexts, particles, sound, scoreboard) {
+        if (this.isDead || this.hp <= 0) return;
+        this.hp = Math.max(0, this.hp - amount);
+        if (combatTexts) {
+          combatTexts.push({
+            x: this.x + (Math.random() - 0.5) * 20,
+            y: this.y - 25,
+            text: `-${Math.round(amount)}`,
+            color: isBlue ? "#ff4757" : "#38ef7d",
+            life: 0.7,
+            maxLife: 0.7
+          });
+        }
+        if (particles && particles.spawnBurst) {
+          particles.spawnBurst(this.x, this.y, "#9b59b6", 6, 80);
+        }
+        if (sound && sound.playHit) {
+          sound.playHit();
+        }
+        if (this.hp <= 0) {
+          this.isDead = true;
+          if (combatTexts) {
+            combatTexts.push({
+              x: this.x,
+              y: this.y - 30,
+              text: isBlue ? "ALLIED LORD FALLEN!" : "ENEMY LORD SLAIN!",
+              color: "#e74c3c",
+              life: 2.0,
+              maxLife: 2.0
+            });
+          }
+        }
+      }
+    };
   }
 
   addAnnouncement(text, color = "#ffd700") {
@@ -86,7 +178,33 @@ class ObjectiveManager {
         // Turtle slain callback
         this.turtle.alive = false;
         this.turtle.spawnTimer = this.turtle.respawnInterval;
-        this.addAnnouncement("BLUE TEAM HAS SLAIN THE TURTLE!", "#ffd700");
+        const slayer = this.turtle.lastAttacker;
+        const isBotSlay = slayer && (slayer === enemyBot || slayer.team === "RED");
+
+        if (isBotSlay) {
+          this.addAnnouncement("RED TEAM HAS SLAIN THE TURTLE!", "#e74c3c");
+          if (scoreboard) scoreboard.addGold("bot", 300);
+          if (enemyBot) {
+            enemyBot.gold += 300;
+            enemyBot.shield = Math.max(enemyBot.shield || 0, 350);
+          }
+          if (combatTexts) {
+            combatTexts.push({ x: this.turtle.x, y: this.turtle.y - 30, text: "[BOT] +300g & SHIELD!", color: "#ff6b81", life: 2.0, maxLife: 2.0 });
+          }
+        } else {
+          this.addAnnouncement("BLUE TEAM HAS SLAIN THE TURTLE!", "#ffd700");
+          if (gameStats) gameStats.gold += 300;
+          if (scoreboard) {
+            scoreboard.addGold("player", 300);
+            if (scoreboard.stats) scoreboard.stats.turtlesTaken++;
+          }
+          if (skillManager) {
+            skillManager.activeBuffs.shield = Math.max(skillManager.activeBuffs.shield, 350);
+          }
+          if (combatTexts) {
+            combatTexts.push({ x: this.turtle.x, y: this.turtle.y - 30, text: "+300g & SHIELD!", color: "#ffd700", life: 2.0, maxLife: 2.0 });
+          }
+        }
 
         // Alternate pit for next spawn (Upper <-> Lower)
         this.turtlePit = this.turtlePit === "upper" ? "lower" : "upper";
@@ -94,20 +212,8 @@ class ObjectiveManager {
         this.turtle.y = this.pits[this.turtlePit].y;
         this.turtle.homeX = this.pits[this.turtlePit].x;
         this.turtle.homeY = this.pits[this.turtlePit].y;
-
-        if (gameStats) gameStats.gold += 300;
-        if (scoreboard) {
-          scoreboard.addGold("player", 300);
-          if (scoreboard.stats) scoreboard.stats.turtlesTaken++;
-        }
-        if (skillManager) {
-          skillManager.activeBuffs.shield = Math.max(skillManager.activeBuffs.shield, 350);
-        }
-
-        if (combatTexts) {
-          combatTexts.push({ x: this.turtle.x, y: this.turtle.y - 30, text: "+300g & SHIELD!", color: "#ffd700", life: 2.0, maxLife: 2.0 });
-        }
-      });
+        this.turtle.lastAttacker = null;
+      }, enemyBot);
     }
 
     // 2. Lord update
@@ -128,47 +234,36 @@ class ObjectiveManager {
         // Lord slain callback
         this.lord.alive = false;
         this.lord.spawnTimer = this.lord.respawnInterval;
-        this.addAnnouncement("THE LORD HAS BEEN SUMMONED TO AID YOUR TEAM!", "#9b59b6");
+        const slayer = this.lord.lastAttacker;
+        const isBotSlay = slayer && (slayer === enemyBot || slayer.team === "RED");
 
-        if (gameStats) gameStats.gold += 500;
-        if (scoreboard) {
-          scoreboard.addGold("player", 500);
-          if (scoreboard.stats) scoreboard.stats.lordsTaken++;
+        if (isBotSlay) {
+          this.addAnnouncement("RED TEAM HAS AWAKENED THE LORD!", "#e74c3c");
+          if (scoreboard) scoreboard.addGold("bot", 500);
+          if (enemyBot) enemyBot.gold += 500;
+          if (combatTexts) {
+            combatTexts.push({ x: this.lord.x, y: this.lord.y - 30, text: "[BOT] +500g & ENEMY LORD SUMMONED!", color: "#e74c3c", life: 2.5, maxLife: 2.5 });
+          }
+          this.summonedLord = this.createSummonedLord("RED");
+        } else {
+          this.addAnnouncement("THE LORD HAS BEEN SUMMONED TO AID YOUR TEAM!", "#9b59b6");
+          if (gameStats) gameStats.gold += 500;
+          if (scoreboard) {
+            scoreboard.addGold("player", 500);
+            if (scoreboard.stats) scoreboard.stats.lordsTaken++;
+          }
+          if (combatTexts) {
+            combatTexts.push({ x: this.lord.x, y: this.lord.y - 30, text: "+500g & ALLIED LORD SUMMONED!", color: "#ffd700", life: 2.5, maxLife: 2.5 });
+          }
+          this.summonedLord = this.createSummonedLord("BLUE");
         }
-        if (combatTexts) {
-          combatTexts.push({ x: this.lord.x, y: this.lord.y - 30, text: "+500g & ALLIED LORD SUMMONED!", color: "#ffd700", life: 2.5, maxLife: 2.5 });
-        }
-
-        // Spawn Summoned Lord Ally at Blue Base pushing Mid Lane
-        this.summonedLord = {
-          name: "Allied Lord",
-          team: "BLUE",
-          x: 140,
-          y: 480,
-          radius: 26,
-          hp: 3600,
-          maxHp: 3600,
-          speed: 55,
-          damage: 140,
-          range: 80,
-          cooldown: 1.2,
-          timer: 0,
-          target: null,
-          isDead: false,
-          waypoints: [
-            { x: 140, y: 480 },
-            { x: 640, y: 480 },
-            { x: 1140, y: 480 },
-            { x: 1220, y: 480 }
-          ],
-          waypointIdx: 0
-        };
-      });
+        this.lord.lastAttacker = null;
+      }, enemyBot);
     }
 
-    // 3. Summoned Lord Ally update
+    // 3. Summoned Lord update
     if (this.summonedLord && !this.summonedLord.isDead) {
-      this.updateSummonedLord(dt, this.summonedLord, map, minions, combatTexts, enemyBot, sound, particles, scoreboard);
+      this.updateSummonedLord(dt, this.summonedLord, map, minions, combatTexts, enemyBot, sound, particles, scoreboard, hero);
       if (this.summonedLord.hp <= 0) {
         this.summonedLord.isDead = true;
         this.summonedLord = null;
@@ -182,7 +277,7 @@ class ObjectiveManager {
     }
   }
 
-  updateBossCombat(dt, boss, hero, minions, combatTexts, onDeath) {
+  updateBossCombat(dt, boss, hero, minions, combatTexts, onDeath, enemyBot) {
     if (boss.hp <= 0) {
       onDeath();
       return;
@@ -217,10 +312,12 @@ class ObjectiveManager {
       }
     }
 
-    // Scan for aggressors in proximity of the pit
+    // Scan for aggressors in proximity of the pit (Player Hero or Enemy Bot Hero, then Minions)
     if (!boss.target) {
-      if (hero && hero.hp > 0 && getDistance(homeX, homeY, hero.x, hero.y) <= 130) {
+      if (hero && hero.hp > 0 && !hero.isDead && getDistance(homeX, homeY, hero.x, hero.y) <= 130) {
         boss.target = hero;
+      } else if (enemyBot && enemyBot.hp > 0 && !enemyBot.isDead && getDistance(homeX, homeY, enemyBot.x, enemyBot.y) <= 130) {
+        boss.target = enemyBot;
       } else if (minions) {
         const nearMinion = minions.find(m => m.hp > 0 && getDistance(homeX, homeY, m.x, m.y) <= 110);
         if (nearMinion) boss.target = nearMinion;
@@ -233,12 +330,18 @@ class ObjectiveManager {
       const d = getDistance(boss.x, boss.y, boss.target.x, boss.target.y);
 
       if (d <= boss.attackRange + 30) {
-        boss.target.hp = Math.max(0, boss.target.hp - boss.attackDamage);
+        const dmg = boss.attackDamage;
+        if (typeof boss.target.takeDamage === "function") {
+          boss.target.takeDamage(dmg, boss, combatTexts, null, null, null);
+        } else if (boss.target.hp !== undefined) {
+          boss.target.hp = Math.max(0, boss.target.hp - dmg);
+        }
+
         if (combatTexts) {
           combatTexts.push({
-            x: boss.target.x,
-            y: boss.target.y - 18,
-            text: `-${boss.attackDamage}`,
+            x: (boss.target.x !== undefined ? boss.target.x : boss.target.worldX),
+            y: (boss.target.y !== undefined ? boss.target.y : boss.target.worldY) - 18,
+            text: `-${dmg}`,
             color: "#e74c3c",
             life: 0.7,
             maxLife: 0.7
@@ -248,8 +351,9 @@ class ObjectiveManager {
     }
   }
 
-  updateSummonedLord(dt, lord, map, minions, combatTexts, enemyBot, sound, particles, scoreboard) {
+  updateSummonedLord(dt, lord, map, minions, combatTexts, enemyBot, sound, particles, scoreboard, hero) {
     lord.timer -= dt;
+    const enemyTeam = lord.team === "BLUE" ? "RED" : "BLUE";
 
     // 1. Verify current target validity
     if (lord.target) {
@@ -273,7 +377,7 @@ class ObjectiveManager {
       // Enemy Turrets in range
       if (map && map.turrets) {
         map.turrets.forEach(t => {
-          if (t.team === "RED" && !t.destroyed) {
+          if (t.team === enemyTeam && !t.destroyed) {
             const d = getDistance(lord.x, lord.y, t.worldX, t.worldY);
             if (d <= 250) {
               candidates.push({ target: t, dist: d, priority: 1, type: "turret" });
@@ -284,27 +388,28 @@ class ObjectiveManager {
 
       // Enemy Base Crystal in range
       if (map && map.bases) {
-        const redBase = map.bases.find(b => b.team === "RED" && b.crystalHp > 0);
-        if (redBase) {
-          const d = getDistance(lord.x, lord.y, redBase.worldX, redBase.worldY);
+        const opposingBase = map.bases.find(b => b.team === enemyTeam && b.crystalHp > 0);
+        if (opposingBase) {
+          const d = getDistance(lord.x, lord.y, opposingBase.worldX, opposingBase.worldY);
           if (d <= 250) {
-            candidates.push({ target: redBase, dist: d, priority: 1, type: "base" });
+            candidates.push({ target: opposingBase, dist: d, priority: 1, type: "base" });
           }
         }
       }
 
-      // Enemy Bot Hero in range
-      if (enemyBot && enemyBot.team === "RED" && !enemyBot.isDead && enemyBot.hp > 0) {
-        const d = getDistance(lord.x, lord.y, enemyBot.x, enemyBot.y);
+      // Opposing Heroes in range
+      const oppHero = lord.team === "BLUE" ? enemyBot : hero;
+      if (oppHero && oppHero.team === enemyTeam && !oppHero.isDead && oppHero.hp > 0) {
+        const d = getDistance(lord.x, lord.y, oppHero.x, oppHero.y);
         if (d <= 250) {
-          candidates.push({ target: enemyBot, dist: d, priority: 2, type: "hero" });
+          candidates.push({ target: oppHero, dist: d, priority: 2, type: "hero" });
         }
       }
 
       // Enemy Minions in range
       if (minions) {
         minions.forEach(m => {
-          if (m.team === "RED" && m.hp > 0) {
+          if (m.team === enemyTeam && m.hp > 0) {
             const d = getDistance(lord.x, lord.y, m.x, m.y);
             if (d <= 250) {
               candidates.push({ target: m, dist: d, priority: 3, type: "minion" });
@@ -333,9 +438,10 @@ class ObjectiveManager {
         if (lord.timer <= 0) {
           lord.timer = lord.cooldown;
 
-          // Short-range melee slashing attack visuals (cleave arc + white sparks + slash sound)
+          // Short-range melee slashing attack visuals
+          const slashColor = lord.team === "BLUE" ? "#4ecca3" : "#e74c3c";
           if (particles && particles.spawnSlash) {
-            particles.spawnSlash(lord.x, lord.y, tx, ty, "#9b59b6", 52);
+            particles.spawnSlash(lord.x, lord.y, tx, ty, slashColor, 52);
           }
           if (particles && particles.spawnBurst) {
             particles.spawnBurst(tx, ty, "#ffffff", 10, 130);
@@ -345,17 +451,17 @@ class ObjectiveManager {
           }
 
           // Deal damage according to target type
-          if (lord.target === enemyBot) {
-            enemyBot.takeDamage(lord.damage, lord, combatTexts, particles, sound, scoreboard);
+          if (typeof lord.target.takeDamage === "function") {
+            lord.target.takeDamage(lord.damage, lord, combatTexts, particles, sound, scoreboard);
           } else if (lord.target.crystalHp !== undefined) {
             lord.target.crystalHp = Math.max(0, lord.target.crystalHp - lord.damage);
             if (combatTexts) {
-              combatTexts.push({ x: tx, y: ty - 22, text: `-${lord.damage}`, color: "#9b59b6", life: 0.8, maxLife: 0.8 });
+              combatTexts.push({ x: tx, y: ty - 22, text: `-${lord.damage}`, color: slashColor, life: 0.8, maxLife: 0.8 });
             }
           } else if (lord.target.hp !== undefined) {
             lord.target.hp = Math.max(0, lord.target.hp - lord.damage);
             if (combatTexts) {
-              combatTexts.push({ x: tx, y: ty - 22, text: `-${lord.damage}`, color: "#9b59b6", life: 0.8, maxLife: 0.8 });
+              combatTexts.push({ x: tx, y: ty - 22, text: `-${lord.damage}`, color: slashColor, life: 0.8, maxLife: 0.8 });
             }
           }
         }
@@ -380,8 +486,9 @@ class ObjectiveManager {
           lord.y += (dy / dist) * lord.speed * dt;
         }
       } else {
-        // Continuous lane march toward Red Base crystal (x = 1220, y = 480)
-        const dx = 1220 - lord.x;
+        // Continuous lane march toward destination Base crystal (1220 for Blue, 140 for Red)
+        const destX = lord.team === "BLUE" ? 1220 : 140;
+        const dx = destX - lord.x;
         const dy = 480 - lord.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > 15) {
@@ -492,31 +599,33 @@ class ObjectiveManager {
       ctx.restore();
     }
 
-    // 3. Render Summoned Lord Ally
+    // 3. Render Summoned Lord Ally / Enemy
     if (this.summonedLord && !this.summonedLord.isDead) {
       const sx = this.summonedLord.x - camera.x;
       const sy = this.summonedLord.y - camera.y;
+      const isBlue = this.summonedLord.team === "BLUE";
+      const teamColor = isBlue ? "#4ecca3" : "#ff4757";
 
       ctx.save();
-      ctx.fillStyle = "#2980b9";
+      ctx.fillStyle = isBlue ? "#2980b9" : "#c0392b";
       ctx.beginPath();
       ctx.arc(sx, sy, this.summonedLord.radius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "#4ecca3";
+      ctx.strokeStyle = teamColor;
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      ctx.fillStyle = "#4ecca3";
+      ctx.fillStyle = teamColor;
       ctx.font = "bold 11px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("ALLIED LORD", sx, sy - this.summonedLord.radius - 10);
+      ctx.fillText(isBlue ? "ALLIED LORD" : "ENEMY LORD", sx, sy - this.summonedLord.radius - 10);
 
       const barW = 45;
       const barH = 4;
       const hpRatio = Math.max(0, this.summonedLord.hp / this.summonedLord.maxHp);
       ctx.fillStyle = "#111";
       ctx.fillRect(sx - barW / 2, sy - this.summonedLord.radius - 6, barW, barH);
-      ctx.fillStyle = "#4ecca3";
+      ctx.fillStyle = teamColor;
       ctx.fillRect(sx - barW / 2, sy - this.summonedLord.radius - 6, barW * hpRatio, barH);
 
       ctx.restore();

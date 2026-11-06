@@ -125,26 +125,44 @@ class SkillManager {
     // Execute skill mechanics
     switch (skill.type) {
       case "multishot": {
-        // Fire 3 arrows at nearby targets
+        // Fire 3 arrows oriented towards cursor / targets
         let fired = 0;
-        const enemies = this.getAllEnemies(hero, minions, map, objectives);
-        enemies.forEach(e => {
-          if (fired < 3 && getDistance(hero.x, hero.y, e.x, e.y) <= 300) {
+        const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
+        const candidates = enemies.filter(e => getDistance(hero.x, hero.y, e.x, e.y) <= 340);
+
+        // Prioritize enemies closest to cursor aim point
+        candidates.sort((a, b) => {
+          const distA = getDistance(a.x, a.y, targetX, targetY);
+          const distB = getDistance(b.x, b.y, targetX, targetY);
+          return distA - distB;
+        });
+
+        candidates.forEach(e => {
+          if (fired < 3) {
+            const ed = getDistance(hero.x, hero.y, e.x, e.y) || 1;
             this.activeProjectiles.push({
               x: hero.x, y: hero.y,
-              vx: (e.x - hero.x) / getDistance(hero.x, hero.y, e.x, e.y) * 480,
-              vy: (e.y - hero.y) / getDistance(hero.x, hero.y, e.x, e.y) * 480,
+              vx: ((e.x - hero.x) / ed) * 520,
+              vy: ((e.y - hero.y) / ed) * 520,
               radius: 4, damage: 180, team: hero.team, color: "#f1c40f", life: 0.8
             });
             fired++;
           }
         });
-        if (fired === 0) {
-          // Fire straight if no targets
-          this.activeProjectiles.push({
-            x: hero.x, y: hero.y, vx: dirX * 480, vy: dirY * 480,
-            radius: 4, damage: 180, team: hero.team, color: "#f1c40f", life: 0.8
-          });
+
+        // If fewer than 3 enemies, fire remainder fanning out in cursor aim direction
+        if (fired < 3) {
+          const angles = [-0.18, 0, 0.18];
+          const baseAngle = Math.atan2(dirY, dirX);
+          for (let i = fired; i < 3; i++) {
+            const a = baseAngle + angles[i];
+            this.activeProjectiles.push({
+              x: hero.x, y: hero.y,
+              vx: Math.cos(a) * 520,
+              vy: Math.sin(a) * 520,
+              radius: 4, damage: 180, team: hero.team, color: "#f1c40f", life: 0.8
+            });
+          }
         }
         break;
       }
@@ -192,13 +210,39 @@ class SkillManager {
       }
 
       case "leap": {
-        hero.x = targetX;
-        hero.y = targetY;
-        hero.targetX = targetX;
-        hero.targetY = targetY;
+        // Alucard Groundsplitter: mid dash attack capped at 160px
+        const maxDash = 160;
+        const clickDist = Math.hypot(targetX - hero.x, targetY - hero.y);
+        const dashDist = Math.min(clickDist, maxDash);
+        const angle = Math.atan2(targetY - hero.y, targetX - hero.x);
+
+        const origX = hero.x;
+        const origY = hero.y;
+        const mapMaxX = map ? map.width * map.tileSize : 1280;
+        const mapMaxY = map ? map.height * map.tileSize : 720;
+        const destX = clamp(hero.x + Math.cos(angle) * dashDist, 60, mapMaxX - 60);
+        const destY = clamp(hero.y + Math.sin(angle) * dashDist, 60, mapMaxY - 60);
+
+        hero.x = destX;
+        hero.y = destY;
+        hero.targetX = destX;
+        hero.targetY = destY;
+
+        // Dashing slash trail VFX & audio
+        if (particles && particles.spawnSlash) {
+          particles.spawnSlash(origX, origY, destX, destY, "#9b59b6", 48);
+        }
+        if (particles && particles.spawnBurst) {
+          particles.spawnBurst(destX, destY, "#ffd700", 12, 140);
+        }
+        if (sound && sound.playSlash) {
+          sound.playSlash();
+        }
+
+        // Groundsplitter impact slam AOE
         this.activeAOEs.push({
           type: "circle",
-          x: targetX, y: targetY,
+          x: destX, y: destY,
           radius: 75,
           damage: 240,
           team: hero.team,

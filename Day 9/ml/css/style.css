@@ -111,9 +111,18 @@ canvas {
 .skills-tray {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 4px;
   margin-top: 2px;
+}
+
+.skill-slot-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
 .skill-circle-btn {
@@ -131,6 +140,7 @@ canvas {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   transition: all 0.15s ease;
   user-select: none;
+  margin: 0 auto;
 }
 
 .skill-circle-btn:hover:not(.cooling-down) {
@@ -209,14 +219,15 @@ canvas {
 }
 
 .skill-label {
-  font-size: 8px;
+  font-size: 7.5px;
   color: #cbd5e1;
   text-align: center;
   max-width: 44px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-top: 1px;
+  margin-top: 2px;
+  line-height: 1.1;
 }
 
 .ultimate-label {
@@ -441,31 +452,6 @@ canvas {
   justify-content: space-between;
   align-items: flex-end;
   pointer-events: none;
-}
-
-.controls-hint {
-  pointer-events: auto;
-  background: rgba(16, 25, 47, 0.85);
-  border: 1px solid #0f3460;
-  border-radius: 8px;
-  padding: 8px 12px;
-  max-width: 320px;
-  font-size: 0.75rem;
-  color: #ccc;
-  line-height: 1.35;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-.controls-hint p {
-  margin: 0 0 3px 0;
-}
-
-.controls-hint p:last-child {
-  margin-bottom: 0;
-}
-
-.controls-hint strong {
-  color: #4ecca3;
 }
 
 /* Ability Dock (Q, W, E, R) */
@@ -1252,9 +1238,6 @@ canvas {
     flex-shrink: 0;
     padding: 0;
   }
-  .controls-hint {
-    display: none;
-  }
 }
 
 @media (max-width: 480px) {
@@ -1351,6 +1334,9 @@ canvas {
     font-size: 10.5px;
   }
   .skill-label {
-    display: none;
+    font-size: 6px;
+    max-width: 28px;
+    line-height: 1;
+    display: block;
   }
 }
