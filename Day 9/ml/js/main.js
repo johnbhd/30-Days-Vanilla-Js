@@ -22,6 +22,7 @@ const scoreboard = new Scoreboard();
 let matchMode = "3v3"; // "1v1" | "2v2" | "3v3"
 let bots = []; // Array of BotHero instances (Blue Allies + Red Enemies)
 let teamRoster = { blue: [], red: [] };
+let activeSlot = { team: "blue", index: 0 }; // Currently active slot for hero assignment ({ team: 'blue'|'red', index: number })
 let enemyBot = null;
 
 // Audio unlock on user interaction
@@ -115,13 +116,134 @@ Input.onTap = (worldX, worldY) => {
   return false;
 };
 
+// Slot Selection & Hero Assignment Helpers
+function getActiveSlotMember() {
+  const list = activeSlot.team === "blue" ? teamRoster.blue : teamRoster.red;
+  if (!list || !list[activeSlot.index]) {
+    activeSlot = { team: "blue", index: 0 };
+  }
+  return (activeSlot.team === "blue" ? teamRoster.blue : teamRoster.red)[activeSlot.index];
+}
+
+function updateActiveSlotPrompt() {
+  const targetNameEl = document.getElementById("activeSlotTargetName");
+  if (!targetNameEl) return;
+
+  const member = getActiveSlotMember();
+  if (!member) return;
+
+  if (activeSlot.team === "blue") {
+    if (member.isPlayer) {
+      targetNameEl.innerHTML = `<span style="color:#ffd700"><i class="fa-solid fa-user"></i> YOU (Player) - ${member.lane} Lane</span>`;
+    } else {
+      targetNameEl.innerHTML = `<span style="color:#4ecca3"><i class="fa-solid fa-shield"></i> Blue Ally ${activeSlot.index} (${member.hero.name}) - ${member.lane} Lane</span>`;
+    }
+  } else {
+    targetNameEl.innerHTML = `<span style="color:#ff6b6b"><i class="fa-solid fa-skull"></i> Red Enemy ${activeSlot.index + 1} (${member.hero.name}) - ${member.lane} Lane</span>`;
+  }
+}
+
+function getHeroAssignment(heroId) {
+  if (!teamRoster) return null;
+  const blueList = teamRoster.blue || [];
+  for (let i = 0; i < blueList.length; i++) {
+    if (blueList[i].hero && blueList[i].hero.id === heroId) {
+      return { team: "blue", index: i, member: blueList[i] };
+    }
+  }
+  const redList = teamRoster.red || [];
+  for (let i = 0; i < redList.length; i++) {
+    if (redList[i].hero && redList[i].hero.id === heroId) {
+      return { team: "red", index: i, member: redList[i] };
+    }
+  }
+  return null;
+}
+
+function updateHeroGridSelection() {
+  if (!heroGrid) return;
+  const cards = heroGrid.querySelectorAll(".hero-card");
+  const activeMember = getActiveSlotMember();
+  const activeHeroId = activeMember && activeMember.hero ? activeMember.hero.id : null;
+
+  cards.forEach(card => {
+    const heroId = card.getAttribute("data-hero-id");
+    const isSelected = heroId === activeHeroId;
+    card.classList.toggle("selected", isSelected);
+
+    // Update or create pick badge
+    let badge = card.querySelector(".hero-card-pick-badge");
+    const assignment = getHeroAssignment(heroId);
+
+    if (assignment) {
+      if (!badge) {
+        badge = document.createElement("span");
+        card.appendChild(badge);
+      }
+      badge.className = "hero-card-pick-badge";
+      if (assignment.team === "blue" && assignment.index === 0) {
+        badge.classList.add("player-pick");
+        badge.innerHTML = `<i class="fa-solid fa-user"></i> YOU`;
+      } else if (assignment.team === "blue") {
+        badge.classList.add("blue-pick");
+        badge.innerHTML = `<i class="fa-solid fa-shield"></i> ALLY ${assignment.index}`;
+      } else {
+        badge.classList.add("red-pick");
+        badge.innerHTML = `<i class="fa-solid fa-skull"></i> ENEMY ${assignment.index + 1}`;
+      }
+    } else if (badge) {
+      badge.remove();
+    }
+  });
+}
+
+function assignHeroToActiveSlot(hero) {
+  const activeMember = getActiveSlotMember();
+  if (!activeMember) return;
+
+  if (activeMember.hero && activeMember.hero.id === hero.id) {
+    return; // Already selected for this slot
+  }
+
+  // Check if another slot in the match already has this hero
+  const existingOwner = getHeroAssignment(hero.id);
+  if (existingOwner) {
+    // Swap heroes between active slot and existing owner slot
+    const previousHero = activeMember.hero;
+    activeMember.hero = hero;
+    existingOwner.member.hero = previousHero;
+  } else {
+    // Assign directly
+    activeMember.hero = hero;
+  }
+
+  // Sync player hero and UI if player slot was changed or affected
+  const playerMember = teamRoster.blue && teamRoster.blue[0];
+  if (playerMember && playerMember.hero) {
+    chosenHeroData = playerMember.hero;
+    if (startBtn) {
+      startBtn.disabled = false;
+      startBtn.textContent = `Start Match as ${chosenHeroData.name}`;
+    }
+    updateHeroUI(chosenHeroData);
+    updateAbilitiesDock(chosenHeroData.id);
+  }
+
+  renderTeamLineupsUI();
+  updateHeroGridSelection();
+  updateActiveSlotPrompt();
+
+  if (sound && sound.playClick) sound.playClick();
+}
+
 // Build hero selection cards
 function buildHeroGrid() {
   if (!heroGrid) return;
   heroGrid.innerHTML = "";
-  HEROES.forEach((hero, idx) => {
+  HEROES.forEach((hero) => {
     const card = document.createElement("div");
-    card.className = "hero-card" + (idx === 0 ? " selected" : "");
+    card.className = "hero-card";
+    card.setAttribute("data-hero-id", hero.id);
     card.innerHTML = `
       <div class="hero-portrait" style="border-color: ${hero.color};">
         <img src="${hero.sprite}idle.png" alt="${hero.name}" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'font-weight:bold;color:${hero.color}\\'>${hero.name[0]}</span>';" />
@@ -132,16 +254,7 @@ function buildHeroGrid() {
     `;
 
     card.addEventListener("click", () => {
-      document.querySelectorAll(".hero-card").forEach(c => c.classList.remove("selected"));
-      card.classList.add("selected");
-      chosenHeroData = hero;
-      startBtn.disabled = false;
-      startBtn.textContent = `Start Match as ${hero.name}`;
-      updateHeroUI(hero);
-
-      // Re-generate team rosters with selected hero
-      generateTeamRosters(hero);
-      renderTeamLineupsUI();
+      assignHeroToActiveSlot(hero);
 
       // On mobile or smaller viewports, smoothly ensure start button is visible
       if (window.innerWidth <= 768 || window.innerHeight <= 600) {
@@ -150,21 +263,17 @@ function buildHeroGrid() {
     });
 
     card.addEventListener("dblclick", () => {
-      chosenHeroData = hero;
-      startMatch();
+      assignHeroToActiveSlot(hero);
+      if (activeSlot.team === "blue" && activeSlot.index === 0) {
+        startMatch();
+      }
     });
 
     heroGrid.appendChild(card);
   });
 
-  if (!chosenHeroData && HEROES.length > 0) {
-    chosenHeroData = HEROES[0];
-    if (startBtn) {
-      startBtn.disabled = false;
-      startBtn.textContent = `Start Match as ${HEROES[0].name}`;
-    }
-    updateHeroUI(HEROES[0]);
-  }
+  updateHeroGridSelection();
+  updateActiveSlotPrompt();
 }
 
 // 2-Column Team Matchup Generator & UI Preview
@@ -291,19 +400,37 @@ function generateTeamRosters(playerHero = null) {
       });
     });
   }
+
+  // Ensure chosenHeroData matches player
+  chosenHeroData = teamRoster.blue[0].hero;
+  if (startBtn) {
+    startBtn.disabled = false;
+    startBtn.textContent = `Start Match as ${chosenHeroData.name}`;
+  }
+  updateHeroUI(chosenHeroData);
 }
 
-function renderTeamSlotHtml(member, team) {
+function renderTeamSlotHtml(member, team, index) {
   const isPlayer = member.isPlayer;
   const hero = member.hero;
   const lane = member.lane;
-  const slotClass = isPlayer ? "team-slot player-slot" : "team-slot";
+  const teamLower = team.toLowerCase();
+  const isActive = activeSlot.team === teamLower && activeSlot.index === index;
+
+  let slotClass = "team-slot";
+  if (isPlayer) slotClass += " player-slot";
+  if (isActive) slotClass += " active-slot";
+
   const badgeClass = isPlayer ? "player-badge" : "bot-badge";
   const badgeText = isPlayer ? '<i class="fa-solid fa-user"></i> YOU' : (team === "BLUE" ? '<i class="fa-solid fa-shield"></i> ALLY' : '<i class="fa-solid fa-robot"></i> BOT');
   const avatarBorder = team === "BLUE" ? (isPlayer ? "#ffd700" : "#4ecca3") : "#e74c3c";
 
+  const statusIndicator = isActive
+    ? `<div class="slot-active-tag"><i class="fa-solid fa-pen-nib"></i> EDITING</div>`
+    : `<div class="slot-edit-hint"><i class="fa-solid fa-arrow-pointer"></i> Change</div>`;
+
   return `
-    <div class="${slotClass}">
+    <div class="${slotClass}" data-team="${teamLower}" data-index="${index}" title="Click to select hero for this slot">
       <div class="team-slot-avatar" style="border-color: ${avatarBorder};">
         <img src="${hero.sprite}idle.png" alt="${hero.name}" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'font-weight:bold;color:${hero.color || '#fff'}\\'>${hero.name[0]}</span>';" />
       </div>
@@ -317,6 +444,7 @@ function renderTeamSlotHtml(member, team) {
           <span class="slot-lane"><i class="fa-solid fa-route"></i> ${lane}</span>
         </div>
       </div>
+      ${statusIndicator}
     </div>
   `;
 }
@@ -330,20 +458,38 @@ function renderTeamLineupsUI() {
   }
 
   if (blueTeamSlots) {
-    blueTeamSlots.innerHTML = teamRoster.blue.map(m => renderTeamSlotHtml(m, "BLUE")).join("");
+    blueTeamSlots.innerHTML = teamRoster.blue.map((m, idx) => renderTeamSlotHtml(m, "BLUE", idx)).join("");
   }
   if (redTeamSlots) {
-    redTeamSlots.innerHTML = teamRoster.red.map(m => renderTeamSlotHtml(m, "RED")).join("");
+    redTeamSlots.innerHTML = teamRoster.red.map((m, idx) => renderTeamSlotHtml(m, "RED", idx)).join("");
   }
+
+  // Attach slot click events
+  const allSlots = document.querySelectorAll(".team-slot");
+  allSlots.forEach(slotEl => {
+    slotEl.addEventListener("click", () => {
+      const t = slotEl.getAttribute("data-team");
+      const idx = parseInt(slotEl.getAttribute("data-index"), 10);
+      if (t && !isNaN(idx)) {
+        activeSlot = { team: t, index: idx };
+        renderTeamLineupsUI();
+        updateHeroGridSelection();
+        updateActiveSlotPrompt();
+      }
+    });
+  });
 }
 
 function selectMatchMode(mode) {
   matchMode = mode;
+  activeSlot = { team: "blue", index: 0 };
   document.querySelectorAll(".mode-card").forEach(c => {
     c.classList.toggle("selected", c.getAttribute("data-mode") === mode);
   });
   generateTeamRosters(chosenHeroData || HEROES[0]);
   renderTeamLineupsUI();
+  updateHeroGridSelection();
+  updateActiveSlotPrompt();
 
   if (modeSelectOverlay) modeSelectOverlay.classList.add("hidden");
   if (selectOverlay) {
@@ -473,14 +619,21 @@ function updateShopState() {
  * Start the match with the selected hero
  */
 function startMatch() {
-  if (!chosenHeroData) chosenHeroData = HEROES[0];
+  // Ensure team rosters exist
+  if (!teamRoster || !teamRoster.blue || teamRoster.blue.length === 0) {
+    generateTeamRosters(chosenHeroData || HEROES[0]);
+  }
+
+  // Ensure chosenHeroData matches the player's slot (teamRoster.blue[0])
+  if (teamRoster.blue[0] && teamRoster.blue[0].hero) {
+    chosenHeroData = teamRoster.blue[0].hero;
+  } else if (!chosenHeroData) {
+    chosenHeroData = HEROES[0];
+  }
 
   selectedHero = new Hero(chosenHeroData);
 
   // Position hero at their designated lane from team roster
-  if (!teamRoster || !teamRoster.blue || teamRoster.blue.length === 0) {
-    generateTeamRosters(chosenHeroData);
-  }
 
   const playerSlot = teamRoster.blue.find(m => m.isPlayer) || { lane: chosenHeroData.lane || "MID" };
   let spawnY = 480;
@@ -781,8 +934,10 @@ if (changeHeroBtn) {
     if (modeSelectOverlay) modeSelectOverlay.classList.add("hidden");
     selectOverlay.classList.remove("hidden");
     if (selectOverlay) selectOverlay.scrollTop = 0;
-    generateTeamRosters(chosenHeroData || HEROES[0]);
+    activeSlot = { team: "blue", index: 0 };
     renderTeamLineupsUI();
+    updateHeroGridSelection();
+    updateActiveSlotPrompt();
   });
 }
 
@@ -1186,8 +1341,10 @@ function loop(currentTime) {
 }
 
 // Initialization
+generateTeamRosters(HEROES[0]);
 buildHeroGrid();
 buildShopCatalog();
-generateTeamRosters(HEROES[0]);
 renderTeamLineupsUI();
+updateHeroGridSelection();
+updateActiveSlotPrompt();
 requestAnimationFrame(loop);

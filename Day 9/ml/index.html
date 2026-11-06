@@ -88,7 +88,13 @@
 
         <!-- Hero Selection Grid -->
         <div class="hero-select-section">
-          <h3 class="hero-select-heading"><i class="fa-solid fa-hand-pointer"></i> Select Your Champion</h3>
+          <div class="hero-select-heading-bar">
+            <h3 class="hero-select-heading" id="heroSelectHeading">
+              <i class="fa-solid fa-hand-pointer"></i>
+              <span id="activeSlotPrompt">Select Champion for: <strong id="activeSlotTargetName" class="active-target-highlight">Player (YOU)</strong></span>
+            </h3>
+            <span class="slot-switch-tip"><i class="fa-solid fa-circle-info"></i> Click any teammate or enemy slot above to change their hero</span>
+          </div>
           <div id="heroGrid" class="hero-grid"></div>
         </div>
 
