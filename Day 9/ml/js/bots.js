@@ -1,14 +1,15 @@
 /**
- * Bot AI Engine - Red Team Computer-Controlled Champion
- * Phase 4 implementation - Tactical decision tree, ability casting, laning & retreat
+ * Bot AI Engine - Multi-Team Computer-Controlled Champions (Blue & Red)
+ * Phase 4 implementation + Multi-Format (1v1, 2v2, 3v3) Team Clash & Lane AI
  */
 
 class BotHero {
-  constructor(heroData, lane = "MID") {
+  constructor(heroData, lane = "MID", team = "RED") {
     this.id = heroData.id;
     this.name = heroData.name;
     this.role = heroData.role;
     this.lane = (lane || "MID").toUpperCase();
+    this.assignedLane = this.lane;
 
     // Map lane to Y pixel coordinate
     if (this.lane.includes("GOLD") || this.lane.includes("TOP")) {
@@ -18,22 +19,29 @@ class BotHero {
     } else {
       this.laneY = 12 * 40; // 480px (Mid Lane)
     }
+    this.assignedLaneY = this.laneY;
 
-    this.color = heroData.color || "#e74c3c";
+    this.team = (team || "RED").toUpperCase();
+    this.color = heroData.color || (this.team === "BLUE" ? "#4ecca3" : "#e74c3c");
     this.spritePath = heroData.sprite;
     this.stats = { ...heroData.stats };
 
-    this.team = "RED";
     this.hp = this.stats.hp || 2400;
     this.maxHp = this.hp;
     this.radius = 18;
 
-    // Spawn at Red Base
-    this.spawnX = 29 * 40; // 1160px
-    this.spawnY = 12 * 40; // 480px
+    // Base Spawns & March Target
+    if (this.team === "BLUE") {
+      this.spawnX = 2 * 40; // 80px (Blue Base)
+      this.spawnY = 12 * 40; // 480px
+      this.targetX = 29 * 40; // March towards Red Base
+    } else {
+      this.spawnX = 29 * 40; // 1160px (Red Base)
+      this.spawnY = 12 * 40; // 480px
+      this.targetX = 2 * 40; // March towards Blue Base
+    }
     this.x = this.spawnX;
     this.y = this.spawnY;
-    this.targetX = 120; // Long-range march target to Blue Base
     this.targetY = this.laneY;
 
     this.speed = (this.stats.spd || 3.8) * 44;
@@ -49,11 +57,16 @@ class BotHero {
       r: { name: "Ultimate", cd: 0, maxCd: 25, damage: 320, range: 250 }
     };
 
-    // State
-    this.state = "LANING"; // "LANING", "COMBAT", "RETREAT", "DEAD"
+    // State: "LANING", "COMBAT", "RETREAT", "CLASH", "OBJECTIVE", "DEAD"
+    this.state = "LANING";
     this.isDead = false;
     this.respawnTimer = 0;
     this.respawnMax = (typeof GAME !== "undefined" && GAME.HERO_RESPAWN_TIME) ? GAME.HERO_RESPAWN_TIME : 10;
+
+    // Roaming & Dynamic Team Clash System
+    this.roamTimer = Math.random() * 20 + 25; // 25 to 45 seconds between roaming plans
+    this.isClashing = false;
+    this.clashDuration = 0;
 
     // Recall ability & retreat safety
     this.isRecalling = false;
@@ -85,7 +98,7 @@ class BotHero {
     this.level = 1;
     this.exp = 0;
     this.maxExp = (typeof GAME !== "undefined" && GAME.LEVEL_EXP) ? GAME.LEVEL_EXP[1] : 100;
-    this.skillPoints = 1; // Start with 1 skill point
+    this.skillPoints = 1;
     this.skillLevels = { q: 1, w: 0, e: 0, r: 0 };
     this.passiveExpTimer = 0;
   }
@@ -118,15 +131,16 @@ class BotHero {
 
     if (leveledUp) {
       if (particles) {
-        particles.spawnRing(this.x, this.y, 45, "#e74c3c", 0.6);
-        particles.spawnBurst(this.x, this.y, "#ff4757", 18, 140);
+        const ringCol = this.team === "BLUE" ? "#4ecca3" : "#e74c3c";
+        particles.spawnRing(this.x, this.y, 45, ringCol, 0.6);
+        particles.spawnBurst(this.x, this.y, ringCol, 18, 140);
       }
       if (combatTexts) {
         combatTexts.push({
           x: this.x,
           y: this.y - 35,
-          text: `[BOT] LEVEL UP! Lv.${this.level}`,
-          color: "#ff6b81",
+          text: `[${this.team}] ${this.name} LEVEL UP! Lv.${this.level}`,
+          color: this.team === "BLUE" ? "#4ecca3" : "#ff6b81",
           life: 1.8,
           maxLife: 1.8
         });
@@ -138,13 +152,25 @@ class BotHero {
 
   autoAllocateSkill() {
     while (this.skillPoints > 0) {
-      // Priority 1: Ultimate (R) at Lv 4, 8, 12 up to rank 3
-      const rReqLevel = this.skillLevels.r === 0 ? 4 : (this.skillLevels.r === 1 ? 8 : 12);
-      if (this.level >= rReqLevel && this.skillLevels.r < 3) {
-        this.skillLevels.r++;
+      // Priority 1: Ultimate at Lv 4, 8, 12
+      if (this.level >= 4 && this.skillLevels.r === 0) {
+        this.skillLevels.r = 1;
         this.skillPoints--;
-        this.skills.r.damage = Math.round(this.skills.r.damage * 1.22);
-        this.skills.r.maxCd = Math.max(12, this.skills.r.maxCd - 1.5);
+        this.skills.r.damage = Math.round(this.skills.r.damage * 1.3);
+        continue;
+      }
+      if (this.level >= 8 && this.skillLevels.r === 1) {
+        this.skillLevels.r = 2;
+        this.skillPoints--;
+        this.skills.r.damage = Math.round(this.skills.r.damage * 1.3);
+        this.skills.r.maxCd = Math.max(16, this.skills.r.maxCd - 2);
+        continue;
+      }
+      if (this.level >= 12 && this.skillLevels.r === 2) {
+        this.skillLevels.r = 3;
+        this.skillPoints--;
+        this.skills.r.damage = Math.round(this.skills.r.damage * 1.3);
+        this.skills.r.maxCd = Math.max(14, this.skills.r.maxCd - 2);
         continue;
       }
 
@@ -165,37 +191,37 @@ class BotHero {
         this.skills.q.damage = Math.round(this.skills.q.damage * 1.22);
         this.skills.q.maxCd = Math.max(3, this.skills.q.maxCd - 0.4);
       } else {
-        break; // All non-ultimate skills maxed
+        break;
       }
     }
   }
 
   getLaneFrontlineBoundary(map) {
-    if (!map || !map.turrets) return 140;
+    if (!map || !map.turrets) return this.team === "BLUE" ? 1160 : 120;
 
-    // Find active Blue turrets in this bot's assigned lane
-    let laneTurrets = map.turrets.filter(t => t.team === "BLUE" && !t.destroyed && t.lane === this.lane);
+    const oppTeam = this.team === "BLUE" ? "RED" : "BLUE";
+    let laneTurrets = map.turrets.filter(t => t.team === oppTeam && !t.destroyed && t.lane === this.assignedLane);
     if (laneTurrets.length === 0) {
-      laneTurrets = map.turrets.filter(t => t.team === "BLUE" && !t.destroyed);
+      laneTurrets = map.turrets.filter(t => t.team === oppTeam && !t.destroyed);
     }
 
     if (laneTurrets.length === 0) {
-      return 160; // All lane turrets down, can push to base crystal
+      return this.team === "BLUE" ? 1160 : 120;
     }
 
-    // Frontline turret is the one with highest worldX (furthest into the lane towards RED side)
-    let frontlineTurret = laneTurrets[0];
-    for (let i = 1; i < laneTurrets.length; i++) {
-      if (laneTurrets[i].worldX > frontlineTurret.worldX) {
-        frontlineTurret = laneTurrets[i];
+    if (this.team === "RED") {
+      let frontline = laneTurrets[0];
+      for (let i = 1; i < laneTurrets.length; i++) {
+        if (laneTurrets[i].worldX > frontline.worldX) frontline = laneTurrets[i];
       }
+      return frontline.worldX - 80;
+    } else {
+      let frontline = laneTurrets[0];
+      for (let i = 1; i < laneTurrets.length; i++) {
+        if (laneTurrets[i].worldX < frontline.worldX) frontline = laneTurrets[i];
+      }
+      return frontline.worldX + 80;
     }
-
-    // Outer turret (3rd) is at x=540 -> cutoff = 460px.
-    // Inner turret (2nd) is at x=420 -> cutoff = 340px.
-    // Base turret (1st) is at x=260 -> cutoff = 180px.
-    // The bot will dive around the frontline tower, but will NOT chase deep past this cutoff.
-    return frontlineTurret.worldX - 80;
   }
 
   async loadSprite() {
@@ -212,8 +238,10 @@ class BotHero {
     this.hp = this.maxHp;
     this.x = this.spawnX;
     this.y = this.spawnY;
-    this.targetX = 120;
-    this.targetY = this.laneY;
+    this.targetX = this.team === "BLUE" ? (29 * 40) : (2 * 40);
+    this.targetY = this.assignedLaneY;
+    this.laneY = this.assignedLaneY;
+    this.isClashing = false;
     this.state = "LANING";
   }
 
@@ -223,12 +251,12 @@ class BotHero {
     if (this.isRecalling) {
       this.isRecalling = false;
       this.recallTimer = 0;
-      this.recallCooldown = 5.0; // Prevent immediately re-attempting recall for 5 seconds
+      this.recallCooldown = 5.0;
       if (combatTexts) {
         combatTexts.push({
           x: this.x,
           y: this.y - 30,
-          text: "[BOT] RECALL INTERRUPTED!",
+          text: `[${this.team}] RECALL INTERRUPTED!`,
           color: "#ff6b6b",
           life: 1.0,
           maxLife: 1.0
@@ -239,7 +267,7 @@ class BotHero {
     this.recentDamageTimer = 4.0;
     this.hp -= amount;
 
-    // If bot HP is low (< 28%), retreat towards Red Base on foot!
+    // If HP drops below 28%, retreat towards friendly base
     if (this.hp < this.maxHp * 0.28) {
       this.state = "RETREAT";
       this.targetX = this.spawnX;
@@ -247,9 +275,9 @@ class BotHero {
     }
 
     if (particles) {
-      particles.spawnBurst(this.x, this.y, "#ff4757", 8, 100);
+      particles.spawnBurst(this.x, this.y, this.team === "BLUE" ? "#4ecca3" : "#ff4757", 8, 100);
     }
-    if (sound) {
+    if (sound && sound.playHit) {
       sound.playHit();
     }
     if (combatTexts) {
@@ -257,7 +285,7 @@ class BotHero {
         x: this.x + (Math.random() - 0.5) * 16,
         y: this.y - 20,
         text: `-${Math.round(amount)}`,
-        color: "#ff4757",
+        color: this.team === "BLUE" ? "#ff6b81" : "#4ecca3",
         life: 0.8,
         maxLife: 0.8
       });
@@ -274,18 +302,23 @@ class BotHero {
         combatTexts.push({
           x: this.x,
           y: this.y - 35,
-          text: `[BOT] ${this.name.toUpperCase()} SLAIN!`,
+          text: `[${this.team}] ${this.name.toUpperCase()} SLAIN!`,
           color: "#ffd700",
           life: 2.2,
           maxLife: 2.2
         });
       }
 
-      if (source && source.team === "BLUE") {
-        if (sound) sound.playAnnouncer("kill");
+      if (source && source.team !== this.team) {
+        if (source.team === "BLUE" && sound && sound.playAnnouncer) sound.playAnnouncer("kill");
         if (scoreboard) {
-          scoreboard.recordKill("player");
-          scoreboard.addGold("player", 250);
+          if (source.team === "BLUE") {
+            scoreboard.recordKill("player");
+            scoreboard.addGold("player", 250);
+          } else {
+            scoreboard.recordKill("bot");
+            scoreboard.addGold("bot", 250);
+          }
         }
       }
     }
@@ -314,7 +347,7 @@ class BotHero {
     }
   }
 
-  update(dt, player, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager) {
+  update(dt, player, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager, allBots) {
     // 1. Respawn timer
     if (this.isDead) {
       this.respawnTimer -= dt;
@@ -324,8 +357,8 @@ class BotHero {
           combatTexts.push({
             x: this.x,
             y: this.y - 25,
-            text: `[BOT] ${this.name} RESPAWNED!`,
-            color: "#e74c3c",
+            text: `[${this.team}] ${this.name} RESPAWNED!`,
+            color: this.color,
             life: 1.5,
             maxLife: 1.5
           });
@@ -334,55 +367,49 @@ class BotHero {
       return;
     }
 
-    // Stun crowd-control handling
+    // Stun crowd-control
     if (this.stunTimer > 0) {
       this.stunTimer = Math.max(0, this.stunTimer - dt);
       this.targetX = this.x;
       this.targetY = this.y;
-      return; // Cannot move, attack, or cast while stunned
+      return;
     }
 
-    // Recall Channeling Handling (2.0s duration)
+    // Recall Channeling (2.0s duration)
     if (this.isRecalling) {
       this.recallTimer -= dt;
 
-      // Swirling crimson rings & sparks
       if (particles && Math.random() < 0.35) {
-        particles.spawnRing(this.x, this.y, 35, "#e74c3c", 0.4);
-      }
-      if (particles && Math.random() < 0.3) {
-        particles.spawnBurst(this.x, this.y - 10, "#ff4757", 3, 50);
+        particles.spawnRing(this.x, this.y, 35, this.team === "BLUE" ? "#4ecca3" : "#e74c3c", 0.4);
       }
 
       if (this.recallTimer <= 0) {
         this.isRecalling = false;
         this.recallTimer = 0;
 
-        // Teleport to Red Base crystal spawn
+        // Teleport to Base
         this.x = this.spawnX;
         this.y = this.spawnY;
         this.targetX = this.spawnX;
         this.targetY = this.spawnY;
 
         if (particles) {
-          particles.spawnRing(this.x, this.y, 65, "#e74c3c", 0.6);
-          particles.spawnBurst(this.x, this.y, "#ff4757", 25, 140);
+          particles.spawnRing(this.x, this.y, 65, this.color, 0.6);
+          particles.spawnBurst(this.x, this.y, this.color, 25, 140);
         }
-        if (sound && sound.playTeleport) {
-          sound.playTeleport();
-        }
+        if (sound && sound.playTeleport) sound.playTeleport();
         if (combatTexts) {
           combatTexts.push({
             x: this.x,
             y: this.y - 30,
-            text: "[BOT] RECALLED TO BASE!",
-            color: "#ff6b81",
+            text: `[${this.team}] RECALLED TO BASE!`,
+            color: this.color,
             life: 1.8,
             maxLife: 1.8
           });
         }
       }
-      return; // Do not move or combat while recalling
+      return;
     }
 
     // 2. Cooldown tickers
@@ -406,95 +433,136 @@ class BotHero {
       this.checkShopPurchase();
     }
 
-    // 3b. Base Fountain Continuous Healing (Friendly Red Base: low HP, half HP, or any non-max HP)
-    const distToRedBase = Math.hypot(this.x - this.spawnX, this.y - this.spawnY);
-    if (distToRedBase <= 120 && this.hp < this.maxHp) {
+    // 3b. Friendly Base Continuous Healing
+    const distToBase = Math.hypot(this.x - this.spawnX, this.y - this.spawnY);
+    if (distToBase <= 120 && this.hp < this.maxHp) {
       this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.20 * dt);
       if (particles && Math.random() < 0.35) {
         particles.spawnTrail(this.x, this.y, "#2ecc71", 3);
       }
       if (this.hp >= this.maxHp * 0.95 && this.state === "RETREAT") {
         this.state = "LANING";
-        this.targetX = 120;
-        this.targetY = this.laneY;
+        this.targetX = this.team === "BLUE" ? (29 * 40) : (2 * 40);
+        this.targetY = this.assignedLaneY;
       }
     }
 
-    // 4. Decision Tree
-    // If low HP (< 28%) -> RETREAT to Red Base (or Recall if safe)
+    // Collect all opposing heroes (Player + Opposing Bots)
+    const opposingHeroes = [];
+    if (player && !player.isDead && player.hp > 0 && player.team !== this.team) {
+      opposingHeroes.push(player);
+    }
+    if (allBots && Array.isArray(allBots)) {
+      allBots.forEach(b => {
+        if (b !== this && !b.isDead && b.hp > 0 && b.team !== this.team) {
+          opposingHeroes.push(b);
+        }
+      });
+    }
+
+    // 4. Decision Tree: Low HP Retreat
     if (this.hp < this.maxHp * 0.28) {
       this.state = "RETREAT";
+      let distToClosestOpp = Infinity;
+      opposingHeroes.forEach(e => {
+        const d = Math.hypot(e.x - this.x, e.y - this.y);
+        if (d < distToClosestOpp) distToClosestOpp = d;
+      });
 
-      let distToPlayer = Infinity;
-      if (player && !player.isDead && player.hp > 0) {
-        distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
-      }
-
-      // Safe to recall ONLY if not in combat, not recently damaged, far from player, and far from base
       const isSafeToRecall = !this.isRecalling &&
                             this.recallCooldown <= 0 &&
                             this.recentDamageTimer <= 0 &&
-                            distToPlayer > 360 &&
-                            distToRedBase > 260;
+                            distToClosestOpp > 360 &&
+                            distToBase > 260;
 
       if (isSafeToRecall) {
         this.isRecalling = true;
         this.recallTimer = this.recallMax;
         this.targetX = this.x;
         this.targetY = this.y;
-        if (sound && sound.playRecall) {
-          sound.playRecall();
-        }
-        if (combatTexts) {
-          combatTexts.push({
-            x: this.x,
-            y: this.y - 30,
-            text: "[BOT] RECALLING...",
-            color: "#ff6b81",
-            life: 0.9,
-            maxLife: 0.9
-          });
-        }
+        if (sound && sound.playRecall) sound.playRecall();
         return;
       }
 
-      // If unsafe, damaged, or interrupted, FLEE to Red Base on foot!
+      // Retreat on foot towards friendly base
       this.targetX = this.spawnX;
       this.targetY = this.spawnY;
     } else {
-      // Check Player proximity
-      let distToPlayer = Infinity;
-      const playerAbsent = !player || player.isDead || player.hp <= 0 || player.isRecalling;
-      if (player && !player.isDead && player.hp > 0) {
-        distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
-      }
-
-      // Check for Opposing Summoned Lord invading Mid Lane
-      let lordTarget = null;
-      if (objectiveManager && objectiveManager.summonedLord && !objectiveManager.summonedLord.isDead && objectiveManager.summonedLord.team !== this.team) {
-        const lord = objectiveManager.summonedLord;
-        const distToLord = Math.hypot(lord.x - this.x, lord.y - this.y);
-        if (distToLord < 360) {
-          lordTarget = lord;
+      // Roaming & Lane-Changing Team Clash Planning
+      this.roamTimer -= dt;
+      if (this.isClashing) {
+        this.clashDuration -= dt;
+        if (this.clashDuration <= 0 || this.hp < this.maxHp * 0.35) {
+          this.isClashing = false;
+          this.laneY = this.assignedLaneY;
+          this.targetY = this.laneY;
+          this.roamTimer = Math.random() * 25 + 30;
+          if (combatTexts) {
+            combatTexts.push({
+              x: this.x,
+              y: this.y - 30,
+              text: `[${this.team}] ${this.name}: RETURNING TO LANE`,
+              color: this.color,
+              life: 1.0,
+              maxLife: 1.0
+            });
+          }
+        }
+      } else if (this.roamTimer <= 0 && this.hp > this.maxHp * 0.65) {
+        // Switch lane temporarily to gank / clash
+        const candidateLanes = [240, 480, 720].filter(ly => ly !== this.assignedLaneY);
+        if (candidateLanes.length > 0) {
+          const targetClashY = candidateLanes[Math.floor(Math.random() * candidateLanes.length)];
+          this.isClashing = true;
+          this.clashDuration = 14.0; // 14s roam duration
+          this.laneY = targetClashY;
+          this.targetY = targetClashY;
+          this.roamTimer = Math.random() * 30 + 35;
+          if (combatTexts) {
+            combatTexts.push({
+              x: this.x,
+              y: this.y - 30,
+              text: `[${this.team}] ${this.name}: ROAMING FOR CLASH!`,
+              color: "#ffd700",
+              life: 1.2,
+              maxLife: 1.2
+            });
+          }
         }
       }
 
-      const chaseCutoff = this.getLaneFrontlineBoundary(map);
+      // Check opposing heroes in proximity
+      let closestOpp = null;
+      let distToClosestOpp = Infinity;
+      opposingHeroes.forEach(e => {
+        const d = Math.hypot(e.x - this.x, e.y - this.y);
+        if (d < distToClosestOpp) {
+          distToClosestOpp = d;
+          closestOpp = e;
+        }
+      });
 
-      if (distToPlayer < 300 && player.x >= chaseCutoff) {
-        // Player is nearby and within frontline dive limit -> COMBAT
+      // Check Opposing Summoned Lord
+      let lordTarget = null;
+      if (objectiveManager && objectiveManager.summonedLord && !objectiveManager.summonedLord.isDead && objectiveManager.summonedLord.team !== this.team) {
+        const lord = objectiveManager.summonedLord;
+        const dLord = Math.hypot(lord.x - this.x, lord.y - this.y);
+        if (dLord < 360) lordTarget = lord;
+      }
+
+      const chaseCutoff = this.getLaneFrontlineBoundary(map);
+      const isOppWithinCutoff = closestOpp ? (this.team === "RED" ? closestOpp.x >= chaseCutoff : closestOpp.x <= chaseCutoff) : false;
+
+      if (closestOpp && distToClosestOpp < 320 && isOppWithinCutoff) {
         this.state = "COMBAT";
-        this.engagePlayer(player, distToPlayer, dt, combatTexts, sound, particles, scoreboard, map);
+        this.engageEnemyHero(closestOpp, distToClosestOpp, dt, combatTexts, sound, particles, scoreboard, map);
       } else if (lordTarget) {
-        // Defend against Opposing Summoned Lord
         this.state = "COMBAT";
         this.engageLord(lordTarget, dt, combatTexts, sound, particles, scoreboard);
-      } else if (this.shouldContestObjective(playerAbsent, distToPlayer, objectiveManager)) {
-        // Bot is healthy & player absent -> contest Turtle or Lord!
+      } else if (this.shouldContestObjective(distToClosestOpp, objectiveManager)) {
         this.state = "OBJECTIVE";
         this.engageObjective(objectiveManager, dt, combatTexts, sound, particles, scoreboard);
       } else {
-        // LANING: push lane or attack blue minions
         this.state = "LANING";
         this.engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard);
       }
@@ -504,24 +572,25 @@ class BotHero {
     this.stepMovement(dt, map);
   }
 
-  engagePlayer(player, dist, dt, combatTexts, sound, particles, scoreboard, map) {
+  engageEnemyHero(targetHero, dist, dt, combatTexts, sound, particles, scoreboard, map) {
     const chaseCutoff = this.getLaneFrontlineBoundary(map);
 
-    // Frontline dive cutoff: If player retreated behind their inner towers or base, stop chasing!
-    if (player.x < chaseCutoff) {
+    // Stop chasing if enemy is past dive cutoff
+    const isPastCutoff = this.team === "RED" ? targetHero.x < chaseCutoff : targetHero.x > chaseCutoff;
+    if (isPastCutoff) {
       this.state = "LANING";
-      this.targetX = Math.max(this.x, chaseCutoff + 30);
+      this.targetX = this.team === "RED" ? Math.max(this.x, chaseCutoff + 30) : Math.min(this.x, chaseCutoff - 30);
       this.targetY = this.laneY;
       return;
     }
 
-    // Position: stay in attack range, but never advance past chaseCutoff
+    // Positioning
     if (dist > this.attackRange * 0.85) {
-      this.targetX = Math.max(player.x, chaseCutoff + 15);
-      this.targetY = player.y;
+      this.targetX = this.team === "RED" ? Math.max(targetHero.x, chaseCutoff + 15) : Math.min(targetHero.x, chaseCutoff - 15);
+      this.targetY = targetHero.y;
     } else if (dist < this.attackRange * 0.35) {
-      // Kite backwards slightly
-      const angle = Math.atan2(this.y - player.y, this.x - player.x);
+      // Kite backwards
+      const angle = Math.atan2(this.y - targetHero.y, this.x - targetHero.x);
       this.targetX = this.x + Math.cos(angle) * 70;
       this.targetY = this.y + Math.sin(angle) * 70;
     } else {
@@ -529,59 +598,50 @@ class BotHero {
       this.targetY = this.y;
     }
 
-    // Cast Skills
-    // Ultimate if available and player below 60% HP
-    if (this.skills.r.cd <= 0 && dist <= this.skills.r.range && player.hp < player.maxHp * 0.6) {
+    // Cast Ultimate (R)
+    if (this.skills.r.cd <= 0 && dist <= this.skills.r.range && targetHero.hp < targetHero.maxHp * 0.6) {
       this.skills.r.cd = this.skills.r.maxCd;
       if (sound) sound.playSkill("r");
       if (particles) {
-        particles.spawnRing(player.x, player.y, 60, "#e74c3c", 0.5);
-        particles.spawnBurst(player.x, player.y, "#ff4757", 18, 160);
+        particles.spawnRing(targetHero.x, targetHero.y, 60, this.color, 0.5);
+        particles.spawnBurst(targetHero.x, targetHero.y, this.color, 18, 160);
       }
-      player.hp -= this.skills.r.damage;
+      if (typeof targetHero.takeDamage === "function") {
+        targetHero.takeDamage(this.skills.r.damage, this, combatTexts, particles, sound, scoreboard);
+      } else {
+        targetHero.hp -= this.skills.r.damage;
+      }
       if (combatTexts) {
         combatTexts.push({
-          x: player.x,
-          y: player.y - 25,
-          text: `[BOT] ${this.skills.r.name.toUpperCase()} -${this.skills.r.damage}!`,
-          color: "#e74c3c",
+          x: targetHero.x,
+          y: targetHero.y - 25,
+          text: `[${this.team}] ${this.skills.r.name.toUpperCase()} -${this.skills.r.damage}!`,
+          color: this.color,
           life: 1.2,
           maxLife: 1.2
         });
       }
     }
-    // Skill 1 (Q)
+    // Cast Skill 1 (Q)
     else if (this.skills.q.cd <= 0 && dist <= this.skills.q.range) {
       this.skills.q.cd = this.skills.q.maxCd;
       if (sound) sound.playSkill("q");
-      if (particles) particles.spawnBurst(player.x, player.y, "#f39c12", 10, 110);
-      player.hp -= this.skills.q.damage;
-      if (combatTexts) {
-        combatTexts.push({
-          x: player.x,
-          y: player.y - 20,
-          text: `-${this.skills.q.damage}`,
-          color: "#f39c12",
-          life: 0.9,
-          maxLife: 0.9
-        });
+      if (particles) particles.spawnBurst(targetHero.x, targetHero.y, "#f39c12", 10, 110);
+      if (typeof targetHero.takeDamage === "function") {
+        targetHero.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
+      } else {
+        targetHero.hp -= this.skills.q.damage;
       }
     }
-    // Skill 2 (W)
+    // Cast Skill 2 (W)
     else if (this.skills.w.cd <= 0 && dist <= this.skills.w.range) {
       this.skills.w.cd = this.skills.w.maxCd;
       if (sound) sound.playSkill("w");
       if (particles) particles.spawnRing(this.x, this.y, 45, "#e67e22", 0.35);
-      player.hp -= this.skills.w.damage;
-      if (combatTexts) {
-        combatTexts.push({
-          x: player.x,
-          y: player.y - 20,
-          text: `-${this.skills.w.damage}`,
-          color: "#e67e22",
-          life: 0.9,
-          maxLife: 0.9
-        });
+      if (typeof targetHero.takeDamage === "function") {
+        targetHero.takeDamage(this.skills.w.damage, this, combatTexts, particles, sound, scoreboard);
+      } else {
+        targetHero.hp -= this.skills.w.damage;
       }
     }
 
@@ -596,50 +656,24 @@ class BotHero {
       }
       if (particles) {
         if (!isRanged && particles.spawnSlash) {
-          particles.spawnSlash(this.x, this.y, player.x, player.y, this.color || "#e74c3c", 40);
+          particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, this.color, 40);
         }
-        particles.spawnBurst(player.x, player.y, "#fff", 6, 90);
       }
-      player.hp -= this.attackDamage;
-      if (combatTexts) {
-        combatTexts.push({
-          x: player.x,
-          y: player.y - 15,
-          text: `-${this.attackDamage}`,
-          color: "#ffdd59",
-          life: 0.7,
-          maxLife: 0.7
-        });
+      if (typeof targetHero.takeDamage === "function") {
+        targetHero.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
+      } else {
+        targetHero.hp -= this.attackDamage;
       }
-    }
-
-    // Check if player died to Bot
-    if (player.hp <= 0 && !player.isDead) {
-      this.kills++;
-      this.gold += 300;
-      if (scoreboard) {
-        scoreboard.recordKill("bot");
-        scoreboard.addGold("bot", 300);
-      }
-      if (sound) sound.playAnnouncer("death");
     }
   }
 
-  shouldContestObjective(playerAbsent, distToPlayer, objectiveManager) {
+  shouldContestObjective(distToOpp, objectiveManager) {
     if (!objectiveManager) return false;
-    // Must be healthy (> 65% HP) and not retreating
     if (this.hp < this.maxHp * 0.65) return false;
-    // Player must be absent, dead, or far away (> 400px)
-    if (!playerAbsent && distToPlayer < 400) return false;
+    if (distToOpp < 240) return false;
 
-    // Check if Turtle is alive
-    if (objectiveManager.turtle && objectiveManager.turtle.alive) {
-      return true;
-    }
-    // Check if Lord is alive
-    if (objectiveManager.lord && objectiveManager.lord.alive) {
-      return true;
-    }
+    if (objectiveManager.turtle && objectiveManager.turtle.alive) return true;
+    if (objectiveManager.lord && objectiveManager.lord.alive) return true;
     return false;
   }
 
@@ -658,8 +692,6 @@ class BotHero {
     }
 
     const dist = Math.hypot(targetBoss.x - this.x, targetBoss.y - this.y);
-
-    // If bot HP falls below 35% during boss fight, back off!
     if (this.hp < this.maxHp * 0.35) {
       this.state = "RETREAT";
       this.targetX = this.spawnX;
@@ -667,7 +699,6 @@ class BotHero {
       return;
     }
 
-    // Approach boss pit
     if (dist > this.attackRange * 0.85) {
       this.targetX = targetBoss.x;
       this.targetY = targetBoss.y;
@@ -676,44 +707,13 @@ class BotHero {
       this.targetY = this.y;
     }
 
-    // Basic attack against boss
     if (dist <= this.attackRange + 25 && this.attackTimer <= 0) {
       this.attackTimer = this.attackCooldown;
-      const isRanged = this.attackRange > 130;
-      if (sound) {
-        if (isRanged) sound.playShoot();
-        else if (sound.playSlash) sound.playSlash();
-        else sound.playAttack();
-      }
-      if (particles) {
-        if (!isRanged && particles.spawnSlash) {
-          particles.spawnSlash(this.x, this.y, targetBoss.x, targetBoss.y, this.color || "#e74c3c", 40);
-        }
-        particles.spawnBurst(targetBoss.x, targetBoss.y, "#fff", 6, 90);
-      }
-
       if (typeof targetBoss.takeDamage === "function") {
         targetBoss.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
       } else {
         targetBoss.hp = Math.max(0, targetBoss.hp - this.attackDamage);
         targetBoss.lastAttacker = this;
-      }
-    }
-
-    // Cast Q or W against boss if available
-    if (dist <= 180) {
-      if (this.skills.q.cd <= 0) {
-        this.skills.q.cd = 6.0;
-        if (sound) sound.playSkill();
-        if (typeof targetBoss.takeDamage === "function") {
-          targetBoss.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
-        }
-      } else if (this.skills.w.cd <= 0) {
-        this.skills.w.cd = 7.0;
-        if (sound) sound.playSkill();
-        if (typeof targetBoss.takeDamage === "function") {
-          targetBoss.takeDamage(this.skills.w.damage, this, combatTexts, particles, sound, scoreboard);
-        }
       }
     }
   }
@@ -730,15 +730,6 @@ class BotHero {
 
     if (dist <= this.attackRange + 25 && this.attackTimer <= 0) {
       this.attackTimer = this.attackCooldown;
-      const isRanged = this.attackRange > 130;
-      if (sound) {
-        if (isRanged) sound.playShoot();
-        else if (sound.playSlash) sound.playSlash();
-        else sound.playAttack();
-      }
-      if (particles) {
-        particles.spawnBurst(lord.x, lord.y, "#fff", 6, 90);
-      }
       if (typeof lord.takeDamage === "function") {
         lord.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
       }
@@ -746,14 +737,14 @@ class BotHero {
   }
 
   engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard) {
-    // 1. Search for nearest Blue Minion
+    // 1. Search for nearest Opposing Minion in current lane
     let nearestMinion = null;
     let minDist = Infinity;
     let clusterCount = 0;
 
     if (minionManager && minionManager.minions) {
       minionManager.minions.forEach(m => {
-        if (m.team === "BLUE" && m.hp > 0) {
+        if (m.team !== this.team && m.hp > 0) {
           const d = Math.hypot(m.x - this.x, m.y - this.y);
           if (d < 240) clusterCount++;
           if (d < minDist) {
@@ -764,24 +755,16 @@ class BotHero {
       });
     }
 
-    // Cast Q or W to fast-clear wave and push when >= 2 minions clustered
+    // Cast Q or W to fast-clear wave when clustered
     if (clusterCount >= 2 && nearestMinion && minDist <= 240) {
       if (this.skills.q.cd <= 0) {
         this.skills.q.cd = 6.0;
         if (sound) sound.playSkill();
-        if (particles) particles.spawnBurst(nearestMinion.x, nearestMinion.y, this.color || "#e74c3c", 8, 110);
         nearestMinion.hp -= this.skills.q.damage;
-        if (combatTexts) {
-          combatTexts.push({ x: nearestMinion.x, y: nearestMinion.y - 20, text: `-${this.skills.q.damage}`, color: "#ff4757", life: 0.7, maxLife: 0.7 });
-        }
       } else if (this.skills.w.cd <= 0) {
         this.skills.w.cd = 7.0;
         if (sound) sound.playSkill();
-        if (particles) particles.spawnBurst(nearestMinion.x, nearestMinion.y, "#ffd700", 6, 90);
         nearestMinion.hp -= this.skills.w.damage;
-        if (combatTexts) {
-          combatTexts.push({ x: nearestMinion.x, y: nearestMinion.y - 20, text: `-${this.skills.w.damage}`, color: "#ff4757", life: 0.7, maxLife: 0.7 });
-        }
       }
     }
 
@@ -803,25 +786,21 @@ class BotHero {
           else if (sound.playSlash) sound.playSlash();
           else sound.playAttack();
         }
-        if (particles) {
-          if (!isRanged && particles.spawnSlash) {
-            particles.spawnSlash(this.x, this.y, nearestMinion.x, nearestMinion.y, this.color || "#e74c3c", 36);
-          }
-          particles.spawnBurst(nearestMinion.x, nearestMinion.y, "#fff", 4, 70);
-        }
         nearestMinion.hp -= this.attackDamage;
-
         if (nearestMinion.hp <= 0) {
           this.cs++;
           this.gold += 45;
-          if (scoreboard) scoreboard.addGold("bot", 45);
+          if (scoreboard) {
+            const teamKey = this.team === "BLUE" ? "player" : "bot";
+            scoreboard.addGold(teamKey, 45);
+          }
         }
       }
     } else {
-      // 2. Check for Blue Turrets in range to attack
+      // 2. Check for Opposing Turrets in range
       let nearTurret = null;
       if (map && map.turrets) {
-        nearTurret = map.turrets.find(t => t.team === "BLUE" && !t.destroyed && Math.hypot(t.worldX - this.x, t.worldY - this.y) <= this.attackRange + 20);
+        nearTurret = map.turrets.find(t => t.team !== this.team && !t.destroyed && Math.hypot(t.worldX - this.x, t.worldY - this.y) <= this.attackRange + 25);
       }
 
       if (nearTurret) {
@@ -829,23 +808,18 @@ class BotHero {
         this.targetY = this.y;
         if (this.attackTimer <= 0) {
           this.attackTimer = this.attackCooldown;
-          if (sound) sound.playAttack();
+          if (sound && sound.playAttack) sound.playAttack();
           nearTurret.hp -= this.attackDamage;
           if (particles) particles.spawnBurst(nearTurret.worldX, nearTurret.worldY, "#ffd700", 6, 80);
-          if (combatTexts) {
-            combatTexts.push({ x: nearTurret.worldX, y: nearTurret.worldY - 20, text: `-${this.attackDamage}`, color: "#ffd700", life: 0.7, maxLife: 0.7 });
-          }
         }
       } else {
-        // 3. March down assigned lane towards frontline / Blue Base!
+        // 3. March down lane towards frontline boundary / opposing base
         const chaseCutoff = this.getLaneFrontlineBoundary(map);
-        if (Math.abs(this.y - this.laneY) > 20 && this.x > 1050) {
-          // Navigate to lane entry inside Red Base
-          this.targetX = this.x;
+        if (this.team === "RED") {
+          this.targetX = Math.max(chaseCutoff + 25, 120);
           this.targetY = this.laneY;
         } else {
-          // March down the lane towards frontline cutoff (do not march blindly past defended towers)
-          this.targetX = Math.max(chaseCutoff + 25, 120);
+          this.targetX = Math.min(chaseCutoff - 25, 29 * 40);
           this.targetY = this.laneY;
         }
       }
@@ -866,7 +840,7 @@ class BotHero {
       this.y = Math.max(40, Math.min(23 * 40, ny));
     }
 
-    // Turret solid collision separation so bot never gets stuck inside a turret
+    // Turret collision separation
     if (map && map.turrets) {
       const minTurretDist = 38;
       for (let i = 0; i < map.turrets.length; i++) {
@@ -912,17 +886,18 @@ class BotHero {
     const sx = this.x - camera.x;
     const sy = this.y - camera.y;
 
-    // Check offscreen
     const canvasW = ctx.canvas ? ctx.canvas.width : GAME.CANVAS_WIDTH;
     const canvasH = ctx.canvas ? ctx.canvas.height : GAME.CANVAS_HEIGHT;
-    if (sx < -60 || sx > canvasW + 60 || sy < -60 || sy > canvasH + 60) {
-      return;
-    }
+    if (sx < -60 || sx > canvasW + 60 || sy < -60 || sy > canvasH + 60) return;
 
     ctx.save();
 
-    // Red aura under bot
-    ctx.fillStyle = "rgba(231, 76, 60, 0.25)";
+    const isBlue = this.team === "BLUE";
+    const teamColor = isBlue ? "#4ecca3" : "#e74c3c";
+    const teamAura = isBlue ? "rgba(78, 204, 163, 0.25)" : "rgba(231, 76, 60, 0.25)";
+
+    // Ground team aura
+    ctx.fillStyle = teamAura;
     ctx.beginPath();
     ctx.arc(sx, sy, this.radius + 6, 0, Math.PI * 2);
     ctx.fill();
@@ -936,7 +911,7 @@ class BotHero {
       ctx.drawImage(this.image, sx - this.radius, sy - this.radius, this.radius * 2, this.radius * 2);
       ctx.restore();
 
-      ctx.strokeStyle = "#e74c3c";
+      ctx.strokeStyle = teamColor;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.arc(sx, sy, this.radius, 0, Math.PI * 2);
@@ -946,7 +921,7 @@ class BotHero {
       ctx.beginPath();
       ctx.arc(sx, sy, this.radius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "#e74c3c";
+      ctx.strokeStyle = teamColor;
       ctx.lineWidth = 2.5;
       ctx.stroke();
 
@@ -963,80 +938,69 @@ class BotHero {
     const hpRatio = Math.max(0, this.hp / this.maxHp);
     ctx.fillStyle = "#1a1a2e";
     ctx.fillRect(sx - barWidth / 2, sy - this.radius - 14, barWidth, barHeight);
-    ctx.fillStyle = "#e74c3c";
+    ctx.fillStyle = isBlue ? "#2ecc71" : "#e74c3c";
     ctx.fillRect(sx - barWidth / 2, sy - this.radius - 14, barWidth * hpRatio, barHeight);
     ctx.strokeStyle = "rgba(255,255,255,0.4)";
     ctx.lineWidth = 1;
     ctx.strokeRect(sx - barWidth / 2, sy - this.radius - 14, barWidth, barHeight);
 
-    // Overhead Level badge next to health bar
+    // Overhead Level badge
     const lvl = this.level || 1;
-    ctx.fillStyle = "rgba(20, 5, 10, 0.9)";
+    ctx.fillStyle = isBlue ? "rgba(10, 25, 20, 0.9)" : "rgba(25, 10, 15, 0.9)";
     ctx.beginPath();
     ctx.arc(sx - barWidth / 2 - 7, sy - this.radius - 11.5, 6, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "#e74c3c";
+    ctx.strokeStyle = teamColor;
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    ctx.fillStyle = "#ff6b81";
+    ctx.fillStyle = isBlue ? "#4ecca3" : "#ff6b81";
     ctx.font = "bold 8px sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(`${lvl}`, sx - barWidth / 2 - 7, sy - this.radius - 11);
 
     // Bot Label
-    ctx.fillStyle = "#ff6b6b";
+    const tag = isBlue ? "[ALLY]" : "[BOT]";
+    ctx.fillStyle = isBlue ? "#4ecca3" : "#ff6b6b";
     ctx.font = "bold 10px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(`[BOT] ${this.name}`, sx, sy - this.radius - 18);
+    ctx.fillText(`${tag} ${this.name}`, sx, sy - this.radius - 18);
 
-    // Recall Channeling Gauge & Portal Aura
+    // Roaming / Clash indicator overhead
+    if (this.isClashing) {
+      ctx.fillStyle = "#ffd700";
+      ctx.font = "bold 9px sans-serif";
+      ctx.fillText("⚔️ CLASH", sx, sy - this.radius - 29);
+    }
+
+    // Recall Channeling Gauge
     if (this.isRecalling) {
       const channelProgress = Math.max(0, Math.min(1, 1 - (this.recallTimer / this.recallMax)));
       const chBarW = 44;
       const chBarH = 6;
-      const chY = sy - this.radius - 32;
+      const chY = sy - this.radius - 34;
 
-      // Gauge background
-      ctx.fillStyle = "rgba(25, 10, 15, 0.85)";
+      ctx.fillStyle = "rgba(15, 20, 30, 0.85)";
       ctx.fillRect(sx - chBarW / 2, chY, chBarW, chBarH);
-
-      // Gauge fill (crimson/orange)
-      ctx.fillStyle = "#ff4757";
+      ctx.fillStyle = isBlue ? "#4ecca3" : "#ff4757";
       ctx.fillRect(sx - chBarW / 2, chY, chBarW * channelProgress, chBarH);
-
-      // Gauge border
-      ctx.strokeStyle = "#ff6b81";
+      ctx.strokeStyle = teamColor;
       ctx.lineWidth = 1;
       ctx.strokeRect(sx - chBarW / 2, chY, chBarW, chBarH);
 
-      // Channeling text
-      ctx.fillStyle = "#ff6b81";
+      ctx.fillStyle = teamColor;
       ctx.font = "bold 9px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(`RECALLING ${this.recallTimer.toFixed(1)}s`, sx, chY - 3);
-
-      // Teleport ring on ground
-      ctx.save();
-      ctx.strokeStyle = "#ff4757";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath();
-      ctx.arc(sx, sy, this.radius + 12, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
     }
 
-    // Overhead Spinning Golden Stun Stars
+    // Overhead Stun Stars
     if (this.stunTimer > 0) {
       const starY = sy - this.radius - 28;
       const angle = (Date.now() / 140) % (Math.PI * 2);
       ctx.save();
       ctx.fillStyle = "#ffd700";
-      ctx.strokeStyle = "#b8860b";
-      ctx.lineWidth = 1;
       for (let i = 0; i < 3; i++) {
         const a = angle + (i * Math.PI * 2 / 3);
         const starX = sx + Math.cos(a) * 13;
@@ -1044,7 +1008,6 @@ class BotHero {
         ctx.beginPath();
         ctx.arc(starX, sY, 3, 0, Math.PI * 2);
         ctx.fill();
-        ctx.stroke();
       }
       ctx.restore();
     }

@@ -19,6 +19,9 @@ let itemShop = new ItemShop();
 const sound = new SoundEngine();
 const particles = new ParticleEngine();
 const scoreboard = new Scoreboard();
+let matchMode = "3v3"; // "1v1" | "2v2" | "3v3"
+let bots = []; // Array of BotHero instances (Blue Allies + Red Enemies)
+let teamRoster = { blue: [], red: [] };
 let enemyBot = null;
 
 // Audio unlock on user interaction
@@ -33,7 +36,7 @@ let chosenHeroData = null;
 const cameraLerp = 0.1;
 let matchTime = 0;
 let passiveGoldTimer = 0;
-let gameState = "SELECT"; // "SELECT" | "PLAYING" | "GAMEOVER"
+let gameState = "MODE_SELECT"; // "MODE_SELECT" | "SELECT" | "PLAYING" | "GAMEOVER"
 const combatTexts = [];
 
 // Match statistics
@@ -44,6 +47,15 @@ const gameStats = {
   gold: 0,
   deaths: 0
 };
+
+// Mode & Hero Select UI references
+const modeSelectOverlay = document.getElementById("modeSelectOverlay");
+const currentModeLabel = document.getElementById("currentModeLabel");
+const backToModeBtn = document.getElementById("backToModeBtn");
+const blueTeamSlots = document.getElementById("blueTeamSlots");
+const redTeamSlots = document.getElementById("redTeamSlots");
+const blueTeamCount = document.getElementById("blueTeamCount");
+const redTeamCount = document.getElementById("redTeamCount");
 
 // UI references
 const selectOverlay = document.getElementById("heroSelectOverlay");
@@ -105,10 +117,11 @@ Input.onTap = (worldX, worldY) => {
 
 // Build hero selection cards
 function buildHeroGrid() {
+  if (!heroGrid) return;
   heroGrid.innerHTML = "";
-  HEROES.forEach((hero) => {
+  HEROES.forEach((hero, idx) => {
     const card = document.createElement("div");
-    card.className = "hero-card";
+    card.className = "hero-card" + (idx === 0 ? " selected" : "");
     card.innerHTML = `
       <div class="hero-portrait" style="border-color: ${hero.color};">
         <img src="${hero.sprite}idle.png" alt="${hero.name}" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'font-weight:bold;color:${hero.color}\\'>${hero.name[0]}</span>';" />
@@ -126,6 +139,10 @@ function buildHeroGrid() {
       startBtn.textContent = `Start Match as ${hero.name}`;
       updateHeroUI(hero);
 
+      // Re-generate team rosters with selected hero
+      generateTeamRosters(hero);
+      renderTeamLineupsUI();
+
       // On mobile or smaller viewports, smoothly ensure start button is visible
       if (window.innerWidth <= 768 || window.innerHeight <= 600) {
         startBtn.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -138,6 +155,219 @@ function buildHeroGrid() {
     });
 
     heroGrid.appendChild(card);
+  });
+
+  if (!chosenHeroData && HEROES.length > 0) {
+    chosenHeroData = HEROES[0];
+    if (startBtn) {
+      startBtn.disabled = false;
+      startBtn.textContent = `Start Match as ${HEROES[0].name}`;
+    }
+    updateHeroUI(HEROES[0]);
+  }
+}
+
+// 2-Column Team Matchup Generator & UI Preview
+function generateTeamRosters(playerHero = null) {
+  const chosen = playerHero || chosenHeroData || HEROES[0];
+  const allOtherHeroes = HEROES.filter(h => h.id !== chosen.id);
+
+  // Determine Player preferred lane
+  let playerLane = "MID";
+  if (chosen.lane) {
+    if (chosen.lane.includes("Gold")) playerLane = "TOP";
+    else if (chosen.lane.includes("EXP")) playerLane = "BOT";
+    else playerLane = "MID";
+  }
+
+  // Pool of available bot heroes
+  const available = [...allOtherHeroes];
+
+  function pickHero(preferredLanes = [], preferredRoles = []) {
+    let bestIdx = available.findIndex(h => {
+      const laneMatch = preferredLanes.length === 0 || preferredLanes.some(l => h.lane && h.lane.toLowerCase().includes(l.toLowerCase()));
+      const roleMatch = preferredRoles.length === 0 || preferredRoles.some(r => h.role && h.role.toLowerCase().includes(r.toLowerCase()));
+      return laneMatch && roleMatch;
+    });
+    if (bestIdx === -1) {
+      bestIdx = available.findIndex(h => {
+        return preferredLanes.length === 0 || preferredLanes.some(l => h.lane && h.lane.toLowerCase().includes(l.toLowerCase()));
+      });
+    }
+    if (bestIdx === -1 && available.length > 0) {
+      bestIdx = 0;
+    }
+    if (bestIdx !== -1) {
+      return available.splice(bestIdx, 1)[0];
+    }
+    return HEROES[1];
+  }
+
+  teamRoster = { blue: [], red: [] };
+
+  if (matchMode === "1v1") {
+    // 1v1 Format: 1 Blue (Player) vs 1 Red Enemy Bot in MID
+    teamRoster.blue.push({
+      hero: chosen,
+      lane: "MID",
+      isPlayer: true
+    });
+
+    const enemyHero = pickHero(["Mid"], ["Mage", "Assassin", "Fighter"]);
+    teamRoster.red.push({
+      hero: enemyHero,
+      lane: "MID",
+      isPlayer: false
+    });
+  } else if (matchMode === "2v2") {
+    // 2v2 Format: 2 Blue (Player + Ally Bot) vs 2 Red Enemy Bots
+    let allyLane = "TOP";
+    if (playerLane === "TOP") {
+      allyLane = "BOT";
+    } else if (playerLane === "BOT") {
+      allyLane = "TOP";
+    } else {
+      playerLane = "MID";
+      allyLane = "TOP";
+    }
+
+    teamRoster.blue.push({
+      hero: chosen,
+      lane: playerLane,
+      isPlayer: true
+    });
+
+    const allyHero = pickHero(allyLane === "TOP" ? ["Gold", "Jungle"] : ["EXP", "Roam"], ["Marksman", "Tank", "Fighter"]);
+    teamRoster.blue.push({
+      hero: allyHero,
+      lane: allyLane,
+      isPlayer: false
+    });
+
+    const redHero1 = pickHero(playerLane === "TOP" ? ["Gold"] : (playerLane === "BOT" ? ["EXP"] : ["Mid"]));
+    teamRoster.red.push({
+      hero: redHero1,
+      lane: playerLane,
+      isPlayer: false
+    });
+
+    const redHero2 = pickHero(allyLane === "TOP" ? ["Gold", "Jungle"] : ["EXP", "Roam"]);
+    teamRoster.red.push({
+      hero: redHero2,
+      lane: allyLane,
+      isPlayer: false
+    });
+  } else {
+    // 3v3 Format: Full 3-Lane Classic MOBA (TOP, MID, BOT)
+    const lanes = ["TOP", "MID", "BOT"];
+    const remainingBlueLanes = lanes.filter(l => l !== playerLane);
+
+    teamRoster.blue.push({
+      hero: chosen,
+      lane: playerLane,
+      isPlayer: true
+    });
+
+    remainingBlueLanes.forEach(lane => {
+      const prefLane = lane === "TOP" ? ["Gold"] : (lane === "BOT" ? ["EXP"] : ["Mid", "Roam"]);
+      const prefRole = lane === "TOP" ? ["Marksman", "Assassin"] : (lane === "BOT" ? ["Fighter", "Tank"] : ["Mage", "Support"]);
+      const ally = pickHero(prefLane, prefRole);
+      teamRoster.blue.push({
+        hero: ally,
+        lane: lane,
+        isPlayer: false
+      });
+    });
+
+    // Red Team: 3 heroes matching TOP, MID, BOT
+    lanes.forEach(lane => {
+      const prefLane = lane === "TOP" ? ["Gold"] : (lane === "BOT" ? ["EXP"] : ["Mid", "Roam"]);
+      const prefRole = lane === "TOP" ? ["Marksman", "Assassin"] : (lane === "BOT" ? ["Fighter", "Tank"] : ["Mage", "Support"]);
+      const enemy = pickHero(prefLane, prefRole);
+      teamRoster.red.push({
+        hero: enemy,
+        lane: lane,
+        isPlayer: false
+      });
+    });
+  }
+}
+
+function renderTeamSlotHtml(member, team) {
+  const isPlayer = member.isPlayer;
+  const hero = member.hero;
+  const lane = member.lane;
+  const slotClass = isPlayer ? "team-slot player-slot" : "team-slot";
+  const badgeClass = isPlayer ? "player-badge" : "bot-badge";
+  const badgeText = isPlayer ? '<i class="fa-solid fa-user"></i> YOU' : (team === "BLUE" ? '<i class="fa-solid fa-shield"></i> ALLY' : '<i class="fa-solid fa-robot"></i> BOT');
+  const avatarBorder = team === "BLUE" ? (isPlayer ? "#ffd700" : "#4ecca3") : "#e74c3c";
+
+  return `
+    <div class="${slotClass}">
+      <div class="team-slot-avatar" style="border-color: ${avatarBorder};">
+        <img src="${hero.sprite}idle.png" alt="${hero.name}" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'font-weight:bold;color:${hero.color || '#fff'}\\'>${hero.name[0]}</span>';" />
+      </div>
+      <div class="team-slot-meta">
+        <div class="team-slot-name-row">
+          <span class="team-slot-name">${hero.name}</span>
+          <span class="${badgeClass}">${badgeText}</span>
+        </div>
+        <div class="team-slot-sub">
+          <span class="team-slot-role">${hero.role}</span>
+          <span class="slot-lane"><i class="fa-solid fa-route"></i> ${lane}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTeamLineupsUI() {
+  if (blueTeamCount) blueTeamCount.textContent = `${teamRoster.blue.length} Hero${teamRoster.blue.length > 1 ? 'es' : ''}`;
+  if (redTeamCount) redTeamCount.textContent = `${teamRoster.red.length} Hero${teamRoster.red.length > 1 ? 'es' : ''}`;
+  if (currentModeLabel) {
+    const modeName = matchMode === "1v1" ? "1v1 Solo Duel" : (matchMode === "2v2" ? "2v2 Skirmish" : "3v3 Classic MOBA");
+    currentModeLabel.textContent = modeName;
+  }
+
+  if (blueTeamSlots) {
+    blueTeamSlots.innerHTML = teamRoster.blue.map(m => renderTeamSlotHtml(m, "BLUE")).join("");
+  }
+  if (redTeamSlots) {
+    redTeamSlots.innerHTML = teamRoster.red.map(m => renderTeamSlotHtml(m, "RED")).join("");
+  }
+}
+
+function selectMatchMode(mode) {
+  matchMode = mode;
+  document.querySelectorAll(".mode-card").forEach(c => {
+    c.classList.toggle("selected", c.getAttribute("data-mode") === mode);
+  });
+  generateTeamRosters(chosenHeroData || HEROES[0]);
+  renderTeamLineupsUI();
+
+  if (modeSelectOverlay) modeSelectOverlay.classList.add("hidden");
+  if (selectOverlay) {
+    selectOverlay.classList.remove("hidden");
+    selectOverlay.scrollTop = 0;
+  }
+}
+
+// Mode Selection Event Listeners
+const modeCards = document.querySelectorAll(".mode-card");
+modeCards.forEach(card => {
+  card.addEventListener("click", () => {
+    const mode = card.getAttribute("data-mode");
+    selectMatchMode(mode);
+  });
+});
+
+if (backToModeBtn) {
+  backToModeBtn.addEventListener("click", () => {
+    if (selectOverlay) selectOverlay.classList.add("hidden");
+    if (modeSelectOverlay) {
+      modeSelectOverlay.classList.remove("hidden");
+      modeSelectOverlay.scrollTop = 0;
+    }
   });
 }
 
@@ -243,25 +473,44 @@ function updateShopState() {
  * Start the match with the selected hero
  */
 function startMatch() {
-  if (!chosenHeroData) return;
+  if (!chosenHeroData) chosenHeroData = HEROES[0];
 
   selectedHero = new Hero(chosenHeroData);
 
-  // Position hero at their designated lane
+  // Position hero at their designated lane from team roster
+  if (!teamRoster || !teamRoster.blue || teamRoster.blue.length === 0) {
+    generateTeamRosters(chosenHeroData);
+  }
+
+  const playerSlot = teamRoster.blue.find(m => m.isPlayer) || { lane: chosenHeroData.lane || "MID" };
   let spawnY = 480;
-  if (chosenHeroData.lane && chosenHeroData.lane.includes("Gold")) spawnY = 240;
-  else if (chosenHeroData.lane && chosenHeroData.lane.includes("EXP")) spawnY = 720;
+  if (playerSlot.lane === "TOP" || (playerSlot.lane && playerSlot.lane.includes("Gold"))) spawnY = 240;
+  else if (playerSlot.lane === "BOT" || (playerSlot.lane && playerSlot.lane.includes("EXP"))) spawnY = 720;
 
   selectedHero.x = 100;
   selectedHero.y = spawnY;
   selectedHero.targetX = 100;
   selectedHero.targetY = spawnY;
+  selectedHero.team = "BLUE";
 
-  // Spawn Enemy Bot from non-chosen hero pool matching the lane
-  const availableBotHeroes = HEROES.filter(h => h.id !== chosenHeroData.id);
-  const botData = availableBotHeroes[Math.floor(Math.random() * availableBotHeroes.length)] || HEROES[1];
-  enemyBot = new BotHero(botData, chosenHeroData.lane || "MID");
+  // Spawn Bots for both Blue (Allies) and Red (Enemies)
+  bots = [];
 
+  // Blue Ally Bots
+  teamRoster.blue.filter(m => !m.isPlayer).forEach(member => {
+    const allyBot = new BotHero(member.hero, member.lane, "BLUE");
+    bots.push(allyBot);
+  });
+
+  // Red Enemy Bots
+  teamRoster.red.forEach(member => {
+    const enemyBotInstance = new BotHero(member.hero, member.lane, "RED");
+    bots.push(enemyBotInstance);
+  });
+
+  enemyBot = bots.find(b => b.team === "RED") || null;
+
+  if (modeSelectOverlay) modeSelectOverlay.classList.add("hidden");
   selectOverlay.classList.add("hidden");
   gameOverOverlay.classList.add("hidden");
   gameState = "PLAYING";
@@ -440,7 +689,7 @@ function triggerSkill(slot, customTargetX, customTargetY) {
     objectiveManager,
     combatTexts,
     gameStats,
-    enemyBot,
+    bots,
     sound,
     particles
   );
@@ -459,6 +708,7 @@ function resetGame() {
   skillManager = new SkillManager();
   objectiveManager = new ObjectiveManager();
   itemShop = new ItemShop();
+  bots = [];
   enemyBot = null;
   scoreboard.stats = {
     player: { kills: 0, deaths: 0, assists: 0, cs: 0, gold: 0, damageDealt: 0 },
@@ -483,8 +733,9 @@ function resetGame() {
   if (chosenHeroData) {
     startMatch();
   } else {
-    selectOverlay.classList.remove("hidden");
-    gameState = "SELECT";
+    if (modeSelectOverlay) modeSelectOverlay.classList.remove("hidden");
+    selectOverlay.classList.add("hidden");
+    gameState = "MODE_SELECT";
   }
 }
 
@@ -526,8 +777,12 @@ if (changeHeroBtn) {
   changeHeroBtn.addEventListener("click", () => {
     disarmSkill(false);
     gameState = "SELECT";
+    gameOverOverlay.classList.add("hidden");
+    if (modeSelectOverlay) modeSelectOverlay.classList.add("hidden");
     selectOverlay.classList.remove("hidden");
     if (selectOverlay) selectOverlay.scrollTop = 0;
+    generateTeamRosters(chosenHeroData || HEROES[0]);
+    renderTeamLineupsUI();
   });
 }
 
@@ -798,51 +1053,51 @@ function loop(currentTime) {
     // 0. Update Particles
     particles.update(dt);
 
-    // 0b. Passive Gold Income: +10 gold every 3.0s for Player & Bot
+    // 0b. Passive Gold Income: +10 gold every 3.0s for Player & all Bots
     passiveGoldTimer += dt;
     if (passiveGoldTimer >= 3.0) {
       passiveGoldTimer -= 3.0;
       gameStats.gold += 10;
       if (scoreboard) scoreboard.addGold("player", 10);
-      if (enemyBot) {
-        enemyBot.gold += 10;
-        if (scoreboard) scoreboard.addGold("bot", 10);
-      }
+      bots.forEach((b, idx) => {
+        b.gold = (b.gold || 0) + 10;
+        if (scoreboard) scoreboard.addGold(b.team === "RED" ? `bot_${idx}` : `ally_${idx}`, 10);
+      });
     }
 
     // 1. Hero Input & Update
     if (selectedHero) {
       if (Input.targetX !== null && Input.targetY !== null) {
         if (selectedHero.stunTimer <= 0) {
-          selectedHero.setTarget(Input.targetX, Input.targetY, map, minionManager.minions, objectiveManager, enemyBot);
+          selectedHero.setTarget(Input.targetX, Input.targetY, map, minionManager.minions, objectiveManager, bots);
         }
         if (!Input.isDragging) {
           Input.targetX = null;
           Input.targetY = null;
         }
       }
-      selectedHero.update(map, dt, minionManager.minions, combatTexts, gameStats, skillManager, itemShop, objectiveManager, enemyBot, sound, particles, scoreboard);
+      selectedHero.update(map, dt, minionManager.minions, combatTexts, gameStats, skillManager, itemShop, objectiveManager, bots, sound, particles, scoreboard);
 
       // Camera follow hero
       updateCamera(false);
     }
 
-    // 1b. Enemy Bot Hero update
-    if (enemyBot) {
-      enemyBot.update(dt, selectedHero, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager);
+    // 1b. Ally & Enemy Bots update (Multi-Lane & Team Clash)
+    for (let i = 0; i < bots.length; i++) {
+      bots[i].update(dt, selectedHero, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager, bots);
     }
 
-    // 2. Minions update (targeting both Player & Enemy Bot)
-    minionManager.update(dt, map, selectedHero, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager);
+    // 2. Minions update (targeting Player, Ally Bots, Enemy Bots, Minions, and Turrets)
+    minionManager.update(dt, map, selectedHero, combatTexts, gameStats, bots, sound, particles, scoreboard, objectiveManager);
 
     // 3. Skills update
-    skillManager.update(dt, selectedHero, map, minionManager.minions, objectiveManager, combatTexts, gameStats, enemyBot, scoreboard, sound, particles);
+    skillManager.update(dt, selectedHero, map, minionManager.minions, objectiveManager, combatTexts, gameStats, bots, scoreboard, sound, particles);
 
     // 4. Boss Objectives update (Turtle & Lord)
-    objectiveManager.update(dt, selectedHero, map, minionManager.minions, combatTexts, gameStats, skillManager, scoreboard, enemyBot, sound, particles);
+    objectiveManager.update(dt, selectedHero, map, minionManager.minions, combatTexts, gameStats, skillManager, scoreboard, bots, sound, particles);
 
-    // 5. Turrets, Base Crystal & projectiles update (targeting both Player & Enemy Bot)
-    map.updateCombat(dt, selectedHero, minionManager.minions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager);
+    // 5. Turrets, Base Crystal & projectiles update
+    map.updateCombat(dt, selectedHero, minionManager.minions, combatTexts, gameStats, bots, sound, particles, scoreboard, objectiveManager);
 
     // 6. Update Ability Cooldown & Recall UI Overlays
     if (recallBtnEl && selectedHero) {
@@ -880,7 +1135,7 @@ function loop(currentTime) {
 
     // 7b. Update Scoreboard if visible
     if (scoreboard.visible) {
-      scoreboard.updateUI(selectedHero, enemyBot, itemShop);
+      scoreboard.updateUI(selectedHero, bots, itemShop);
     }
 
     // 8. Combat floating texts update
@@ -909,8 +1164,9 @@ function loop(currentTime) {
   renderer.renderMinions(minionManager, camera);
   renderer.renderSkills(skillManager, camera);
 
-  if (enemyBot) {
-    renderer.renderBot(enemyBot, camera);
+  // Render all bots (Blue Allies and Red Enemies)
+  for (let i = 0; i < bots.length; i++) {
+    renderer.renderBot(bots[i], camera);
   }
 
   if (selectedHero) {
@@ -920,7 +1176,7 @@ function loop(currentTime) {
     }
     const blueBase = map.bases.find(b => b.team === "BLUE");
     const redBase = map.bases.find(b => b.team === "RED");
-    renderer.renderUI(selectedHero, matchTime, minionManager.waveCount, blueBase, redBase, gameStats, enemyBot);
+    renderer.renderUI(selectedHero, matchTime, minionManager.waveCount, blueBase, redBase, gameStats, bots);
   }
 
   renderer.renderParticles(particles, camera);
@@ -929,7 +1185,9 @@ function loop(currentTime) {
   requestAnimationFrame(loop);
 }
 
-// Start
+// Initialization
 buildHeroGrid();
 buildShopCatalog();
+generateTeamRosters(HEROES[0]);
+renderTeamLineupsUI();
 requestAnimationFrame(loop);

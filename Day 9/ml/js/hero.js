@@ -206,13 +206,16 @@ class Hero {
     let clickedEnemy = null;
     let minClickDist = 38;
 
-    if (enemyBot && !enemyBot.isDead && enemyBot.hp > 0 && enemyBot.team !== this.team) {
-      const cd = Math.hypot(enemyBot.x - tx, enemyBot.y - ty);
-      if (cd < minClickDist) {
-        minClickDist = cd;
-        clickedEnemy = enemyBot;
+    const botList = Array.isArray(enemyBot) ? enemyBot : (enemyBot ? [enemyBot] : []);
+    botList.forEach(b => {
+      if (!b.isDead && b.hp > 0 && b.team !== this.team) {
+        const cd = Math.hypot(b.x - tx, b.y - ty);
+        if (cd < minClickDist) {
+          minClickDist = cd;
+          clickedEnemy = b;
+        }
       }
-    }
+    });
 
     if (minions) {
       minions.forEach(m => {
@@ -552,11 +555,14 @@ class Hero {
     if (!this.attackTarget) {
       const potentialTargets = [];
 
-      // Enemy Bot Hero
-      if (enemyBot && !enemyBot.isDead && enemyBot.hp > 0 && enemyBot.team !== this.team) {
-        const d = getDistance(this.x, this.y, enemyBot.x, enemyBot.y);
-        if (d <= this.attackRange) potentialTargets.push({ unit: enemyBot, dist: d, priority: 0.8 });
-      }
+      // Enemy Bot Heroes
+      const activeBots = Array.isArray(enemyBot) ? enemyBot : (enemyBot ? [enemyBot] : []);
+      activeBots.forEach(b => {
+        if (!b.isDead && b.hp > 0 && b.team !== this.team) {
+          const d = getDistance(this.x, this.y, b.x, b.y);
+          if (d <= this.attackRange) potentialTargets.push({ unit: b, dist: d, priority: 0.8 });
+        }
+      });
 
       // Enemy Minions
       if (minions) {
@@ -670,8 +676,8 @@ class Hero {
         }
 
         // Direct melee strike
-        if (enemyBot && this.attackTarget === enemyBot) {
-          enemyBot.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
+        if (typeof this.attackTarget.takeDamage === "function") {
+          this.attackTarget.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
         } else if (this.attackTarget.hp !== undefined) {
           const prevHp = this.attackTarget.hp || 0;
           this.attackTarget.hp = Math.max(0, this.attackTarget.hp - this.attackDamage);

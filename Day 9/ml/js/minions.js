@@ -108,10 +108,13 @@ class Minion {
         }
       }
 
-      // Enemy Hero (Player or Enemy Bot)
+      // Enemy Heroes (Player or Bots)
       const enemyHeroes = [];
       if (hero && hero.team !== this.team && !hero.isDead && hero.hp > 0) enemyHeroes.push(hero);
-      if (enemyBot && enemyBot.team !== this.team && !enemyBot.isDead && enemyBot.hp > 0) enemyHeroes.push(enemyBot);
+      const botList = Array.isArray(enemyBot) ? enemyBot : (enemyBot ? [enemyBot] : []);
+      botList.forEach(b => {
+        if (b.team !== this.team && !b.isDead && b.hp > 0) enemyHeroes.push(b);
+      });
 
       enemyHeroes.forEach(eh => {
         const d = getDistance(this.x, this.y, eh.x, eh.y);

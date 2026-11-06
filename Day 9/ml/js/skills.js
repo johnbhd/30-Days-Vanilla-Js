@@ -595,9 +595,12 @@ class SkillManager {
 
   getAllEnemies(hero, minions, map, objectives, enemyBot) {
     const enemies = [];
-    if (enemyBot && !enemyBot.isDead && enemyBot.hp > 0 && enemyBot.team !== hero.team) {
-      enemies.push(enemyBot);
-    }
+    const botList = Array.isArray(enemyBot) ? enemyBot : (enemyBot ? [enemyBot] : []);
+    botList.forEach(b => {
+      if (!b.isDead && b.hp > 0 && b.team !== hero.team) {
+        enemies.push(b);
+      }
+    });
     if (minions) {
       minions.forEach(m => {
         if (m.team !== hero.team && m.hp > 0) enemies.push(m);

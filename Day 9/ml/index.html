@@ -14,14 +14,86 @@
   <div class="game-wrapper">
     <canvas id="gameCanvas" width="1280" height="720"></canvas>
 
-    <!-- Hero Selection Overlay -->
-    <div id="heroSelectOverlay" class="hero-select-overlay">
+    <!-- Match Format Selection Overlay (1v1, 2v2, 3v3) -->
+    <div id="modeSelectOverlay" class="mode-select-overlay">
+      <div class="mode-select-container">
+        <h1><i class="fa-solid fa-trophy" style="color: #ffd700; margin-right: 8px;"></i> Select Match Format</h1>
+        <p>Choose the battle scale for the Land of Dawn</p>
+        <div class="mode-cards-grid">
+          <div class="mode-card" data-mode="1v1">
+            <div class="mode-badge">SOLO DUEL</div>
+            <div class="mode-icon"><i class="fa-solid fa-crosshairs"></i></div>
+            <h2>1 v 1</h2>
+            <span class="mode-tagline">Mid Lane Solo Showdown</span>
+            <p class="mode-desc">Pure skill matchup. 1 Player vs 1 Enemy Bot in the Mid Lane.</p>
+            <button class="mode-select-btn" type="button">Play 1v1</button>
+          </div>
+          <div class="mode-card" data-mode="2v2">
+            <div class="mode-badge">SKIRMISH</div>
+            <div class="mode-icon"><i class="fa-solid fa-user-group"></i></div>
+            <h2>2 v 2</h2>
+            <span class="mode-tagline">Duo Lane Push & Ganks</span>
+            <p class="mode-desc">Co-op battle. 2 Blue (Player + 1 Ally Bot) vs 2 Red Enemy Bots.</p>
+            <button class="mode-select-btn" type="button">Play 2v2</button>
+          </div>
+          <div class="mode-card selected" data-mode="3v3">
+            <div class="mode-badge popular-badge">RECOMMENDED</div>
+            <div class="mode-icon"><i class="fa-solid fa-users"></i></div>
+            <h2>3 v 3</h2>
+            <span class="mode-tagline">Full 3-Lane Classic MOBA</span>
+            <p class="mode-desc">3 Blue vs 3 Red across Top, Mid, and Bot lanes with team clashes.</p>
+            <button class="mode-select-btn" type="button">Play 3v3</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero Selection Overlay with 2-Column Team Lineup Preview -->
+    <div id="heroSelectOverlay" class="hero-select-overlay hidden">
       <div class="select-container">
-        <h1>Choose Your Hero</h1>
-        <p>Pick your MLBB champion to defend the Land of Dawn</p>
-        <div id="heroGrid" class="hero-grid"></div>
+        <div class="select-header-bar">
+          <div>
+            <h1>Choose Your Hero</h1>
+            <p id="selectModeSubtitle">Pick your champion for <strong id="currentModeLabel" class="mode-highlight">3v3 Classic MOBA</strong></p>
+          </div>
+          <button id="backToModeBtn" class="back-mode-btn" type="button"><i class="fa-solid fa-arrow-left"></i> Change Mode</button>
+        </div>
+
+        <!-- 2-Column Team Matchup Preview (1st col: Blue Team, 2nd col: Red Team) -->
+        <div class="teams-matchup-container">
+          <div class="team-column blue-team" id="blueTeamColumn">
+            <div class="team-column-header">
+              <span class="team-title"><i class="fa-solid fa-shield-halved"></i> BLUE TEAM</span>
+              <span class="team-count" id="blueTeamCount">3 Heroes</span>
+            </div>
+            <div class="team-slots-list" id="blueTeamSlots">
+              <!-- Dynamically populated slots -->
+            </div>
+          </div>
+
+          <div class="matchup-vs-divider">
+            <span class="vs-circle">VS</span>
+          </div>
+
+          <div class="team-column red-team" id="redTeamColumn">
+            <div class="team-column-header">
+              <span class="team-title"><i class="fa-solid fa-skull"></i> RED TEAM</span>
+              <span class="team-count" id="redTeamCount">3 Heroes</span>
+            </div>
+            <div class="team-slots-list" id="redTeamSlots">
+              <!-- Dynamically populated slots -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Selection Grid -->
+        <div class="hero-select-section">
+          <h3 class="hero-select-heading"><i class="fa-solid fa-hand-pointer"></i> Select Your Champion</h3>
+          <div id="heroGrid" class="hero-grid"></div>
+        </div>
+
         <div class="select-footer">
-          <button id="startBtn" class="start-button" disabled>Select a Hero</button>
+          <button id="startBtn" class="start-button" disabled>Select a Hero to Begin</button>
         </div>
       </div>
     </div>

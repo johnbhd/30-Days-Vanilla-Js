@@ -82,31 +82,53 @@ class Scoreboard {
     const tableBody = document.getElementById("scoreboardRows");
     if (!tableBody) return;
 
-    const playerItems = itemShop ? itemShop.inventory.map(i => i.icon).join(" ") : "-";
-    const botItems = bot && bot.items ? bot.items.length : 0;
+    const botList = Array.isArray(bot) ? bot : (bot ? [bot] : []);
+    const blueBots = botList.filter(b => b.team === "BLUE");
+    const redBots = botList.filter(b => b.team === "RED");
 
+    const playerItems = itemShop && itemShop.inventory.length > 0 ? itemShop.inventory.map(i => i.icon).join(" ") : "Empty";
     const playerDeadBadge = player && player.isDead
       ? `<span style="color:#ff6b6b; font-weight:bold; margin-left:6px;"><i class="fa-solid fa-skull"></i> (${Math.ceil(player.respawnTimer)}s)</span>`
       : "";
-    const botDeadBadge = bot && bot.isDead
-      ? `<span style="color:#ff6b6b; font-weight:bold; margin-left:6px;"><i class="fa-solid fa-skull"></i> (${Math.ceil(bot.respawnTimer)}s)</span>`
-      : "";
 
-    tableBody.innerHTML = `
+    let rowsHtml = `
       <tr class="score-row blue-side">
-        <td><strong style="color:#4ecca3">${player ? player.name : "Player"}</strong> <small>(${player ? player.role : ""})</small>${playerDeadBadge}</td>
+        <td><strong style="color:#4ecca3">${player ? player.name : "Player"} (YOU)</strong> <small>(${player ? player.role : ""})</small>${playerDeadBadge}</td>
         <td>${this.stats.player.kills} / ${this.stats.player.deaths} / ${this.stats.player.assists}</td>
         <td>${this.stats.player.cs}</td>
         <td>${Math.round(this.stats.player.gold)}g</td>
-        <td class="scoreboard-items">${playerItems || "Empty"}</td>
-      </tr>
-      <tr class="score-row red-side">
-        <td><strong style="color:#e74c3c">${bot ? "[BOT] " + bot.name : "Enemy Bot"}</strong> <small>(${bot ? bot.role : ""})</small>${botDeadBadge}</td>
-        <td>${this.stats.bot.kills} / ${this.stats.bot.deaths} / ${this.stats.bot.assists}</td>
-        <td>${this.stats.bot.cs}</td>
-        <td>${Math.round(this.stats.bot.gold)}g</td>
-        <td class="scoreboard-items">${botItems} items</td>
+        <td class="scoreboard-items">${playerItems}</td>
       </tr>
     `;
+
+    // Blue Ally Bots
+    blueBots.forEach(b => {
+      const deadBadge = b.isDead ? `<span style="color:#ff6b6b; font-weight:bold; margin-left:6px;"><i class="fa-solid fa-skull"></i> (${Math.ceil(b.respawnTimer)}s)</span>` : "";
+      rowsHtml += `
+        <tr class="score-row blue-side">
+          <td><strong style="color:#4ecca3">${b.name} [ALLY]</strong> <small>(${b.role} • ${b.lane})</small>${deadBadge}</td>
+          <td>${b.kills} / ${b.deaths} / ${b.assists}</td>
+          <td>${b.cs}</td>
+          <td>${Math.round(b.gold)}g</td>
+          <td class="scoreboard-items">${b.items && b.items.length > 0 ? `${b.items.length} items` : "-"}</td>
+        </tr>
+      `;
+    });
+
+    // Red Enemy Bots
+    redBots.forEach(b => {
+      const deadBadge = b.isDead ? `<span style="color:#ff6b6b; font-weight:bold; margin-left:6px;"><i class="fa-solid fa-skull"></i> (${Math.ceil(b.respawnTimer)}s)</span>` : "";
+      rowsHtml += `
+        <tr class="score-row red-side">
+          <td><strong style="color:#e74c3c">${b.name} [ENEMY]</strong> <small>(${b.role} • ${b.lane})</small>${deadBadge}</td>
+          <td>${b.kills} / ${b.deaths} / ${b.assists}</td>
+          <td>${b.cs}</td>
+          <td>${Math.round(b.gold)}g</td>
+          <td class="scoreboard-items">${b.items && b.items.length > 0 ? `${b.items.length} items` : "-"}</td>
+        </tr>
+      `;
+    });
+
+    tableBody.innerHTML = rowsHtml;
   }
 }

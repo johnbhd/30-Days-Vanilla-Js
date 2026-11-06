@@ -276,7 +276,10 @@ class GameMap {
   updateCombat(dt, hero, minions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager) {
     const candidateHeroes = [];
     if (hero && !hero.isDead && hero.hp > 0) candidateHeroes.push(hero);
-    if (enemyBot && !enemyBot.isDead && enemyBot.hp > 0) candidateHeroes.push(enemyBot);
+    const botList = Array.isArray(enemyBot) ? enemyBot : (enemyBot ? [enemyBot] : []);
+    botList.forEach(b => {
+      if (!b.isDead && b.hp > 0) candidateHeroes.push(b);
+    });
 
     // 1. Update Turret shooting & destruction
     this.turrets.forEach(turret => {

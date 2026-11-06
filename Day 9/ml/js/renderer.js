@@ -251,7 +251,9 @@ class Renderer {
     const hudX = visibleLeft + 14;
     const hudY = visibleTop + 14;
     const hudWidth = 205;
-    const hasBotDead = enemyBot && enemyBot.isDead;
+    const botList = Array.isArray(enemyBot) ? enemyBot : (enemyBot ? [enemyBot] : []);
+    const deadBots = botList.filter(b => b.isDead);
+    const hasBotDead = deadBots.length > 0;
     const hudHeight = hasBotDead ? 68 : 52;
 
     this.ctx.fillStyle = "rgba(16, 25, 47, 0.88)";
@@ -283,12 +285,14 @@ class Renderer {
     this.ctx.textAlign = "right";
     this.ctx.fillText(`Red: ${rHp}`, hudX + hudWidth - 10, hudY + 38);
 
-    // Enemy Bot Respawn Status in HUD
+    // Bot Respawn Status in HUD
     if (hasBotDead) {
       this.ctx.fillStyle = "#ff6b6b";
       this.ctx.font = "bold 11px sans-serif";
       this.ctx.textAlign = "left";
-      this.ctx.fillText(`💀 [BOT] Reviving in ${Math.ceil(enemyBot.respawnTimer)}s`, hudX + 10, hudY + 56);
+      const minTimer = Math.min(...deadBots.map(b => b.respawnTimer));
+      const label = deadBots.length === 1 ? `💀 [${deadBots[0].team}] ${deadBots[0].name} in ${Math.ceil(deadBots[0].respawnTimer)}s` : `💀 ${deadBots.length} Respawning (${Math.ceil(minTimer)}s)`;
+      this.ctx.fillText(label, hudX + 10, hudY + 56);
     }
 
     // Player Hero Respawn Countdown Banner (Top-Center)

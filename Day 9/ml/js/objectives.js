@@ -326,15 +326,19 @@ class ObjectiveManager {
       }
     }
 
-    // Scan for aggressors in proximity of the pit (Player Hero or Enemy Bot Hero, then Minions)
+    // Scan for aggressors in proximity of the pit (Player Hero or Bots, then Minions)
     if (!boss.target) {
       if (hero && hero.hp > 0 && !hero.isDead && getDistance(homeX, homeY, hero.x, hero.y) <= 130) {
         boss.target = hero;
-      } else if (enemyBot && enemyBot.hp > 0 && !enemyBot.isDead && getDistance(homeX, homeY, enemyBot.x, enemyBot.y) <= 130) {
-        boss.target = enemyBot;
-      } else if (minions) {
-        const nearMinion = minions.find(m => m.hp > 0 && getDistance(homeX, homeY, m.x, m.y) <= 110);
-        if (nearMinion) boss.target = nearMinion;
+      } else {
+        const botList = Array.isArray(enemyBot) ? enemyBot : (enemyBot ? [enemyBot] : []);
+        const nearBot = botList.find(b => b.hp > 0 && !b.isDead && getDistance(homeX, homeY, b.x, b.y) <= 130);
+        if (nearBot) {
+          boss.target = nearBot;
+        } else if (minions) {
+          const nearMinion = minions.find(m => m.hp > 0 && getDistance(homeX, homeY, m.x, m.y) <= 110);
+          if (nearMinion) boss.target = nearMinion;
+        }
       }
     }
 
