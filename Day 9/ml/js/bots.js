@@ -223,6 +223,34 @@ class BotHero {
     return false;
   }
 
+  setLevel(targetLevel, exp = 0) {
+    const maxLvl = (typeof GAME !== "undefined" && GAME.MAX_HERO_LEVEL) ? GAME.MAX_HERO_LEVEL : 15;
+    const clampedLevel = clamp(targetLevel, 1, maxLvl);
+    const expTable = (typeof GAME !== "undefined" && GAME.LEVEL_EXP) ? GAME.LEVEL_EXP : [0, 100, 220, 360, 520, 700, 900, 1120, 1360, 1620, 1900, 2200, 2520, 2860, 3220];
+
+    const hpBoost = (typeof GAME !== "undefined" && GAME.STAT_GROWTH) ? GAME.STAT_GROWTH.hpPerLevel : 65;
+    const atkBoost = (typeof GAME !== "undefined" && GAME.STAT_GROWTH) ? GAME.STAT_GROWTH.atkPerLevel : 4.5;
+
+    // Reset base stats first
+    this.maxHp = this.stats.hp || 2400;
+    this.attackDamage = this.stats.atk || 110;
+    this.skillPoints = 1;
+    this.skillLevels = { q: 1, w: 0, e: 0, r: 0 };
+    this.skills = this.initHeroSkills(this.heroData);
+
+    for (let l = 2; l <= clampedLevel; l++) {
+      this.level = l;
+      this.skillPoints++;
+      this.maxHp += hpBoost;
+      this.attackDamage += atkBoost;
+      this.autoAllocateSkill();
+    }
+    this.level = clampedLevel;
+    this.hp = this.maxHp;
+    this.exp = exp;
+    this.maxExp = expTable[this.level] || (this.maxExp * 1.25);
+  }
+
   autoAllocateSkill() {
     while (this.skillPoints > 0) {
       // Priority 1: Ultimate at Lv 4, 8, 12
@@ -309,6 +337,7 @@ class BotHero {
   respawn() {
     this.isDead = false;
     this.hp = this.maxHp;
+    this.shield = 0;
     this.x = this.spawnX;
     this.y = this.spawnY;
     this.targetX = this.team === "BLUE" ? (29 * 40) : (2 * 40);
@@ -319,7 +348,7 @@ class BotHero {
   }
 
   takeDamage(amount, source, combatTexts, particles, sound, scoreboard) {
-    if (this.isDead) return;
+    if (this.isDead || this.hp <= 0) return;
 
     if (this.isRecalling) {
       this.isRecalling = false;
@@ -365,11 +394,22 @@ class BotHero {
     }
 
     if (this.hp <= 0) {
+      // Immortality revive check
+      if (this.hasRevive && !this.hasUsedRevive) {
+        this.hasUsedRevive = true;
+        this.hp = Math.floor(this.maxHp * 0.35);
+        if (combatTexts) {
+          combatTexts.push({ x: this.x, y: this.y - 30, text: `[${this.team}] IMMORTALITY REVIVE!`, color: "#ffd700", life: 1.8, maxLife: 1.8 });
+        }
+        return;
+      }
+
       this.hp = 0;
       this.isDead = true;
       this.deaths++;
       this.respawnTimer = this.respawnMax;
       this.state = "DEAD";
+      this.shield = 0;
 
       if (combatTexts) {
         combatTexts.push({
@@ -421,8 +461,28 @@ class BotHero {
   }
 
   update(dt, player, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager, allBots) {
-    // 1. Respawn timer
-    if (this.isDead) {
+    // 1. Respawn timer (never freeze even if external heals hit dead bot)
+    if (this.isDead || this.hp <= 0) {
+      if (!this.isDead) {
+        if (this.hasRevive && !this.hasUsedRevive) {
+          this.hasUsedRevive = true;
+          this.hp = Math.floor(this.maxHp * 0.35);
+          if (combatTexts) {
+            combatTexts.push({ x: this.x, y: this.y - 30, text: `[${this.team}] IMMORTALITY REVIVE!`, color: "#ffd700", life: 1.8, maxLife: 1.8 });
+          }
+          return;
+        }
+
+        this.hp = 0;
+        this.isDead = true;
+        this.deaths++;
+        this.respawnTimer = this.respawnMax;
+        this.state = "DEAD";
+        this.shield = 0;
+      }
+
+      this.hp = 0;
+      this.shield = 0;
       this.respawnTimer -= dt;
       if (this.respawnTimer <= 0) {
         this.respawn();
@@ -762,6 +822,10 @@ class BotHero {
       } else {
         targetHero.hp -= this.attackDamage;
       }
+      if (this.lifesteal > 0 && this.hp < this.maxHp) {
+        const healAmt = Math.round(this.attackDamage * this.lifesteal);
+        this.hp = Math.min(this.maxHp, this.hp + healAmt);
+      }
     }
   }
 
@@ -954,27 +1018,96 @@ class BotHero {
     }
   }
 
+  getRecommendedBuild() {
+    const heroId = (this.heroData && this.heroData.id) ? this.heroData.id.toLowerCase() : "";
+    const role = (this.role || "").toLowerCase();
+
+    // 1. Mage / Magic Burst (Pharsa, Nana, Angela)
+    if (heroId === "pharsa" || heroId === "nana" || heroId === "angela" || role === "mage" || role === "support") {
+      return ["swift_boots", "holy_crystal", "athenas_shield", "holy_crystal", "immortality", "bloodlust_axe"];
+    }
+
+    // 2. Magic Assassin (Gusion)
+    if (heroId === "gusion") {
+      return ["swift_boots", "holy_crystal", "bloodlust_axe", "holy_crystal", "athenas_shield", "immortality"];
+    }
+
+    // 3. Marksman (Layla, Miya)
+    if (heroId === "layla" || heroId === "miya" || role === "marksman") {
+      return ["swift_boots", "blade_of_despair", "bloodlust_axe", "blade_of_despair", "athenas_shield", "immortality"];
+    }
+
+    // 4. Tank / Frontline (Tigreal)
+    if (heroId === "tigreal" || role === "tank") {
+      return ["swift_boots", "athenas_shield", "immortality", "athenas_shield", "blade_of_despair", "bloodlust_axe"];
+    }
+
+    // 5. Fighter / Physical Assassin (Balmond, Alucard, Saber)
+    return ["swift_boots", "blade_of_despair", "bloodlust_axe", "athenas_shield", "immortality", "blade_of_despair"];
+  }
+
   checkShopPurchase() {
     if (this.items.length >= 6) return;
 
-    if (this.gold >= 1400 && !this.items.includes("immortality")) {
-      this.gold -= 1400;
-      this.items.push("immortality");
-      this.maxHp += 400;
-      this.hp += 400;
-    } else if (this.gold >= 1200 && !this.items.includes("blade_of_despair")) {
-      this.gold -= 1200;
-      this.items.push("blade_of_despair");
-      this.attackDamage += 55;
-    } else if (this.gold >= 850 && !this.items.includes("athenas_shield")) {
-      this.gold -= 850;
-      this.items.push("athenas_shield");
-      this.maxHp += 450;
-      this.hp += 450;
-    } else if (this.gold >= 500 && !this.items.includes("swift_boots")) {
-      this.gold -= 500;
-      this.items.push("swift_boots");
-      this.speed *= 1.25;
+    const buildPath = this.getRecommendedBuild();
+    const itemCatalogMap = {
+      swift_boots: { cost: 500, spd: 0.25 },
+      blade_of_despair: { cost: 1200, atk: 55 },
+      athenas_shield: { cost: 850, hp: 450 },
+      bloodlust_axe: { cost: 950, atk: 25, lifesteal: 0.20 },
+      holy_crystal: { cost: 1100, abilityPower: 60 },
+      immortality: { cost: 1400, hp: 400, revive: true }
+    };
+
+    let nextItemId = null;
+    const currentCounts = {};
+    this.items.forEach(id => { currentCounts[id] = (currentCounts[id] || 0) + 1; });
+
+    const neededCounts = {};
+    for (const id of buildPath) {
+      neededCounts[id] = (neededCounts[id] || 0) + 1;
+      if ((currentCounts[id] || 0) < neededCounts[id]) {
+        nextItemId = id;
+        break;
+      }
+    }
+
+    // Fallback: if completed build path but has free slot, buy available powerful item
+    if (!nextItemId) {
+      const fallbacks = ["blade_of_despair", "holy_crystal", "athenas_shield"];
+      nextItemId = fallbacks.find(id => this.gold >= itemCatalogMap[id].cost) || null;
+    }
+
+    if (!nextItemId) return;
+    const item = itemCatalogMap[nextItemId];
+    if (!item || this.gold < item.cost) return;
+
+    // Deduct gold & equip item
+    this.gold -= item.cost;
+    this.items.push(nextItemId);
+
+    // Apply item stats
+    if (item.spd) this.speed *= (1 + item.spd);
+    if (item.atk) this.attackDamage += item.atk;
+    if (item.hp) {
+      this.maxHp += item.hp;
+      if (!this.isDead) this.hp += item.hp;
+    }
+    if (item.abilityPower) {
+      this.abilityPower = (this.abilityPower || 0) + item.abilityPower;
+      // Empower bot's signature magical and burst skills!
+      if (this.skills) {
+        if (this.skills.q) this.skills.q.damage += Math.round(item.abilityPower * 0.7);
+        if (this.skills.w) this.skills.w.damage += Math.round(item.abilityPower * 0.8);
+        if (this.skills.r) this.skills.r.damage += Math.round(item.abilityPower * 1.5);
+      }
+    }
+    if (item.lifesteal) {
+      this.lifesteal = (this.lifesteal || 0) + item.lifesteal;
+    }
+    if (item.revive) {
+      this.hasRevive = true;
+      this.hasUsedRevive = false;
     }
   }
 

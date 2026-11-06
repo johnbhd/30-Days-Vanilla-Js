@@ -102,6 +102,30 @@ class Hero {
     return false;
   }
 
+  setLevel(targetLevel, exp = 0) {
+    const maxLvl = (typeof GAME !== "undefined" && GAME.MAX_HERO_LEVEL) ? GAME.MAX_HERO_LEVEL : 15;
+    const clampedLevel = clamp(targetLevel, 1, maxLvl);
+    const expTable = (typeof GAME !== "undefined" && GAME.LEVEL_EXP) ? GAME.LEVEL_EXP : [0, 100, 220, 360, 520, 700, 900, 1120, 1360, 1620, 1900, 2200, 2520, 2860, 3220];
+
+    const hpBoost = (typeof GAME !== "undefined" && GAME.STAT_GROWTH) ? GAME.STAT_GROWTH.hpPerLevel : 65;
+    const atkBoost = (typeof GAME !== "undefined" && GAME.STAT_GROWTH) ? GAME.STAT_GROWTH.atkPerLevel : 4.5;
+
+    // Reset base stats first
+    this.maxHp = this.stats.hp;
+    this.attackDamage = this.stats.atk;
+    this.skillPoints = 1;
+
+    for (let l = 2; l <= clampedLevel; l++) {
+      this.skillPoints++;
+      this.maxHp += hpBoost;
+      this.attackDamage += atkBoost;
+    }
+    this.level = clampedLevel;
+    this.hp = this.maxHp;
+    this.exp = exp;
+    this.maxExp = expTable[this.level] || (this.maxExp * 1.25);
+  }
+
   async loadSprite() {
     try {
       this.image = await loadImage(`${this.spritePath}idle.png`);
@@ -353,20 +377,36 @@ class Hero {
 
   update(map, dt, minions, combatTexts, gameStats, skillManager, itemShop, objectives, enemyBot, sound, particles, scoreboard) {
     // Respawn handling & Immortality check
-    if (this.hp <= 0) {
-      if (itemShop && !itemShop.hasUsedRevive && itemShop.inventory.some(i => i.stats && i.stats.revive)) {
-        itemShop.hasUsedRevive = true;
-        this.hp = Math.floor(this.maxHp * 0.35);
-        if (combatTexts) {
-          combatTexts.push({ x: this.x, y: this.y - 30, text: "IMMORTALITY REVIVE!", color: "#ffd700", life: 1.8, maxLife: 1.8 });
-        }
-        return;
-      }
-
+    if (this.isDead || this.hp <= 0) {
       if (!this.isDead) {
+        if (itemShop && !itemShop.hasUsedRevive && itemShop.inventory.some(i => i.stats && i.stats.revive)) {
+          itemShop.hasUsedRevive = true;
+          this.hp = Math.floor(this.maxHp * 0.35);
+          if (combatTexts) {
+            combatTexts.push({ x: this.x, y: this.y - 30, text: "IMMORTALITY REVIVE!", color: "#ffd700", life: 1.8, maxLife: 1.8 });
+          }
+          return;
+        }
+
         this.isDead = true;
+        this.hp = 0;
         this.respawnTimer = this.respawnMax;
+        this.attackTarget = null;
+        if (this.isRecalling) {
+          this.isRecalling = false;
+        }
         if (gameStats) gameStats.deaths++;
+
+        // Clear turtle shield aura & all active skill buffs upon death!
+        if (skillManager && skillManager.activeBuffs) {
+          skillManager.activeBuffs.shield = 0;
+          skillManager.activeBuffs.speedBoost = 0;
+          skillManager.activeBuffs.attackSpeedBoost = 0;
+          skillManager.activeBuffs.bonusDamage = 0;
+          skillManager.activeBuffs.bonusDamageTimer = 0;
+          skillManager.activeBuffs.lifesteal = 0;
+        }
+
         if (combatTexts) {
           combatTexts.push({
             x: this.x,
@@ -379,7 +419,10 @@ class Hero {
         }
       }
 
+      // Lock HP to 0 while dead so no external heals/items break death state
+      this.hp = 0;
       this.respawnTimer -= dt;
+
       if (this.respawnTimer <= 0) {
         // Respawn at Blue base
         this.isDead = false;
@@ -388,6 +431,18 @@ class Hero {
         this.y = 480;
         this.targetX = 100;
         this.targetY = 480;
+        this.attackTarget = null;
+
+        // Ensure shield and buffs are clean upon respawn
+        if (skillManager && skillManager.activeBuffs) {
+          skillManager.activeBuffs.shield = 0;
+          skillManager.activeBuffs.speedBoost = 0;
+          skillManager.activeBuffs.attackSpeedBoost = 0;
+          skillManager.activeBuffs.bonusDamage = 0;
+          skillManager.activeBuffs.bonusDamageTimer = 0;
+          skillManager.activeBuffs.lifesteal = 0;
+        }
+
         if (combatTexts) {
           combatTexts.push({
             x: this.x,
@@ -892,3 +947,6 @@ class Hero {
     ctx.restore();
   }
 }
+
+if (typeof window !== "undefined") window.Hero = Hero;
+if (typeof global !== "undefined") global.Hero = Hero;

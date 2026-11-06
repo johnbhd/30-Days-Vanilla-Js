@@ -365,6 +365,10 @@ class ObjectiveManager {
             maxLife: 0.7
           });
         }
+
+        if (boss.target && (boss.target.hp <= 0 || boss.target.isDead)) {
+          boss.target = null;
+        }
       }
     }
   }

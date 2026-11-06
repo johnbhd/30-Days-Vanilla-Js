@@ -149,3 +149,14 @@ const HEROES = [
 function getHeroById(id) {
   return HEROES.find(h => h.id === id) || null;
 }
+
+if (typeof window !== "undefined") {
+  window.GAME = GAME;
+  window.HEROES = HEROES;
+  window.getHeroById = getHeroById;
+}
+if (typeof global !== "undefined") {
+  global.GAME = GAME;
+  global.HEROES = HEROES;
+  global.getHeroById = getHeroById;
+}

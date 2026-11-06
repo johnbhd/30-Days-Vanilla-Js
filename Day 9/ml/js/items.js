@@ -198,3 +198,12 @@ class ItemShop {
     }
   }
 }
+
+if (typeof window !== "undefined") {
+  window.ITEM_CATALOG = ITEM_CATALOG;
+  window.ItemShop = ItemShop;
+}
+if (typeof global !== "undefined") {
+  global.ITEM_CATALOG = ITEM_CATALOG;
+  global.ItemShop = ItemShop;
+}

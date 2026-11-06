@@ -631,10 +631,54 @@ function startMatch() {
     chosenHeroData = HEROES[0];
   }
 
+  // Preserve progression when changing hero mid-match (player, ally bots, enemy bots)
+  const prevHeroLevel = (selectedHero && selectedHero.level > 1) ? selectedHero.level : 1;
+  const prevHeroExp = (selectedHero && selectedHero.exp) ? selectedHero.exp : 0;
+  const prevHeroSkillLevels = (selectedHero && selectedHero.skillLevels) ? JSON.parse(JSON.stringify(selectedHero.skillLevels)) : null;
+  const prevHeroSkillPoints = selectedHero ? selectedHero.skillPoints : 1;
+  const prevHeroHpRatio = (selectedHero && selectedHero.maxHp > 0) ? (selectedHero.hp / selectedHero.maxHp) : 1;
+
+  // Bot states mapped by team and index
+  const prevBlueBotStates = [];
+  const prevRedBotStates = [];
+  if (Array.isArray(bots) && bots.length > 0) {
+    bots.filter(b => b.team === "BLUE").forEach(b => {
+      prevBlueBotStates.push({
+        level: b.level,
+        exp: b.exp,
+        gold: b.gold,
+        items: [...(b.items || [])],
+        kills: b.kills,
+        deaths: b.deaths,
+        assists: b.assists,
+        cs: b.cs
+      });
+    });
+    bots.filter(b => b.team === "RED").forEach(b => {
+      prevRedBotStates.push({
+        level: b.level,
+        exp: b.exp,
+        gold: b.gold,
+        items: [...(b.items || [])],
+        kills: b.kills,
+        deaths: b.deaths,
+        assists: b.assists,
+        cs: b.cs
+      });
+    });
+  }
+
   selectedHero = new Hero(chosenHeroData);
+  if (prevHeroLevel > 1) {
+    selectedHero.setLevel(prevHeroLevel, prevHeroExp);
+    if (prevHeroSkillLevels) {
+      selectedHero.skillLevels = prevHeroSkillLevels;
+      selectedHero.skillPoints = prevHeroSkillPoints;
+    }
+    selectedHero.hp = Math.round(selectedHero.maxHp * Math.max(0.25, prevHeroHpRatio));
+  }
 
   // Position hero at their designated lane from team roster
-
   const playerSlot = teamRoster.blue.find(m => m.isPlayer) || { lane: chosenHeroData.lane || "MID" };
   let spawnY = 480;
   if (playerSlot.lane === "TOP" || (playerSlot.lane && playerSlot.lane.includes("Gold"))) spawnY = 240;
@@ -650,14 +694,32 @@ function startMatch() {
   bots = [];
 
   // Blue Ally Bots
-  teamRoster.blue.filter(m => !m.isPlayer).forEach(member => {
+  teamRoster.blue.filter(m => !m.isPlayer).forEach((member, idx) => {
     const allyBot = new BotHero(member.hero, member.lane, "BLUE");
+    if (prevBlueBotStates[idx] && prevBlueBotStates[idx].level > 1) {
+      allyBot.setLevel(prevBlueBotStates[idx].level, prevBlueBotStates[idx].exp);
+      allyBot.gold = prevBlueBotStates[idx].gold !== undefined ? prevBlueBotStates[idx].gold : allyBot.gold;
+      if (prevBlueBotStates[idx].items) allyBot.items = [...prevBlueBotStates[idx].items];
+      allyBot.kills = prevBlueBotStates[idx].kills || 0;
+      allyBot.deaths = prevBlueBotStates[idx].deaths || 0;
+      allyBot.assists = prevBlueBotStates[idx].assists || 0;
+      allyBot.cs = prevBlueBotStates[idx].cs || 0;
+    }
     bots.push(allyBot);
   });
 
   // Red Enemy Bots
-  teamRoster.red.forEach(member => {
+  teamRoster.red.forEach((member, idx) => {
     const enemyBotInstance = new BotHero(member.hero, member.lane, "RED");
+    if (prevRedBotStates[idx] && prevRedBotStates[idx].level > 1) {
+      enemyBotInstance.setLevel(prevRedBotStates[idx].level, prevRedBotStates[idx].exp);
+      enemyBotInstance.gold = prevRedBotStates[idx].gold !== undefined ? prevRedBotStates[idx].gold : enemyBotInstance.gold;
+      if (prevRedBotStates[idx].items) enemyBotInstance.items = [...prevRedBotStates[idx].items];
+      enemyBotInstance.kills = prevRedBotStates[idx].kills || 0;
+      enemyBotInstance.deaths = prevRedBotStates[idx].deaths || 0;
+      enemyBotInstance.assists = prevRedBotStates[idx].assists || 0;
+      enemyBotInstance.cs = prevRedBotStates[idx].cs || 0;
+    }
     bots.push(enemyBotInstance);
   });
 
@@ -861,6 +923,7 @@ function resetGame() {
   skillManager = new SkillManager();
   objectiveManager = new ObjectiveManager();
   itemShop = new ItemShop();
+  selectedHero = null;
   bots = [];
   enemyBot = null;
   scoreboard.stats = {

@@ -361,7 +361,9 @@ class SkillManager {
 
       case "buff": {
         this.activeBuffs.speedBoost = 2.5;
-        hero.hp = Math.min(hero.maxHp, hero.hp + Math.round(100 * dmgMultiplier));
+        if (!hero.isDead && hero.hp > 0) {
+          hero.hp = Math.min(hero.maxHp, hero.hp + Math.round(100 * dmgMultiplier));
+        }
         break;
       }
 
@@ -463,9 +465,11 @@ class SkillManager {
       }
 
       case "heal": {
-        hero.hp = Math.min(hero.maxHp, hero.hp + Math.round(280 * dmgMultiplier));
-        if (combatTexts) {
-          combatTexts.push({ x: hero.x, y: hero.y - 20, text: `+${Math.round(280 * dmgMultiplier)} HP`, color: "#2ecc71", life: 1, maxLife: 1 });
+        if (!hero.isDead && hero.hp > 0) {
+          hero.hp = Math.min(hero.maxHp, hero.hp + Math.round(280 * dmgMultiplier));
+          if (combatTexts) {
+            combatTexts.push({ x: hero.x, y: hero.y - 20, text: `+${Math.round(280 * dmgMultiplier)} HP`, color: "#2ecc71", life: 1, maxLife: 1 });
+          }
         }
         break;
       }
@@ -481,9 +485,11 @@ class SkillManager {
 
       case "wave_heal": {
         const healAmt = Math.round(240 * dmgMultiplier);
-        hero.hp = Math.min(hero.maxHp, hero.hp + healAmt);
-        if (combatTexts) {
-          combatTexts.push({ x: hero.x, y: hero.y - 20, text: `+${healAmt} HP`, color: "#2ecc71", life: 1, maxLife: 1 });
+        if (!hero.isDead && hero.hp > 0) {
+          hero.hp = Math.min(hero.maxHp, hero.hp + healAmt);
+          if (combatTexts) {
+            combatTexts.push({ x: hero.x, y: hero.y - 20, text: `+${healAmt} HP`, color: "#2ecc71", life: 1, maxLife: 1 });
+          }
         }
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,

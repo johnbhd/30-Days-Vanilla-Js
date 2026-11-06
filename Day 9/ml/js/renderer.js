@@ -38,8 +38,8 @@ class Renderer {
   renderHero(hero, camera, skillManager) {
     hero.render(this.ctx, camera);
 
-    // Render Shield Aura if active
-    if (skillManager && skillManager.activeBuffs && skillManager.activeBuffs.shield > 0) {
+    // Render Shield Aura if active (hidden when hero is dead)
+    if (skillManager && skillManager.activeBuffs && skillManager.activeBuffs.shield > 0 && !hero.isDead) {
       const sx = hero.x - camera.x;
       const sy = hero.y - camera.y;
 
@@ -338,3 +338,6 @@ class Renderer {
     this.ctx.restore();
   }
 }
+
+if (typeof window !== "undefined") window.Renderer = Renderer;
+if (typeof global !== "undefined") global.Renderer = Renderer;
