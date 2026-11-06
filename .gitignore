@@ -5,3 +5,4 @@ dist/
 output/playwright/
 src/assets/previews/
 
+.git_backup/

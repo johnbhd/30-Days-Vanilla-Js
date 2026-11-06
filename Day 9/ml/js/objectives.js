@@ -1,0 +1,545 @@
+/**
+ * River Boss Objectives (Turtle & Lord)
+ * Phase 3 implementation - Neutral bosses with team buffs and allied Lord siege pusher
+ */
+
+class ObjectiveManager {
+  constructor() {
+    // River Pit Locations
+    // Exactly horizontally centered in blue river (x = 660)
+    // Upper Pit: vertically centered between Top Lane & Mid Lane (y = 380)
+    // Lower Pit: vertically centered between Mid Lane & Bottom Lane (y = 620)
+    this.pits = {
+      upper: { x: 660, y: 380, name: "UPPER RIVER PIT" },
+      lower: { x: 660, y: 620, name: "LOWER RIVER PIT" }
+    };
+    this.turtlePit = "upper"; // Spawns between Top Lane & Mid Lane
+
+    this.turtle = {
+      name: "Turtle",
+      x: this.pits.upper.x,
+      y: this.pits.upper.y,
+      homeX: this.pits.upper.x,
+      homeY: this.pits.upper.y,
+      isBoss: true,
+      radius: 24,
+      hp: 2500,
+      maxHp: 2500,
+      attackDamage: 38,
+      attackRange: 80,
+      attackCooldown: 1.4,
+      attackTimer: 0,
+      target: null,
+      alive: false,
+      bounty: 300,
+      spawnTimer: 25, // spawns at 25s for prompt combat
+      respawnInterval: 75
+    };
+
+    // Lord spawns in Lower Pit
+    this.lord = {
+      name: "Lord",
+      x: this.pits.lower.x,
+      y: this.pits.lower.y,
+      homeX: this.pits.lower.x,
+      homeY: this.pits.lower.y,
+      isBoss: true,
+      radius: 30,
+      hp: 5000,
+      maxHp: 5000,
+      attackDamage: 80,
+      attackRange: 90,
+      attackCooldown: 1.6,
+      attackTimer: 0,
+      target: null,
+      alive: false,
+      bounty: 500,
+      spawnTimer: 90, // spawns at 90s
+      respawnInterval: 160
+    };
+
+    this.summonedLord = null;
+    this.announcements = [];
+  }
+
+  addAnnouncement(text, color = "#ffd700") {
+    this.announcements.push({ text, color, life: 3.5, maxLife: 3.5 });
+  }
+
+  update(dt, hero, map, minions, combatTexts, gameStats, skillManager, scoreboard, enemyBot, sound, particles) {
+    // 1. Turtle update
+    if (!this.turtle.alive) {
+      this.turtle.spawnTimer -= dt;
+      if (this.turtle.spawnTimer <= 0) {
+        this.turtle.alive = true;
+        this.turtle.hp = this.turtle.maxHp;
+        this.turtle.target = null;
+        this.turtle.x = this.pits[this.turtlePit].x;
+        this.turtle.y = this.pits[this.turtlePit].y;
+        this.turtle.homeX = this.pits[this.turtlePit].x;
+        this.turtle.homeY = this.pits[this.turtlePit].y;
+        const pitName = this.pits[this.turtlePit].name;
+        this.addAnnouncement(`THE TURTLE HAS SPAWNED IN RIVER (${pitName})!`, "#2ecc71");
+      }
+    } else {
+      this.updateBossCombat(dt, this.turtle, hero, minions, combatTexts, () => {
+        // Turtle slain callback
+        this.turtle.alive = false;
+        this.turtle.spawnTimer = this.turtle.respawnInterval;
+        this.addAnnouncement("BLUE TEAM HAS SLAIN THE TURTLE!", "#ffd700");
+
+        // Alternate pit for next spawn (Upper <-> Lower)
+        this.turtlePit = this.turtlePit === "upper" ? "lower" : "upper";
+        this.turtle.x = this.pits[this.turtlePit].x;
+        this.turtle.y = this.pits[this.turtlePit].y;
+        this.turtle.homeX = this.pits[this.turtlePit].x;
+        this.turtle.homeY = this.pits[this.turtlePit].y;
+
+        if (gameStats) gameStats.gold += 300;
+        if (scoreboard) {
+          scoreboard.addGold("player", 300);
+          if (scoreboard.stats) scoreboard.stats.turtlesTaken++;
+        }
+        if (skillManager) {
+          skillManager.activeBuffs.shield = Math.max(skillManager.activeBuffs.shield, 350);
+        }
+
+        if (combatTexts) {
+          combatTexts.push({ x: this.turtle.x, y: this.turtle.y - 30, text: "+300g & SHIELD!", color: "#ffd700", life: 2.0, maxLife: 2.0 });
+        }
+      });
+    }
+
+    // 2. Lord update
+    if (!this.lord.alive) {
+      this.lord.spawnTimer -= dt;
+      if (this.lord.spawnTimer <= 0) {
+        this.lord.alive = true;
+        this.lord.hp = this.lord.maxHp;
+        this.lord.target = null;
+        this.lord.x = this.pits.lower.x;
+        this.lord.y = this.pits.lower.y;
+        this.lord.homeX = this.pits.lower.x;
+        this.lord.homeY = this.pits.lower.y;
+        this.addAnnouncement("THE LORD HAS AWAKENED IN THE RIVER!", "#e74c3c");
+      }
+    } else {
+      this.updateBossCombat(dt, this.lord, hero, minions, combatTexts, () => {
+        // Lord slain callback
+        this.lord.alive = false;
+        this.lord.spawnTimer = this.lord.respawnInterval;
+        this.addAnnouncement("THE LORD HAS BEEN SUMMONED TO AID YOUR TEAM!", "#9b59b6");
+
+        if (gameStats) gameStats.gold += 500;
+        if (scoreboard) {
+          scoreboard.addGold("player", 500);
+          if (scoreboard.stats) scoreboard.stats.lordsTaken++;
+        }
+        if (combatTexts) {
+          combatTexts.push({ x: this.lord.x, y: this.lord.y - 30, text: "+500g & ALLIED LORD SUMMONED!", color: "#ffd700", life: 2.5, maxLife: 2.5 });
+        }
+
+        // Spawn Summoned Lord Ally at Blue Base pushing Mid Lane
+        this.summonedLord = {
+          name: "Allied Lord",
+          team: "BLUE",
+          x: 140,
+          y: 480,
+          radius: 26,
+          hp: 3600,
+          maxHp: 3600,
+          speed: 55,
+          damage: 140,
+          range: 80,
+          cooldown: 1.2,
+          timer: 0,
+          target: null,
+          isDead: false,
+          waypoints: [
+            { x: 140, y: 480 },
+            { x: 640, y: 480 },
+            { x: 1140, y: 480 },
+            { x: 1220, y: 480 }
+          ],
+          waypointIdx: 0
+        };
+      });
+    }
+
+    // 3. Summoned Lord Ally update
+    if (this.summonedLord && !this.summonedLord.isDead) {
+      this.updateSummonedLord(dt, this.summonedLord, map, minions, combatTexts, enemyBot, sound, particles, scoreboard);
+      if (this.summonedLord.hp <= 0) {
+        this.summonedLord.isDead = true;
+        this.summonedLord = null;
+      }
+    }
+
+    // 4. Announcements decay
+    for (let i = this.announcements.length - 1; i >= 0; i--) {
+      this.announcements[i].life -= dt;
+      if (this.announcements[i].life <= 0) this.announcements.splice(i, 1);
+    }
+  }
+
+  updateBossCombat(dt, boss, hero, minions, combatTexts, onDeath) {
+    if (boss.hp <= 0) {
+      onDeath();
+      return;
+    }
+
+    boss.attackTimer -= dt;
+
+    const homeX = boss.homeX !== undefined ? boss.homeX : boss.x;
+    const homeY = boss.homeY !== undefined ? boss.homeY : boss.y;
+
+    // Check target validity and leash boundaries
+    if (boss.target) {
+      const isDead = boss.target.hp <= 0 || boss.target.isDead;
+      const d = getDistance(boss.x, boss.y, boss.target.x, boss.target.y);
+      const dFromPit = getDistance(boss.target.x, boss.target.y, homeX, homeY);
+      if (isDead || d > 220 || dFromPit > 190) {
+        boss.target = null; // Drop aggro and return to pit
+      }
+    }
+
+    // Leash back to pit home position if idle or out of position
+    if (!boss.target) {
+      const distToHome = getDistance(boss.x, boss.y, homeX, homeY);
+      if (distToHome > 3) {
+        const dx = homeX - boss.x;
+        const dy = homeY - boss.y;
+        boss.x += (dx / distToHome) * 85 * dt;
+        boss.y += (dy / distToHome) * 85 * dt;
+      } else {
+        boss.x = homeX;
+        boss.y = homeY;
+      }
+    }
+
+    // Scan for aggressors in proximity of the pit
+    if (!boss.target) {
+      if (hero && hero.hp > 0 && getDistance(homeX, homeY, hero.x, hero.y) <= 130) {
+        boss.target = hero;
+      } else if (minions) {
+        const nearMinion = minions.find(m => m.hp > 0 && getDistance(homeX, homeY, m.x, m.y) <= 110);
+        if (nearMinion) boss.target = nearMinion;
+      }
+    }
+
+    // Attack target
+    if (boss.target && boss.attackTimer <= 0) {
+      boss.attackTimer = boss.attackCooldown;
+      const d = getDistance(boss.x, boss.y, boss.target.x, boss.target.y);
+
+      if (d <= boss.attackRange + 30) {
+        boss.target.hp = Math.max(0, boss.target.hp - boss.attackDamage);
+        if (combatTexts) {
+          combatTexts.push({
+            x: boss.target.x,
+            y: boss.target.y - 18,
+            text: `-${boss.attackDamage}`,
+            color: "#e74c3c",
+            life: 0.7,
+            maxLife: 0.7
+          });
+        }
+      }
+    }
+  }
+
+  updateSummonedLord(dt, lord, map, minions, combatTexts, enemyBot, sound, particles, scoreboard) {
+    lord.timer -= dt;
+
+    // 1. Verify current target validity
+    if (lord.target) {
+      let isDead = false;
+      if (lord.target.destroyed) isDead = true;
+      else if (lord.target.isDead) isDead = true;
+      else if (lord.target.hp !== undefined && lord.target.hp <= 0) isDead = true;
+      else if (lord.target.crystalHp !== undefined && lord.target.crystalHp <= 0) isDead = true;
+
+      const tx = lord.target.worldX !== undefined ? lord.target.worldX : lord.target.x;
+      const ty = lord.target.worldY !== undefined ? lord.target.worldY : lord.target.y;
+      if (isDead || getDistance(lord.x, lord.y, tx, ty) > 280) {
+        lord.target = null;
+      }
+    }
+
+    // 2. Scan for enemy targets within 250px aggro radius (Turrets, Bot Hero, Minions, Base)
+    if (!lord.target) {
+      const candidates = [];
+
+      // Enemy Turrets in range
+      if (map && map.turrets) {
+        map.turrets.forEach(t => {
+          if (t.team === "RED" && !t.destroyed) {
+            const d = getDistance(lord.x, lord.y, t.worldX, t.worldY);
+            if (d <= 250) {
+              candidates.push({ target: t, dist: d, priority: 1, type: "turret" });
+            }
+          }
+        });
+      }
+
+      // Enemy Base Crystal in range
+      if (map && map.bases) {
+        const redBase = map.bases.find(b => b.team === "RED" && b.crystalHp > 0);
+        if (redBase) {
+          const d = getDistance(lord.x, lord.y, redBase.worldX, redBase.worldY);
+          if (d <= 250) {
+            candidates.push({ target: redBase, dist: d, priority: 1, type: "base" });
+          }
+        }
+      }
+
+      // Enemy Bot Hero in range
+      if (enemyBot && enemyBot.team === "RED" && !enemyBot.isDead && enemyBot.hp > 0) {
+        const d = getDistance(lord.x, lord.y, enemyBot.x, enemyBot.y);
+        if (d <= 250) {
+          candidates.push({ target: enemyBot, dist: d, priority: 2, type: "hero" });
+        }
+      }
+
+      // Enemy Minions in range
+      if (minions) {
+        minions.forEach(m => {
+          if (m.team === "RED" && m.hp > 0) {
+            const d = getDistance(lord.x, lord.y, m.x, m.y);
+            if (d <= 250) {
+              candidates.push({ target: m, dist: d, priority: 3, type: "minion" });
+            }
+          }
+        });
+      }
+
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => {
+          const scoreA = a.dist - (a.priority === 1 ? 50 : (a.priority === 2 ? 30 : 0));
+          const scoreB = b.dist - (b.priority === 1 ? 50 : (b.priority === 2 ? 30 : 0));
+          return scoreA - scoreB;
+        });
+        lord.target = candidates[0].target;
+      }
+    }
+
+    // 3. Attack or march down Mid lane
+    if (lord.target) {
+      const tx = lord.target.worldX !== undefined ? lord.target.worldX : lord.target.x;
+      const ty = lord.target.worldY !== undefined ? lord.target.worldY : lord.target.y;
+      const d = getDistance(lord.x, lord.y, tx, ty);
+
+      if (d <= lord.range) {
+        if (lord.timer <= 0) {
+          lord.timer = lord.cooldown;
+
+          // Short-range melee slashing attack visuals (cleave arc + white sparks + slash sound)
+          if (particles && particles.spawnSlash) {
+            particles.spawnSlash(lord.x, lord.y, tx, ty, "#9b59b6", 52);
+          }
+          if (particles && particles.spawnBurst) {
+            particles.spawnBurst(tx, ty, "#ffffff", 10, 130);
+          }
+          if (sound && sound.playSlash) {
+            sound.playSlash();
+          }
+
+          // Deal damage according to target type
+          if (lord.target === enemyBot) {
+            enemyBot.takeDamage(lord.damage, lord, combatTexts, particles, sound, scoreboard);
+          } else if (lord.target.crystalHp !== undefined) {
+            lord.target.crystalHp = Math.max(0, lord.target.crystalHp - lord.damage);
+            if (combatTexts) {
+              combatTexts.push({ x: tx, y: ty - 22, text: `-${lord.damage}`, color: "#9b59b6", life: 0.8, maxLife: 0.8 });
+            }
+          } else if (lord.target.hp !== undefined) {
+            lord.target.hp = Math.max(0, lord.target.hp - lord.damage);
+            if (combatTexts) {
+              combatTexts.push({ x: tx, y: ty - 22, text: `-${lord.damage}`, color: "#9b59b6", life: 0.8, maxLife: 0.8 });
+            }
+          }
+        }
+      } else {
+        const dx = tx - lord.x;
+        const dy = ty - lord.y;
+        lord.x += (dx / d) * lord.speed * dt;
+        lord.y += (dy / d) * lord.speed * dt;
+      }
+    } else {
+      // Follow Mid waypoints
+      if (lord.waypoints && lord.waypointIdx < lord.waypoints.length) {
+        const wp = lord.waypoints[lord.waypointIdx];
+        const dx = wp.x - lord.x;
+        const dy = wp.y - lord.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 25) {
+          lord.waypointIdx++;
+        } else {
+          lord.x += (dx / dist) * lord.speed * dt;
+          lord.y += (dy / dist) * lord.speed * dt;
+        }
+      } else {
+        // Continuous lane march toward Red Base crystal (x = 1220, y = 480)
+        const dx = 1220 - lord.x;
+        const dy = 480 - lord.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 15) {
+          lord.x += (dx / dist) * lord.speed * dt;
+          lord.y += (dy / dist) * lord.speed * dt;
+        }
+      }
+    }
+  }
+
+  render(ctx, camera) {
+    // 1. Render Turtle
+    if (this.turtle.alive) {
+      const sx = this.turtle.x - camera.x;
+      const sy = this.turtle.y - camera.y;
+
+      ctx.save();
+      // Shell
+      ctx.fillStyle = "#27ae60";
+      ctx.beginPath();
+      ctx.arc(sx, sy, this.turtle.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#f1c40f";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Turtle emblem
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("TURTLE", sx, sy - this.turtle.radius - 12);
+
+      // HP Bar
+      const barW = 44;
+      const barH = 5;
+      const hpRatio = Math.max(0, this.turtle.hp / this.turtle.maxHp);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(sx - barW / 2, sy - this.turtle.radius - 8, barW, barH);
+      ctx.fillStyle = "#2ecc71";
+      ctx.fillRect(sx - barW / 2, sy - this.turtle.radius - 8, barW * hpRatio, barH);
+
+      ctx.restore();
+    } else {
+      // Spawn indicator in river pit
+      const sx = this.turtle.x - camera.x;
+      const sy = this.turtle.y - camera.y;
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      ctx.beginPath();
+      ctx.arc(sx, sy, 20, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#a0a0a0";
+      ctx.font = "10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`Turtle: ${Math.ceil(this.turtle.spawnTimer)}s`, sx, sy + 4);
+      ctx.restore();
+    }
+
+    // 2. Render Lord
+    if (this.lord.alive) {
+      const sx = this.lord.x - camera.x;
+      const sy = this.lord.y - camera.y;
+
+      ctx.save();
+      // Lord Body
+      ctx.fillStyle = "#8e44ad";
+      ctx.beginPath();
+      ctx.arc(sx, sy, this.lord.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#e74c3c";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Horns / Crown
+      ctx.fillStyle = "#ffd700";
+      ctx.beginPath();
+      ctx.arc(sx, sy - this.lord.radius + 6, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Label
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("THE LORD", sx, sy - this.lord.radius - 14);
+
+      // HP Bar
+      const barW = 60;
+      const barH = 6;
+      const hpRatio = Math.max(0, this.lord.hp / this.lord.maxHp);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(sx - barW / 2, sy - this.lord.radius - 8, barW, barH);
+      ctx.fillStyle = "#9b59b6";
+      ctx.fillRect(sx - barW / 2, sy - this.lord.radius - 8, barW * hpRatio, barH);
+
+      ctx.restore();
+    } else {
+      const sx = this.lord.x - camera.x;
+      const sy = this.lord.y - camera.y;
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      ctx.beginPath();
+      ctx.arc(sx, sy, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#a0a0a0";
+      ctx.font = "10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`Lord: ${Math.ceil(this.lord.spawnTimer)}s`, sx, sy + 4);
+      ctx.restore();
+    }
+
+    // 3. Render Summoned Lord Ally
+    if (this.summonedLord && !this.summonedLord.isDead) {
+      const sx = this.summonedLord.x - camera.x;
+      const sy = this.summonedLord.y - camera.y;
+
+      ctx.save();
+      ctx.fillStyle = "#2980b9";
+      ctx.beginPath();
+      ctx.arc(sx, sy, this.summonedLord.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#4ecca3";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.fillStyle = "#4ecca3";
+      ctx.font = "bold 11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("ALLIED LORD", sx, sy - this.summonedLord.radius - 10);
+
+      const barW = 45;
+      const barH = 4;
+      const hpRatio = Math.max(0, this.summonedLord.hp / this.summonedLord.maxHp);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(sx - barW / 2, sy - this.summonedLord.radius - 6, barW, barH);
+      ctx.fillStyle = "#4ecca3";
+      ctx.fillRect(sx - barW / 2, sy - this.summonedLord.radius - 6, barW * hpRatio, barH);
+
+      ctx.restore();
+    }
+
+    // 4. Render Global Banner Announcements
+    if (this.announcements.length > 0) {
+      const ann = this.announcements[0];
+      const alpha = Math.min(1, ann.life);
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "rgba(16, 25, 47, 0.85)";
+      ctx.fillRect(GAME.CANVAS_WIDTH / 2 - 220, 100, 440, 36);
+      ctx.strokeStyle = ann.color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(GAME.CANVAS_WIDTH / 2 - 220, 100, 440, 36);
+
+      ctx.fillStyle = ann.color;
+      ctx.font = "bold 14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(ann.text, GAME.CANVAS_WIDTH / 2, 123);
+      ctx.restore();
+    }
+  }
+}

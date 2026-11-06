@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ML Heroes - 2D MOBA Prototype</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="game-wrapper">
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+    <!-- Hero Selection Overlay -->
+    <div id="heroSelectOverlay" class="hero-select-overlay">
+      <div class="select-container">
+        <h1>Choose Your Hero</h1>
+        <p>Pick your MLBB champion to defend the Land of Dawn</p>
+        <div id="heroGrid" class="hero-grid"></div>
+        <div class="select-footer">
+          <button id="startBtn" class="start-button" disabled>Select a Hero</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item Shop Overlay Modal -->
+    <div id="shopOverlay" class="shop-overlay hidden">
+      <div class="shop-modal">
+        <div class="shop-header">
+          <h2><i class="fa-solid fa-store" style="color: #4ecca3; margin-right: 6px;"></i> Equipment Shop</h2>
+          <div class="shop-gold-info"><i class="fa-solid fa-coins" style="color: #ffd700;"></i> Gold: <span id="shopGoldText" class="gold-highlight">0g</span></div>
+          <button id="closeShopBtn" class="close-btn">&times;</button>
+        </div>
+        <div class="shop-catalog" id="shopCatalog">
+          <!-- Populated from ITEM_CATALOG -->
+        </div>
+        <div class="shop-footer">
+          <p>Press <strong>P</strong> or click anywhere outside to close shop. Items sell back for 70% value.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scoreboard Overlay Modal -->
+    <div id="scoreboardOverlay" class="scoreboard-overlay hidden">
+      <div class="scoreboard-modal">
+        <div class="scoreboard-header">
+          <h2><i class="fa-solid fa-table-list" style="color: #4ecca3; margin-right: 6px;"></i> Match Scoreboard</h2>
+          <button id="closeScoreboardBtn" class="close-btn">&times;</button>
+        </div>
+        <table class="scoreboard-table">
+          <thead>
+            <tr>
+              <th>Hero / Team</th>
+              <th>K / D / A</th>
+              <th>CS (Minions)</th>
+              <th>Net Worth</th>
+              <th>Builds</th>
+            </tr>
+          </thead>
+          <tbody id="scoreboardRows">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+        <div class="scoreboard-footer">
+          <p>Press <strong>TAB</strong> to toggle scoreboard view during match.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Overlay Modal -->
+    <div id="settingsOverlay" class="settings-overlay hidden">
+      <div class="settings-modal">
+        <div class="settings-header">
+          <h2><i class="fa-solid fa-gear" style="color: #ffd700; margin-right: 6px;"></i> Game Settings</h2>
+          <button id="closeSettingsBtn" class="close-btn">&times;</button>
+        </div>
+        <div class="settings-content">
+          <div class="setting-item">
+            <label><i class="fa-solid fa-volume-high"></i> Master Sound:</label>
+            <div class="setting-controls">
+              <input type="range" id="soundVolumeSlider" min="0" max="100" value="50" />
+              <button id="muteToggleBtn" class="setting-toggle-btn"><i class="fa-solid fa-volume-high"></i> Mute</button>
+            </div>
+          </div>
+          <div class="setting-item">
+            <label><i class="fa-solid fa-wand-magic-sparkles"></i> Particle FX:</label>
+            <select id="particleQualitySelect" class="setting-select">
+              <option value="high" selected>High (Full Trails)</option>
+              <option value="medium">Medium (Balanced)</option>
+              <option value="low">Low (Battery Saver)</option>
+            </select>
+          </div>
+          <div class="keybinds-guide">
+            <h3><i class="fa-solid fa-keyboard"></i> Keybinds Reference</h3>
+            <ul>
+              <li><strong>Click / Tap:</strong> Move hero & auto-attack target</li>
+              <li><strong>Q, W, E, R:</strong> Cast Hero Abilities</li>
+              <li><strong>B:</strong> Recall to Base (2s Channel)</li>
+              <li><strong>P:</strong> Toggle Equipment Shop</li>
+              <li><strong>TAB:</strong> Toggle Match Scoreboard</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Over Overlay -->
+    <div id="gameOverOverlay" class="game-over-overlay hidden">
+      <div class="game-over-box">
+        <h1 id="gameOverTitle">VICTORY</h1>
+        <p id="gameOverDesc">Enemy Crystal Destroyed!</p>
+        <div id="gameStatsSummary" class="game-stats-summary"></div>
+        <button id="restartBtn" class="start-button">Play Again</button>
+      </div>
+    </div>
+
+    <!-- In-Game UI Overlay -->
+    <div class="ui-overlay">
+      <div class="top-row">
+        <div class="top-right-column">
+          <div class="hero-panel" id="heroPanel">
+            <div class="hero-panel-header">
+              <h2 id="heroName">Select a Hero</h2>
+              <div class="hero-badges">
+                <span id="heroRoleBadge" class="hero-badge role-badge"><i class="fa-solid fa-crosshairs"></i> -</span>
+                <span id="heroLaneBadge" class="hero-badge lane-badge"><i class="fa-solid fa-route"></i> -</span>
+              </div>
+            </div>
+            <div class="builds-header">
+              <span><i class="fa-solid fa-shield-halved"></i> Builds</span>
+              <span class="gold-badge"><i class="fa-solid fa-coins"></i> <span id="playerGoldDisplay">0g</span></span>
+            </div>
+            <div class="inventory-tray" id="inventoryTray">
+              <div class="inv-slot" id="invSlot0"></div>
+              <div class="inv-slot" id="invSlot1"></div>
+              <div class="inv-slot" id="invSlot2"></div>
+              <div class="inv-slot" id="invSlot3"></div>
+              <div class="inv-slot" id="invSlot4"></div>
+              <div class="inv-slot" id="invSlot5"></div>
+            </div>
+            <div class="hero-panel-actions">
+              <button id="openShopBtn" class="shop-btn"><i class="fa-solid fa-cart-shopping"></i> Shop</button>
+              <button id="btnRecall" class="recall-action-btn" title="Recall to Base (B)"><i class="fa-solid fa-house"></i> Recall</button>
+              <button id="openScoreboardBtn" class="icon-action-btn" title="Scoreboard (TAB)"><i class="fa-solid fa-table-list"></i></button>
+              <button id="openSettingsBtn" class="icon-action-btn" title="Settings"><i class="fa-solid fa-gear"></i></button>
+              <button id="changeHeroBtn" class="change-hero-btn" title="Change Hero"><i class="fa-solid fa-arrows-rotate"></i></button>
+            </div>
+          </div>
+
+          <!-- Hero Abilities Card (Directly Below Hero Card) -->
+          <div class="hero-skills-panel" id="heroSkillsPanel">
+            <div class="skills-panel-header">
+              <span><i class="fa-solid fa-wand-magic-sparkles"></i> Abilities</span>
+              <span class="skills-keys-hint">Q • W • E • R</span>
+            </div>
+            <div class="skills-tray" id="skillsTray">
+              <div class="skill-circle-btn" id="btnSkillQ" data-slot="q" title="Skill 1 (Q)">
+                <span class="skill-key-badge">Q</span>
+                <div class="skill-icon-wrap skill-icon-q"><i class="fa-solid fa-bolt"></i></div>
+                <span class="skill-label" id="nameSkillQ">Skill 1</span>
+                <div class="cooldown-overlay hidden" id="cdOverlayQ">0.0</div>
+              </div>
+              <div class="skill-circle-btn" id="btnSkillW" data-slot="w" title="Skill 2 (W)">
+                <span class="skill-key-badge">W</span>
+                <div class="skill-icon-wrap skill-icon-w"><i class="fa-solid fa-shield-halved"></i></div>
+                <span class="skill-label" id="nameSkillW">Skill 2</span>
+                <div class="cooldown-overlay hidden" id="cdOverlayW">0.0</div>
+              </div>
+              <div class="skill-circle-btn" id="btnSkillE" data-slot="e" title="Skill 3 (E)">
+                <span class="skill-key-badge">E</span>
+                <div class="skill-icon-wrap skill-icon-e"><i class="fa-solid fa-wind"></i></div>
+                <span class="skill-label" id="nameSkillE">Skill 3</span>
+                <div class="cooldown-overlay hidden" id="cdOverlayE">0.0</div>
+              </div>
+              <div class="skill-circle-btn ultimate-circle-btn" id="btnSkillR" data-slot="r" title="Ultimate (R)">
+                <span class="skill-key-badge ultimate-key-badge">R</span>
+                <div class="skill-icon-wrap skill-icon-r"><i class="fa-solid fa-crown"></i></div>
+                <span class="skill-label ultimate-label" id="nameSkillR">Ultimate</span>
+                <div class="cooldown-overlay hidden" id="cdOverlayR">0.0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Dock Hints -->
+      <div class="bottom-dock">
+        <div class="controls-hint" id="controlsHint">
+          <p><strong>Click</strong> move/attack | <strong>Q, W, E, R</strong> skills</p>
+          <p><strong>B</strong> recall | <strong>P</strong> shop | <strong>TAB</strong> scoreboard</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/scoreboard.js"></script>
+  <script src="js/skills.js"></script>
+  <script src="js/objectives.js"></script>
+  <script src="js/items.js"></script>
+  <script src="js/hero.js"></script>
+  <script src="js/bots.js"></script>
+  <script src="js/minions.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

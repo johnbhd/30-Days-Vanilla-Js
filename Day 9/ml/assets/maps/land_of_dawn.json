@@ -1,0 +1,26 @@
+{
+  "name": "Land of Dawn",
+  "description": "3-lane MOBA map for ML heroes",
+  "tiles": 40,
+  "width": 32,
+  "height": 24,
+  "lanes": [
+    { "name": "Gold Lane",  "x": 8,  "role": "Marksman",  "heroes": ["miya", "layla"] },
+    { "name": "Mid Lane",   "x": 16, "role": "Mage",      "heroes": ["pharsa", "nana"] },
+    { "name": "EXP Lane",   "x": 24, "role": "Fighter",   "heroes": ["balmond", "alucard"] }
+  ],
+  "jungle": [
+    { "x": 7,  "y": 7,  "w": 6, "h": 6 },
+    { "x": 19, "y": 7,  "w": 6, "h": 6 },
+    { "x": 7,  "y": 11, "w": 6, "h": 6 },
+    { "x": 19, "y": 11, "w": 6, "h": 6 }
+  ],
+  "bases": [
+    { "name": "Blue Base", "x": 2,  "y": 12, "w": 4, "h": 6, "team": "BLUE" },
+    { "name": "Red Base",  "x": 30, "y": 12, "w": 4, "h": 6, "team": "RED" }
+  ],
+  "objectives": {
+    "turtle": { "x": 16, "y": 8,  "spawnTime": 120 },
+    "lord":   { "x": 16, "y": 16, "spawnTime": 480 }
+  }
+}
