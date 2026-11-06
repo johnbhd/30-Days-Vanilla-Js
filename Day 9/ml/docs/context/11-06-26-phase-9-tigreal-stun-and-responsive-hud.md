@@ -19,8 +19,11 @@ This phase accomplishes the requested behavior:
 2. **Clock/Wave Card Preserved in Canvas Top-Left**:
    - The Clock & Wave Card is left untouched on the canvas at top-left (`hudX = 14, hudY = 14`).
    - Displays match time (`⏱️ mm:ss • Wave X`), crystal HPs (`Blue: 5000`, `Red: 5000`), and bot revive countdown (`💀 [BOT] Reviving in Xs`).
-3. **Hero Build, Settings, and Skills Buttons in Top-Right**:
+3. **Hero Build, Settings, and Skills Buttons in Top-Right Inside Map**:
    - The **Hero Build / Settings Card** (`#heroPanel`) and **Abilities Card** (`#heroSkillsPanel`) are anchored firmly in the **top-right** (`.top-row { justify-content: flex-end; }`).
+   - Locked `.game-wrapper` aspect ratio to 16:9 (`aspect-ratio: 16 / 9; width: min(100vw, calc(100vh * 16 / 9)); height: min(100vh, calc(100vw * 9 / 16));`) with `14px` padding on `.ui-overlay` so all HTML HUD elements are positioned strictly inside the visible canvas map boundaries, matching the Clock/Wave canvas HUD inset.
+   - Sized icon action buttons (`#scoreboardToggleBtn`, `#settingsBtn`, `#changeHeroBtn`) to fixed 22px x 22px with `flex-shrink: 0`, and allocated remaining width to Shop and Recall (`flex: 1`), eliminating button overlap.
+   - Removed `max-width: 95px` from `.hero-panel-header h2` with `flex: 1` so hero names ("Tigreal", "Balmond", etc.) are never cut off.
    - Styled with the same visual design as the Clock/Wave card (compact `205px` width, `rgba(16, 25, 47, 0.88)` dark tactical glass, `1px solid rgba(78, 204, 163, 0.35)` cyan border, `6px` border-radius, and clean typography).
    - Responsive scaling for mobile screens (`max-width: 768px` and `max-width: 480px`).
 

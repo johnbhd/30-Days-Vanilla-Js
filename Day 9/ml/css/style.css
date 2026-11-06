@@ -17,10 +17,11 @@ body {
 
 .game-wrapper {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: min(100vw, calc(100vh * 16 / 9));
+  height: min(100vh, calc(100vw * 9 / 16));
   max-width: 1280px;
   max-height: 720px;
+  aspect-ratio: 16 / 9;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
   border: 2px solid #16213e;
 }
@@ -29,7 +30,6 @@ canvas {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
 }
 
 .ui-overlay {
@@ -39,7 +39,7 @@ canvas {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -112,14 +112,14 @@ canvas {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   margin-top: 2px;
 }
 
 .skill-circle-btn {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: radial-gradient(circle, #1a2744 0%, #0d172e 100%);
   border: 2px solid #4ecca3;
@@ -144,8 +144,8 @@ canvas {
 }
 
 .ultimate-circle-btn {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-color: #ffd700;
   box-shadow: 0 0 12px rgba(255, 215, 0, 0.45);
 }
@@ -228,38 +228,38 @@ canvas {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px;
-  padding-bottom: 4px;
+  margin-bottom: 4px;
+  padding-bottom: 3px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 4px;
 }
 
 .hero-panel-header h2 {
   margin: 0;
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   color: #fff;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 95px;
+  flex: 1;
 }
 
 .hero-badges {
   display: flex;
-  gap: 4px;
+  gap: 3px;
+  flex-shrink: 0;
 }
 
 .hero-badge {
-  font-size: 0.65rem;
+  font-size: 0.58rem;
   font-weight: 600;
-  padding: 2px 5px;
-  border-radius: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
   background: rgba(30, 41, 59, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.12);
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
 }
 
 .role-badge {
@@ -276,12 +276,12 @@ canvas {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.70rem;
+  font-size: 0.66rem;
   color: #94a3b8;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin: 4px 0 3px 0;
+  margin: 3px 0 2px 0;
 }
 
 .gold-badge {
@@ -290,9 +290,9 @@ canvas {
   gap: 3px;
   color: #ffd700;
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   background: rgba(255, 215, 0, 0.12);
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 10px;
   border: 1px solid rgba(255, 215, 0, 0.25);
 }
@@ -301,24 +301,24 @@ canvas {
 .inventory-tray {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 4px;
-  margin: 4px 0 6px 0;
+  gap: 3px;
+  margin: 3px 0 4px 0;
   background: rgba(10, 15, 30, 0.7);
-  padding: 3px;
-  border-radius: 6px;
+  padding: 2px;
+  border-radius: 4px;
   border: 1px solid #16213e;
 }
 
 .inv-slot {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   background: rgba(22, 33, 62, 0.6);
   border: 1px dashed rgba(255, 255, 255, 0.18);
-  border-radius: 4px;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -336,27 +336,28 @@ canvas {
 
 .hero-panel-actions {
   display: flex;
-  gap: 5px;
-  margin-top: 5px;
+  gap: 3px;
+  margin-top: 4px;
   align-items: center;
+  width: 100%;
 }
 
 .shop-btn {
   flex: 1;
-  padding: 5px 6px;
+  padding: 3px 5px;
   background: linear-gradient(135deg, #f59e0b, #d97706);
   color: #0f172a;
   border: none;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 0.70rem;
+  font-size: 0.64rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
-  transition: all 0.2s;
+  gap: 2px;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+  transition: all 0.15s;
   white-space: nowrap;
 }
 
@@ -366,21 +367,21 @@ canvas {
 }
 
 .recall-action-btn {
-  flex: 1.1;
-  padding: 5px 6px;
+  flex: 1;
+  padding: 3px 5px;
   background: linear-gradient(135deg, #0284c7, #0369a1);
   color: #fff;
   border: 1px solid #38bdf8;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 0.70rem;
+  font-size: 0.64rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
-  transition: all 0.2s;
+  gap: 2px;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.35);
+  transition: all 0.15s;
   white-space: nowrap;
   user-select: none;
 }
@@ -408,22 +409,26 @@ canvas {
   }
 }
 
+.icon-action-btn,
 .change-hero-btn {
-  padding: 5px 8px;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  padding: 0;
   background: rgba(30, 41, 59, 0.85);
   color: #94a3b8;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 0.70rem;
+  font-size: 0.66rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  transition: all 0.2s;
+  transition: all 0.15s;
 }
 
+.icon-action-btn:hover,
 .change-hero-btn:hover {
   background: #334155;
   color: #fff;
@@ -1191,39 +1196,61 @@ canvas {
   }
   .hero-panel {
     width: 100%;
-    padding: 5px 8px;
+    padding: 4px 6px;
+  }
+  .hero-panel-header h2 {
+    font-size: 0.78rem;
+    max-width: none;
+  }
+  .hero-badges {
+    gap: 2px;
+  }
+  .hero-badge {
+    font-size: 0.54rem;
+    padding: 1px 3px;
   }
   .hero-skills-panel {
     width: 100%;
-    padding: 5px 8px;
+    padding: 4px 6px;
   }
   .skill-circle-btn {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
   }
   .ultimate-circle-btn {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
   }
   .skill-icon-wrap {
-    font-size: 13px;
+    font-size: 12px;
   }
   .skill-icon-r {
-    font-size: 14px;
+    font-size: 13px;
   }
   .skill-label {
     font-size: 7px;
-    max-width: 32px;
+    max-width: 30px;
   }
   .inv-slot {
-    width: 22px;
-    height: 22px;
-    font-size: 11px;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+  .hero-panel-actions {
+    gap: 2px;
   }
   .shop-btn,
   .recall-action-btn {
-    padding: 4px 4px;
-    font-size: 0.64rem;
+    padding: 3px 4px;
+    font-size: 0.60rem;
+  }
+  .icon-action-btn,
+  .change-hero-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 0.62rem;
+    flex-shrink: 0;
+    padding: 0;
   }
   .controls-hint {
     display: none;
@@ -1238,82 +1265,90 @@ canvas {
     justify-content: flex-end;
   }
   .top-right-column {
-    width: clamp(135px, 48vw, 165px);
+    width: clamp(130px, 45vw, 160px);
     gap: 3px;
   }
   .hero-panel {
-    padding: 4px 6px;
+    padding: 3px 5px;
   }
   .hero-panel-header h2 {
-    font-size: 0.78rem;
-    max-width: 75px;
+    font-size: 0.72rem;
+    max-width: none;
   }
   .hero-badge {
-    font-size: 0.58rem;
-    padding: 1px 3px;
+    font-size: 0.50rem;
+    padding: 1px 2px;
   }
   .builds-header {
-    font-size: 0.62rem;
+    font-size: 0.58rem;
+    margin: 2px 0;
   }
   .gold-badge {
-    font-size: 0.64rem;
-    padding: 0 4px;
+    font-size: 0.58rem;
+    padding: 0 3px;
+  }
+  .inventory-tray {
+    gap: 2px;
+    padding: 2px;
+    margin: 2px 0;
   }
   .inv-slot {
-    width: 19px;
-    height: 19px;
-    font-size: 9px;
+    width: 17px;
+    height: 17px;
+    font-size: 8.5px;
   }
   .hero-panel-actions {
-    gap: 3px;
-    margin-top: 3px;
+    gap: 2px;
+    margin-top: 2px;
   }
   .shop-btn,
   .recall-action-btn {
-    padding: 3px 3px;
-    font-size: 0.58rem;
-    gap: 2px;
+    padding: 2px 3px;
+    font-size: 0.52rem;
+    gap: 1px;
   }
   .icon-action-btn,
   .change-hero-btn {
-    width: 20px;
-    height: 20px;
-    font-size: 0.62rem;
+    width: 17px;
+    height: 17px;
+    font-size: 0.54rem;
+    flex-shrink: 0;
+    padding: 0;
   }
   .hero-skills-panel {
-    padding: 4px 6px;
+    padding: 3px 5px;
   }
   .skills-panel-header {
-    font-size: 0.64rem;
-    margin-bottom: 3px;
+    font-size: 0.58rem;
+    margin-bottom: 2px;
     padding-bottom: 2px;
   }
   .skills-keys-hint {
-    font-size: 0.58rem;
+    font-size: 0.52rem;
   }
   .skills-tray {
-    gap: 3px;
+    gap: 2px;
   }
   .skill-circle-btn {
+    width: 26px;
+    height: 26px;
+  }
+  .ultimate-circle-btn {
     width: 30px;
     height: 30px;
   }
-  .ultimate-circle-btn {
-    width: 34px;
-    height: 34px;
-  }
   .skill-key-badge {
-    width: 13px;
-    height: 13px;
-    font-size: 8px;
+    width: 11px;
+    height: 11px;
+    font-size: 7px;
     top: -2px;
     left: -2px;
   }
   .skill-icon-wrap {
-    font-size: 11px;
+    font-size: 9.5px;
   }
   .skill-icon-r {
-    font-size: 12px;
+    font-size: 10.5px;
   }
   .skill-label {
     display: none;
