@@ -10,6 +10,7 @@ const Input = {
   isDragging: false,
   dragStartX: 0,
   dragStartY: 0,
+  onTap: null,
 
   init(canvas, camera) {
     const updateCoords = (clientX, clientY) => {
@@ -43,13 +44,21 @@ const Input = {
     // Click to set move target or attack target
     canvas.addEventListener("mousedown", (e) => {
       updateCoords(e.clientX, e.clientY);
+      const worldX = this.mouseX + camera.x;
+      const worldY = this.mouseY + camera.y;
+
+      if (typeof this.onTap === "function" && this.onTap(worldX, worldY)) {
+        this.isDragging = false;
+        return;
+      }
+
       this.isDragging = true;
       this.dragStartX = this.mouseX;
       this.dragStartY = this.mouseY;
 
       // Set move target in world coords
-      this.targetX = this.mouseX + camera.x;
-      this.targetY = this.mouseY + camera.y;
+      this.targetX = worldX;
+      this.targetY = worldY;
     });
 
     canvas.addEventListener("mouseup", () => {
@@ -69,8 +78,16 @@ const Input = {
       e.preventDefault();
       const touch = e.touches[0];
       updateCoords(touch.clientX, touch.clientY);
-      this.targetX = this.mouseX + camera.x;
-      this.targetY = this.mouseY + camera.y;
+      const worldX = this.mouseX + camera.x;
+      const worldY = this.mouseY + camera.y;
+
+      if (typeof this.onTap === "function" && this.onTap(worldX, worldY)) {
+        this.isDragging = false;
+        return;
+      }
+
+      this.targetX = worldX;
+      this.targetY = worldY;
     }, { passive: false });
 
     canvas.addEventListener("touchmove", (e) => {

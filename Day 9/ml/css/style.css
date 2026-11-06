@@ -265,6 +265,24 @@ canvas {
   transform: scale(0.94);
 }
 
+.skill-circle-btn.armed {
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.9), inset 0 0 10px rgba(255, 215, 0, 0.5) !important;
+  transform: scale(1.12) !important;
+  animation: armedSkillPulse 1.1s infinite alternate ease-in-out !important;
+}
+
+@keyframes armedSkillPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6), inset 0 0 6px rgba(255, 215, 0, 0.35);
+    transform: scale(1.08);
+  }
+  100% {
+    box-shadow: 0 0 22px rgba(255, 215, 0, 1), inset 0 0 14px rgba(255, 215, 0, 0.7);
+    transform: scale(1.16);
+  }
+}
+
 .ultimate-circle-btn {
   width: 42px;
   height: 42px;

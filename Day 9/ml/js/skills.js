@@ -5,64 +5,64 @@
 
 const HERO_SKILLS = {
   miya: {
-    q: { name: "Moon Arrow", cd: 4, type: "multishot", desc: "Fires 3 split arrows at nearby enemies" },
-    w: { name: "Arrow of Eclipse", cd: 7, type: "aoe", radius: 60, desc: "Rain of arrows slowing and damaging enemies" },
+    q: { name: "Moon Arrow", cd: 4, type: "multishot", range: 340, indicator: "cone", desc: "Fires 3 split arrows at nearby enemies" },
+    w: { name: "Arrow of Eclipse", cd: 7, type: "aoe", radius: 60, range: 420, indicator: "circle_aoe", desc: "Rain of arrows slowing and damaging enemies" },
     e: { name: "Moon Stride", cd: 10, type: "buff", desc: "Cleanse and +60% movement speed" },
     r: { name: "Hidden Moonlight", cd: 24, type: "ultimate", desc: "Max attack speed surge and bonus attack damage" }
   },
   layla: {
-    q: { name: "Malefic Bomb", cd: 4, type: "laser", desc: "High-speed piercing laser beam" },
-    w: { name: "Void Projectile", cd: 6, type: "aoe", radius: 55, desc: "Energy ball explosive blast" },
+    q: { name: "Malefic Bomb", cd: 4, type: "laser", range: 400, indicator: "line", desc: "High-speed piercing laser beam" },
+    w: { name: "Void Projectile", cd: 6, type: "aoe", radius: 55, range: 420, indicator: "circle_aoe", desc: "Energy ball explosive blast" },
     e: { name: "Range Mastery", cd: 11, type: "buff", desc: "+120 attack range and +25% move speed" },
-    r: { name: "Destruction Rush", cd: 28, type: "ultimate", desc: "Massive cannon laser down the lane" }
+    r: { name: "Destruction Rush", cd: 28, type: "ultimate", range: 800, indicator: "line", desc: "Massive cannon laser down the lane" }
   },
   tigreal: {
-    q: { name: "Attack Wave", cd: 5, type: "shockwave", desc: "Ground wave damaging and slowing enemies" },
-    w: { name: "Sacred Hammer", cd: 8, type: "dash_push", desc: "Charges forward, knocking back enemies" },
+    q: { name: "Attack Wave", cd: 5, type: "shockwave", range: 380, indicator: "line", desc: "Ground wave damaging and slowing enemies" },
+    w: { name: "Sacred Hammer", cd: 8, type: "dash_push", range: 160, indicator: "dash", desc: "Charges forward, knocking back enemies" },
     e: { name: "Fearless Guard", cd: 10, type: "shield", desc: "Shield absorbing 450 damage" },
     r: { name: "Implosion", cd: 28, type: "ultimate_pull", desc: "Pulls all nearby enemies into Tigreal with a stun" }
   },
   angela: {
-    q: { name: "Love Waves", cd: 3.5, type: "wave_heal", desc: "Heals hero and damages enemies in a line" },
-    w: { name: "Puppet String", cd: 8, type: "targeted_cc", desc: "Tethers enemy, immobilizing them after 1s" },
+    q: { name: "Love Waves", cd: 3.5, type: "wave_heal", range: 380, indicator: "line", desc: "Heals hero and damages enemies in a line" },
+    w: { name: "Puppet String", cd: 8, type: "targeted_cc", range: 340, indicator: "target", desc: "Tethers enemy, immobilizing them after 1s" },
     e: { name: "Love Motion", cd: 9, type: "buff", desc: "+45% movement speed burst" },
     r: { name: "Heartguard", cd: 28, type: "ultimate_shield", desc: "Massive 700 HP shield and +30 ATK" }
   },
   alucard: {
-    q: { name: "Groundsplitter", cd: 5, type: "leap", desc: "Leaps to cursor with greatsword slam" },
+    q: { name: "Groundsplitter", cd: 5, type: "leap", range: 160, radius: 75, indicator: "circle_aoe", desc: "Leaps to cursor with greatsword slam" },
     w: { name: "Whirling Smash", cd: 4, type: "cleave", radius: 70, desc: "360° greatsword spin slashing enemies" },
-    e: { name: "Pursuit", cd: 7, type: "dash", desc: "Instant forward dash and attack empower" },
-    r: { name: "Fission Wave", cd: 24, type: "ultimate_wave", desc: "50% lifesteal aura and massive shockwave" }
+    e: { name: "Pursuit", cd: 7, type: "dash", range: 140, indicator: "dash", desc: "Instant forward dash and attack empower" },
+    r: { name: "Fission Wave", cd: 24, type: "ultimate_wave", range: 500, indicator: "line", desc: "50% lifesteal aura and massive shockwave" }
   },
   balmond: {
-    q: { name: "Soul Lock", cd: 6, type: "dash_knock", desc: "Charges forward dealing damage and knockback" },
+    q: { name: "Soul Lock", cd: 6, type: "dash_knock", range: 140, indicator: "dash", desc: "Charges forward dealing damage and knockback" },
     w: { name: "Cyclone Sweep", cd: 5, type: "spin_ticks", desc: "Spins giant axe dealing multi-tick damage" },
     e: { name: "Bloodthirst", cd: 10, type: "heal", desc: "War cry restoring 250 HP instantly" },
-    r: { name: "Lethal Counter", cd: 24, type: "ultimate_execute", desc: "Slams axe down dealing heavy execute damage" }
+    r: { name: "Lethal Counter", cd: 24, type: "ultimate_execute", range: 120, radius: 85, indicator: "circle_aoe", desc: "Slams axe down dealing heavy execute damage" }
   },
   gusion: {
-    q: { name: "Sword Spike", cd: 4, type: "dagger_teleport", desc: "Throws dagger; recast dashes behind target" },
-    w: { name: "Shadowblade", cd: 5, type: "dagger_fan", desc: "Throws fan of 5 daggers that return" },
-    e: { name: "Incandescence", cd: 10, type: "dash_reset", desc: "Dashes and instantly refreshes Q and W" },
+    q: { name: "Sword Spike", cd: 4, type: "dagger_teleport", range: 380, indicator: "line", desc: "Throws dagger; recast dashes behind target" },
+    w: { name: "Shadowblade", cd: 5, type: "dagger_fan", range: 350, indicator: "cone", desc: "Throws fan of 5 daggers that return" },
+    e: { name: "Incandescence", cd: 10, type: "dash_reset", range: 130, indicator: "dash", desc: "Dashes and instantly refreshes Q and W" },
     r: { name: "Blade Barrage", cd: 22, type: "ultimate_storm", desc: "Unleashes rapid dagger storm in all directions" }
   },
   saber: {
     q: { name: "Orbiting Swords", cd: 6, type: "swords_orbit", desc: "Spawns 4 spinning swords that strike enemies" },
-    w: { name: "Charge", cd: 6, type: "dash", desc: "Dashes forward slicing through enemy lines" },
-    e: { name: "Enemy's Bane", cd: 8, type: "armor_shred", desc: "Armor-piercing strike dealing true damage" },
-    r: { name: "Triple Sweep", cd: 26, type: "ultimate_execute", desc: "Locks onto target, knocks airborne with 3 slashes" }
+    w: { name: "Charge", cd: 6, type: "dash", range: 140, indicator: "dash", desc: "Dashes forward slicing through enemy lines" },
+    e: { name: "Enemy's Bane", cd: 8, type: "armor_shred", range: 220, indicator: "target", desc: "Armor-piercing strike dealing true damage" },
+    r: { name: "Triple Sweep", cd: 26, type: "ultimate_execute", range: 260, indicator: "target", desc: "Locks onto target, knocks airborne with 3 slashes" }
   },
   pharsa: {
-    q: { name: "Curse of Crow", cd: 5, type: "aoe", radius: 50, desc: "Crow mark stunning enemy on next attack" },
-    w: { name: "Energy Impact", cd: 5, type: "laser", desc: "Wide magical burst beam" },
+    q: { name: "Curse of Crow", cd: 5, type: "aoe", radius: 50, range: 420, indicator: "circle_aoe", desc: "Crow mark stunning enemy on next attack" },
+    w: { name: "Energy Impact", cd: 5, type: "laser", range: 450, indicator: "line", desc: "Wide magical burst beam" },
     e: { name: "Wings by Wings", cd: 12, type: "buff_fly", desc: "Transforms into flying crow with +80% move speed" },
-    r: { name: "Air Strike", cd: 28, type: "ultimate_meteor", desc: "Bombards 4 consecutive air strikes at cursor" }
+    r: { name: "Air Strike", cd: 28, type: "ultimate_meteor", range: 550, radius: 70, indicator: "circle_aoe", desc: "Bombards 4 consecutive air strikes at cursor" }
   },
   nana: {
-    q: { name: "Magic Boomerang", cd: 4, type: "boomerang", desc: "Throws boomerang forward that damages and returns" },
-    w: { name: "Molina Smooch", cd: 9, type: "trap_morph", desc: "Places Molina trap that morphs enemy into a cat" },
+    q: { name: "Magic Boomerang", cd: 4, type: "boomerang", range: 420, indicator: "line", desc: "Throws boomerang forward that damages and returns" },
+    w: { name: "Molina Smooch", cd: 9, type: "trap_morph", range: 400, radius: 50, indicator: "circle_aoe", desc: "Places Molina trap that morphs enemy into a cat" },
     e: { name: "Molina Sprint", cd: 8, type: "buff", desc: "+50% move speed burst and heal" },
-    r: { name: "Molina Blitz", cd: 26, type: "ultimate_paws", desc: "Summons 3 giant consecutive paw ground slams" }
+    r: { name: "Molina Blitz", cd: 26, type: "ultimate_paws", range: 500, radius: 70, indicator: "circle_aoe", desc: "Summons 3 giant consecutive paw ground slams" }
   }
 };
 
@@ -88,6 +88,31 @@ class SkillManager {
 
   getSkillsForHero(heroId) {
     return HERO_SKILLS[heroId] || HERO_SKILLS.miya;
+  }
+
+  getSkillConfig(heroId, slot) {
+    const skills = this.getSkillsForHero(heroId);
+    return skills ? skills[slot] : null;
+  }
+
+  isInstantSkill(heroId, slot) {
+    const s = this.getSkillConfig(heroId, slot);
+    if (!s) return false;
+    const instantTypes = [
+      "buff",
+      "buff_fly",
+      "shield",
+      "heal",
+      "ultimate_pull",
+      "ultimate_shield",
+      "ultimate_storm",
+      "spin_ticks",
+      "cleave",
+      "swords_orbit"
+    ];
+    if (instantTypes.includes(s.type)) return true;
+    if (s.type === "ultimate" && !s.indicator) return true; // e.g. Miya R
+    return false;
   }
 
   canCast(slot, hero) {

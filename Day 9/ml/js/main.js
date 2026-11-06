@@ -93,6 +93,15 @@ const particleQualitySelect = document.getElementById("particleQualitySelect");
 
 // Initialize input
 Input.init(canvas, camera);
+Input.onTap = (worldX, worldY) => {
+  if (armedSkillSlot) {
+    const slotToCast = armedSkillSlot;
+    disarmSkill(false);
+    triggerSkill(slotToCast, worldX, worldY);
+    return true; // Intercepted: do not walk to point
+  }
+  return false;
+};
 
 // Build hero selection cards
 function buildHeroGrid() {
@@ -296,7 +305,69 @@ function updateAbilitiesDock(heroId) {
   });
 }
 
-function triggerSkill(slot) {
+let armedSkillSlot = null;
+
+function disarmSkill(showFeedback = false) {
+  if (!armedSkillSlot) return;
+  armedSkillSlot = null;
+  ["q", "w", "e", "r"].forEach(s => {
+    const btn = document.getElementById(`btnSkill${s.toUpperCase()}`);
+    if (btn) btn.classList.remove("armed");
+  });
+  if (showFeedback && selectedHero && combatTexts) {
+    combatTexts.push({
+      x: selectedHero.x,
+      y: selectedHero.y - 35,
+      text: "AIM CANCELLED",
+      color: "#e74c3c",
+      life: 0.7,
+      maxLife: 0.7
+    });
+  }
+}
+
+function handleSkillActivation(slot) {
+  if (gameState !== "PLAYING" || !selectedHero) return;
+  if (selectedHero.hp <= 0 || selectedHero.stunTimer > 0) return;
+
+  // Check cooldown and skill points
+  if (!skillManager.canCast(slot, selectedHero)) return;
+
+  // Rule 4: Instant cast skills (self-buffs, heals, self PBAOEs) activate immediately!
+  if (skillManager.isInstantSkill(selectedHero.id, slot)) {
+    disarmSkill(false);
+    triggerSkill(slot, selectedHero.x, selectedHero.y);
+    return;
+  }
+
+  // Tap again to cancel: if this skill is already armed, disarm it without consuming cooldown
+  if (armedSkillSlot === slot) {
+    disarmSkill(true);
+    if (sound && sound.playClick) sound.playClick();
+    return;
+  }
+
+  // Otherwise, arm this skill for the 2nd tap on screen
+  disarmSkill(false);
+  armedSkillSlot = slot;
+  const btn = document.getElementById(`btnSkill${slot.toUpperCase()}`);
+  if (btn) btn.classList.add("armed");
+
+  const skillInfo = skillManager.getSkillConfig(selectedHero.id, slot);
+  if (combatTexts && skillInfo) {
+    combatTexts.push({
+      x: selectedHero.x,
+      y: selectedHero.y - 35,
+      text: `${skillInfo.name.toUpperCase()}: TAP TARGET`,
+      color: "#ffd700",
+      life: 0.85,
+      maxLife: 0.85
+    });
+  }
+  if (sound && sound.playClick) sound.playClick();
+}
+
+function triggerSkill(slot, customTargetX, customTargetY) {
   if (gameState !== "PLAYING" || !selectedHero) return;
   if (selectedHero.stunTimer > 0) return;
 
@@ -304,8 +375,8 @@ function triggerSkill(slot) {
     selectedHero.cancelRecall(combatTexts);
   }
 
-  const targetX = Input.mouseX + camera.x;
-  const targetY = Input.mouseY + camera.y;
+  const targetX = (customTargetX !== undefined && customTargetX !== null) ? customTargetX : (Input.mouseX + camera.x);
+  const targetY = (customTargetY !== undefined && customTargetY !== null) ? customTargetY : (Input.mouseY + camera.y);
 
   const castSuccess = skillManager.castSkill(
     slot,
@@ -330,6 +401,7 @@ function triggerSkill(slot) {
 }
 
 function resetGame() {
+  disarmSkill(false);
   map = new GameMap(GAME.MAP.WIDTH, GAME.MAP.HEIGHT, GAME.TILE_SIZE);
   minionManager = new MinionManager();
   skillManager = new SkillManager();
@@ -400,6 +472,7 @@ if (restartBtn) {
 
 if (changeHeroBtn) {
   changeHeroBtn.addEventListener("click", () => {
+    disarmSkill(false);
     gameState = "SELECT";
     selectOverlay.classList.remove("hidden");
     if (selectOverlay) selectOverlay.scrollTop = 0;
@@ -495,7 +568,7 @@ if (recallBtn) {
 ["q", "w", "e", "r"].forEach(slot => {
   const btn = document.getElementById(`btnSkill${slot.toUpperCase()}`);
   if (btn) {
-    btn.addEventListener("click", () => triggerSkill(slot));
+    btn.addEventListener("click", () => handleSkillActivation(slot));
   }
   const upBtn = document.getElementById(`upBtn${slot.toUpperCase()}`);
   if (upBtn) {
@@ -523,13 +596,15 @@ window.addEventListener("keydown", (e) => {
     if (["KeyQ", "KeyW", "KeyE", "KeyR", "KeyB"].includes(e.code)) return;
   }
 
-  if (e.code === "KeyQ") triggerSkill("q");
-  else if (e.code === "KeyW") triggerSkill("w");
-  else if (e.code === "KeyE") triggerSkill("e");
-  else if (e.code === "KeyR") triggerSkill("r");
+  if (e.code === "KeyQ") handleSkillActivation("q");
+  else if (e.code === "KeyW") handleSkillActivation("w");
+  else if (e.code === "KeyE") handleSkillActivation("e");
+  else if (e.code === "KeyR") handleSkillActivation("r");
   else if (e.code === "KeyB") {
+    disarmSkill(false);
     if (selectedHero && selectedHero.stunTimer <= 0) selectedHero.startRecall(combatTexts, sound);
   } else if (e.code === "KeyP") {
+    disarmSkill(false);
     if (shopOverlay.classList.contains("hidden")) {
       shopOverlay.classList.remove("hidden");
       updateShopState();
@@ -537,6 +612,10 @@ window.addEventListener("keydown", (e) => {
       shopOverlay.classList.add("hidden");
     }
   } else if (e.code === "Escape") {
+    if (armedSkillSlot) {
+      disarmSkill(true);
+      return;
+    }
     shopOverlay.classList.add("hidden");
     if (scoreboardOverlay) scoreboardOverlay.classList.add("hidden");
     if (settingsOverlay) settingsOverlay.classList.add("hidden");
@@ -780,6 +859,9 @@ function loop(currentTime) {
 
   if (selectedHero) {
     renderer.renderHero(selectedHero, camera, skillManager);
+    if (armedSkillSlot) {
+      renderer.renderSkillAimIndicator(selectedHero, camera, skillManager, armedSkillSlot, Input);
+    }
     const blueBase = map.bases.find(b => b.team === "BLUE");
     const redBase = map.bases.find(b => b.team === "RED");
     renderer.renderUI(selectedHero, matchTime, minionManager.waveCount, blueBase, redBase, gameStats, enemyBot);
