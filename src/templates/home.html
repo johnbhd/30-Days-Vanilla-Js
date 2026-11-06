@@ -36,5 +36,17 @@
     </main>
     <footer class="site-footer"><p>Made with curiosity &amp; vanilla JavaScript.</p><a href="#page-title">Back to top ↑</a></footer>
   </div>
+  <script>
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('.project-card');
+      if (!card) return;
+      if (e.target.closest('.repo-link')) return;
+      if (e.target.closest('.view-link') || e.target.closest('.card-link-overlay')) return;
+      const link = card.querySelector('.view-link') || card.querySelector('.card-link-overlay');
+      if (link) {
+        link.click();
+      }
+    });
+  </script>
 </body>
 </html>

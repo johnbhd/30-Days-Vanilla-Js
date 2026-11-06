@@ -63,6 +63,7 @@ export function renderGallery(template, projects) {
     const cards = items.map(project => {
       const title = escapeHtml(project.title);
       return `<article class="project-card${project.preview ? '' : ' has-fallback'}" data-entry="${escapeHtml(project.entry)}">
+        <a class="card-link-overlay" href="${escapeHtml(project.href)}" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1"></a>
         ${project.preview ? `<img class="project-preview" src="${escapeHtml(project.preview)}" alt="" loading="lazy" decoding="async" width="1280" height="720">` : '<div class="preview-fallback" aria-hidden="true"><span>JS</span></div>'}
         <div class="card-shade"></div>
         <div class="card-content">
