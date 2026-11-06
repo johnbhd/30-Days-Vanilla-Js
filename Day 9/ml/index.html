@@ -117,6 +117,20 @@
     <!-- In-Game UI Overlay -->
     <div class="ui-overlay">
       <div class="top-row">
+        <!-- Match Status Card (Clock, Wave, Crystals, Bot Revive) -->
+        <div class="match-status-panel" id="matchStatusPanel">
+          <div class="match-status-header">
+            <span id="matchClockWaveDisplay"><i class="fa-regular fa-clock"></i> 00:00 • Wave 1</span>
+          </div>
+          <div class="match-crystals-row">
+            <span class="crystal-tag blue-tag"><i class="fa-solid fa-gem"></i> Blue: <span id="blueCrystalHpText">5000</span></span>
+            <span class="crystal-tag red-tag"><i class="fa-solid fa-gem"></i> Red: <span id="redCrystalHpText">5000</span></span>
+          </div>
+          <div id="botReviveHud" class="bot-revive-hud hidden">
+            <i class="fa-solid fa-skull"></i> Reviving in <span id="botReviveSecs">0</span>s
+          </div>
+        </div>
+
         <div class="top-right-column">
           <div class="hero-panel" id="heroPanel">
             <div class="hero-panel-header">

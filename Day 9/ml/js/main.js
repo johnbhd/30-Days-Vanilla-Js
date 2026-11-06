@@ -220,6 +220,7 @@ function updateAbilitiesDock(heroId) {
 
 function triggerSkill(slot) {
   if (gameState !== "PLAYING" || !selectedHero) return;
+  if (selectedHero.stunTimer > 0) return;
 
   if (selectedHero.isRecalling) {
     selectedHero.cancelRecall(combatTexts);
@@ -237,7 +238,10 @@ function triggerSkill(slot) {
     minionManager.minions,
     objectiveManager,
     combatTexts,
-    gameStats
+    gameStats,
+    enemyBot,
+    sound,
+    particles
   );
 
   if (castSuccess) {
@@ -393,7 +397,7 @@ for (let i = 0; i < 6; i++) {
 const recallBtn = document.getElementById("btnRecall");
 if (recallBtn) {
   recallBtn.addEventListener("click", () => {
-    if (selectedHero) selectedHero.startRecall(combatTexts, sound);
+    if (selectedHero && selectedHero.stunTimer <= 0) selectedHero.startRecall(combatTexts, sound);
   });
 }
 
@@ -414,12 +418,17 @@ window.addEventListener("keydown", (e) => {
     return;
   }
 
+  // Prevent skill casts and recall while hero is stunned
+  if (selectedHero && selectedHero.stunTimer > 0) {
+    if (["KeyQ", "KeyW", "KeyE", "KeyR", "KeyB"].includes(e.code)) return;
+  }
+
   if (e.code === "KeyQ") triggerSkill("q");
   else if (e.code === "KeyW") triggerSkill("w");
   else if (e.code === "KeyE") triggerSkill("e");
   else if (e.code === "KeyR") triggerSkill("r");
   else if (e.code === "KeyB") {
-    if (selectedHero) selectedHero.startRecall(combatTexts, sound);
+    if (selectedHero && selectedHero.stunTimer <= 0) selectedHero.startRecall(combatTexts, sound);
   } else if (e.code === "KeyP") {
     if (shopOverlay.classList.contains("hidden")) {
       shopOverlay.classList.remove("hidden");
@@ -482,7 +491,9 @@ function loop(currentTime) {
     // 1. Hero Input & Update
     if (selectedHero) {
       if (Input.targetX !== null && Input.targetY !== null) {
-        selectedHero.setTarget(Input.targetX, Input.targetY);
+        if (selectedHero.stunTimer <= 0) {
+          selectedHero.setTarget(Input.targetX, Input.targetY);
+        }
         if (!Input.isDragging) {
           Input.targetX = null;
           Input.targetY = null;
@@ -543,6 +554,37 @@ function loop(currentTime) {
       }
     });
 
+    // 6b. Update Match Status Card (Clock, Wave, Crystals, Bot Revive)
+    const clockWaveEl = document.getElementById("matchClockWaveDisplay");
+    if (clockWaveEl) {
+      const minutes = Math.floor(matchTime / 60);
+      const seconds = Math.floor(matchTime % 60).toString().padStart(2, "0");
+      clockWaveEl.innerHTML = `<i class="fa-regular fa-clock"></i> ${minutes}:${seconds} • Wave ${minionManager.waveCount}`;
+    }
+
+    const blueBase = map.bases.find(b => b.team === "BLUE");
+    const redBase = map.bases.find(b => b.team === "RED");
+
+    const blueHpEl = document.getElementById("blueCrystalHpText");
+    if (blueHpEl && blueBase) {
+      blueHpEl.textContent = Math.max(0, blueBase.crystalHp);
+    }
+    const redHpEl = document.getElementById("redCrystalHpText");
+    if (redHpEl && redBase) {
+      redHpEl.textContent = Math.max(0, redBase.crystalHp);
+    }
+
+    const botReviveHud = document.getElementById("botReviveHud");
+    const botReviveSecs = document.getElementById("botReviveSecs");
+    if (botReviveHud && botReviveSecs) {
+      if (enemyBot && enemyBot.isDead) {
+        botReviveHud.classList.remove("hidden");
+        botReviveSecs.textContent = Math.ceil(enemyBot.respawnTimer);
+      } else {
+        botReviveHud.classList.add("hidden");
+      }
+    }
+
     // 7. Update Gold and Shop HUD
     itemShop.updateShopUI(gameStats);
 
@@ -560,9 +602,6 @@ function loop(currentTime) {
     }
 
     // 9. Win / Loss Condition
-    const blueBase = map.bases.find(b => b.team === "BLUE");
-    const redBase = map.bases.find(b => b.team === "RED");
-
     if (redBase && redBase.crystalHp <= 0) {
       showGameOver(true);
     } else if (blueBase && blueBase.crystalHp <= 0) {

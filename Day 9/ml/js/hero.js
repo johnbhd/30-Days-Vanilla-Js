@@ -41,6 +41,9 @@ class Hero {
     this.recallTimer = 0;
     this.recallMax = 2.0;
 
+    // Stun crowd-control
+    this.stunTimer = 0;
+
     // Load sprite
     this.loadSprite();
   }
@@ -112,7 +115,29 @@ class Hero {
     }
   }
 
+  applyStun(duration, combatTexts) {
+    if (this.isDead || this.hp <= 0) return;
+    this.stunTimer = Math.max(this.stunTimer || 0, duration);
+    if (this.isRecalling) {
+      this.cancelRecall(combatTexts);
+    }
+    this.targetX = this.x;
+    this.targetY = this.y;
+    this.attackTarget = null;
+    if (combatTexts) {
+      combatTexts.push({
+        x: this.x,
+        y: this.y - 30,
+        text: "STUNNED!",
+        color: "#ffd700",
+        life: 1.0,
+        maxLife: 1.0
+      });
+    }
+  }
+
   setTarget(tx, ty) {
+    if (this.stunTimer > 0) return; // Cannot move while stunned
     if (this.isRecalling) {
       const dist = Math.hypot(tx - this.x, ty - this.y);
       if (dist > 15) {
@@ -224,6 +249,15 @@ class Hero {
         }
       }
       return;
+    }
+
+    // Stun crowd-control handling
+    if (this.stunTimer > 0) {
+      this.stunTimer = Math.max(0, this.stunTimer - dt);
+      this.targetX = this.x;
+      this.targetY = this.y;
+      this.attackTarget = null;
+      return; // Cannot move, attack, or channel recall while stunned
     }
 
     // Recall Channeling Handling (2.0s duration)
@@ -602,6 +636,26 @@ class Hero {
       ctx.arc(sx, sy, this.radius + 12, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    // Overhead Spinning Golden Stun Stars
+    if (this.stunTimer > 0) {
+      const starY = sy - this.radius - 28;
+      const angle = (Date.now() / 140) % (Math.PI * 2);
+      ctx.save();
+      ctx.fillStyle = "#ffd700";
+      ctx.strokeStyle = "#b8860b";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 3; i++) {
+        const a = angle + (i * Math.PI * 2 / 3);
+        const starX = sx + Math.cos(a) * 13;
+        const sY = starY + Math.sin(a) * 5;
+        ctx.beginPath();
+        ctx.arc(starX, sY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
       ctx.restore();
     }
 

@@ -36,6 +36,22 @@ class Minion {
     this.attackTimer = Math.random() * 0.4;
     this.target = null;
     this.isDead = false;
+    this.stunTimer = 0;
+  }
+
+  applyStun(duration, combatTexts) {
+    if (this.isDead || this.hp <= 0) return;
+    this.stunTimer = Math.max(this.stunTimer || 0, duration);
+    if (combatTexts) {
+      combatTexts.push({
+        x: this.x,
+        y: this.y - 18,
+        text: "STUNNED!",
+        color: "#ffd700",
+        life: 0.8,
+        maxLife: 0.8
+      });
+    }
   }
 
   update(dt, map, hero, allMinions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard) {
@@ -48,6 +64,12 @@ class Minion {
     if (this.x < -40 || this.x > map.width * map.tileSize + 40 || this.y < -40 || this.y > map.height * map.tileSize + 40) {
       this.isDead = true;
       return;
+    }
+
+    // Stun crowd-control handling
+    if (this.stunTimer > 0) {
+      this.stunTimer = Math.max(0, this.stunTimer - dt);
+      return; // Cannot move or attack while stunned
     }
 
     this.attackTimer -= dt;
@@ -228,6 +250,21 @@ class Minion {
     ctx.fillRect(sx - barW / 2, sy - this.radius - 6, barW, barH);
     ctx.fillStyle = this.team === "BLUE" ? "#42a5f5" : "#ef5350";
     ctx.fillRect(sx - barW / 2, sy - this.radius - 6, barW * hpRatio, barH);
+
+    // Overhead mini spinning stun stars
+    if (this.stunTimer > 0) {
+      const starY = sy - this.radius - 12;
+      const angle = (Date.now() / 140) % (Math.PI * 2);
+      ctx.fillStyle = "#ffd700";
+      for (let i = 0; i < 3; i++) {
+        const a = angle + (i * Math.PI * 2 / 3);
+        const starX = sx + Math.cos(a) * 8;
+        const sY = starY + Math.sin(a) * 3;
+        ctx.beginPath();
+        ctx.arc(starX, sY, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
 
     ctx.restore();
   }

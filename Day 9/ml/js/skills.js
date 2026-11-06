@@ -94,7 +94,7 @@ class SkillManager {
     return this.cooldowns[slot] <= 0;
   }
 
-  castSkill(slot, hero, targetX, targetY, map, minions, objectives, combatTexts, gameStats) {
+  castSkill(slot, hero, targetX, targetY, map, minions, objectives, combatTexts, gameStats, enemyBot, sound, particles) {
     if (!hero || hero.hp <= 0 || !this.canCast(slot)) return false;
 
     const heroSkills = this.getSkillsForHero(hero.id);
@@ -309,7 +309,7 @@ class SkillManager {
       case "ultimate_meteor":
       case "ultimate_pull":
       case "ultimate_shield": {
-        this.executeUltimate(skill.type, hero, targetX, targetY, dirX, dirY, map, minions, objectives, combatTexts);
+        this.executeUltimate(skill.type, hero, targetX, targetY, dirX, dirY, map, minions, objectives, combatTexts, enemyBot, sound, particles, gameStats);
         break;
       }
 
@@ -326,7 +326,7 @@ class SkillManager {
     return true;
   }
 
-  executeUltimate(type, hero, targetX, targetY, dirX, dirY, map, minions, objectives, combatTexts) {
+  executeUltimate(type, hero, targetX, targetY, dirX, dirY, map, minions, objectives, combatTexts, enemyBot, sound, particles, gameStats) {
     if (type === "ultimate_execute") {
       // Execute slam
       this.activeAOEs.push({
@@ -368,31 +368,40 @@ class SkillManager {
         });
       }
     } else if (type === "ultimate_pull") {
-      const enemies = this.getAllEnemies(hero, minions, map, objectives);
+      const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
       enemies.forEach(e => {
-        if (getDistance(hero.x, hero.y, e.x, e.y) <= 160) {
-          // Bosses (Turtle & Lord) and Turrets are CC-immune to pulls/displacement!
+        if (getDistance(hero.x, hero.y, e.x, e.y) <= 175) {
+          // Bosses (Turtle & Lord) and Turrets are CC-immune to pulls/displacement and stuns!
           const isBossOrTurret = e.isTurret || e.isBoss || (objectives && (e === objectives.turtle || e === objectives.lord));
           if (!isBossOrTurret) {
-            e.x = hero.x + (Math.random() - 0.5) * 20;
-            e.y = hero.y + (Math.random() - 0.5) * 20;
-            if (typeof e.setTarget === "function") {
+            // Pull enemy directly into Tigreal's melee perimeter
+            e.x = hero.x + (Math.random() - 0.5) * 25;
+            e.y = hero.y + (Math.random() - 0.5) * 25;
+            if (e.targetX !== undefined) {
               e.targetX = e.x;
               e.targetY = e.y;
             }
+            // Apply 1.0s stun
+            if (typeof e.applyStun === "function") {
+              e.applyStun(1.0, combatTexts);
+            }
           }
-          this.applySkillDamage(e, 320, hero, combatTexts, null, null, null, null);
+          this.applySkillDamage(e, 320, hero, combatTexts, gameStats, null, sound, particles);
         }
       });
       this.activeAOEs.push({
         type: "circle",
         x: hero.x, y: hero.y,
-        radius: 160,
+        radius: 175,
         damage: 0,
         team: hero.team,
         color: "rgba(41, 128, 185, 0.5)",
         life: 0.5, maxLife: 0.5
       });
+      if (particles) {
+        particles.spawnRing(hero.x, hero.y, 175, "#ffd700", 0.5);
+        particles.spawnBurst(hero.x, hero.y, "#3498db", 20, 150);
+      }
     } else if (type === "ultimate_shield") {
       this.activeBuffs.shield = 750;
       this.activeBuffs.bonusDamage = 35;

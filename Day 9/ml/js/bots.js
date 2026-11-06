@@ -60,6 +60,9 @@ class BotHero {
     this.recallTimer = 0;
     this.recallMax = 2.0;
 
+    // Stun crowd-control
+    this.stunTimer = 0;
+
     // Stats
     this.kills = 0;
     this.deaths = 0;
@@ -161,6 +164,27 @@ class BotHero {
     }
   }
 
+  applyStun(duration, combatTexts) {
+    if (this.isDead || this.hp <= 0) return;
+    this.stunTimer = Math.max(this.stunTimer || 0, duration);
+    if (this.isRecalling) {
+      this.isRecalling = false;
+      this.recallTimer = 0;
+    }
+    this.targetX = this.x;
+    this.targetY = this.y;
+    if (combatTexts) {
+      combatTexts.push({
+        x: this.x,
+        y: this.y - 28,
+        text: "STUNNED!",
+        color: "#ffd700",
+        life: 1.0,
+        maxLife: 1.0
+      });
+    }
+  }
+
   update(dt, player, minionManager, map, combatTexts, sound, particles, scoreboard) {
     // 1. Respawn timer
     if (this.isDead) {
@@ -179,6 +203,14 @@ class BotHero {
         }
       }
       return;
+    }
+
+    // Stun crowd-control handling
+    if (this.stunTimer > 0) {
+      this.stunTimer = Math.max(0, this.stunTimer - dt);
+      this.targetX = this.x;
+      this.targetY = this.y;
+      return; // Cannot move, attack, or cast while stunned
     }
 
     // Recall Channeling Handling (2.0s duration)
@@ -645,6 +677,26 @@ class BotHero {
       ctx.arc(sx, sy, this.radius + 12, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    // Overhead Spinning Golden Stun Stars
+    if (this.stunTimer > 0) {
+      const starY = sy - this.radius - 28;
+      const angle = (Date.now() / 140) % (Math.PI * 2);
+      ctx.save();
+      ctx.fillStyle = "#ffd700";
+      ctx.strokeStyle = "#b8860b";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 3; i++) {
+        const a = angle + (i * Math.PI * 2 / 3);
+        const starX = sx + Math.cos(a) * 13;
+        const sY = starY + Math.sin(a) * 5;
+        ctx.beginPath();
+        ctx.arc(starX, sY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
       ctx.restore();
     }
 

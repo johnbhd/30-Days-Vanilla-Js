@@ -47,27 +47,82 @@ canvas {
 
 .top-row {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: flex-start;
   width: 100%;
+  pointer-events: none;
+}
+
+/* Match Status Panel (Clock, Wave, Crystals, Bot Revive) */
+.match-status-panel {
+  pointer-events: auto;
+  background: rgba(16, 25, 47, 0.88);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(78, 204, 163, 0.35);
+  border-radius: 6px;
+  padding: 6px 10px;
+  width: clamp(140px, 20vw, 205px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.match-status-header {
+  font-size: clamp(0.72rem, 1.2vw, 0.82rem);
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.match-crystals-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: clamp(0.66rem, 1.1vw, 0.74rem);
+  font-weight: 600;
+  padding-top: 3px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.crystal-tag.blue-tag {
+  color: #4ecca3;
+}
+
+.crystal-tag.red-tag {
+  color: #e74c3c;
+}
+
+.bot-revive-hud {
+  font-size: clamp(0.64rem, 1.0vw, 0.72rem);
+  font-weight: 700;
+  color: #ff6b6b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 2px;
 }
 
 .top-right-column {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   align-items: flex-end;
-  width: 250px;
+  width: clamp(160px, 22vw, 205px);
   pointer-events: none;
 }
 
 .hero-panel {
   pointer-events: auto;
-  background: rgba(16, 25, 47, 0.92);
+  background: rgba(16, 25, 47, 0.88);
   backdrop-filter: blur(6px);
   border: 1px solid rgba(78, 204, 163, 0.35);
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 6px;
+  padding: 6px 10px;
   width: 100%;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
   margin-top: 0;
@@ -77,11 +132,11 @@ canvas {
 .hero-skills-panel {
   pointer-events: auto;
   width: 100%;
-  background: rgba(16, 25, 47, 0.92);
+  background: rgba(16, 25, 47, 0.88);
   backdrop-filter: blur(6px);
   border: 1px solid rgba(78, 204, 163, 0.35);
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 6px;
+  padding: 6px 10px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
   user-select: none;
   display: flex;
@@ -92,17 +147,17 @@ canvas {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
+  margin-bottom: 5px;
+  padding-bottom: 3px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.72rem;
+  font-size: 0.70rem;
   font-weight: 700;
   color: #4ecca3;
   letter-spacing: 0.3px;
 }
 
 .skills-keys-hint {
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   color: #94a3b8;
   font-weight: 600;
 }
@@ -111,14 +166,14 @@ canvas {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   margin-top: 2px;
 }
 
 .skill-circle-btn {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: radial-gradient(circle, #1a2744 0%, #0d172e 100%);
   border: 2px solid #4ecca3;
@@ -143,8 +198,8 @@ canvas {
 }
 
 .ultimate-circle-btn {
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   border-color: #ffd700;
   box-shadow: 0 0 12px rgba(255, 215, 0, 0.45);
 }
@@ -1176,27 +1231,156 @@ canvas {
   .hero-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .ui-overlay {
+    padding: 8px;
+  }
+  .top-row {
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .match-status-panel {
+    width: clamp(130px, 28vw, 175px);
+    padding: 5px 8px;
+  }
   .top-right-column {
-    width: 230px;
-    margin-top: 75px;
+    width: clamp(155px, 34vw, 190px);
+    margin-top: 0;
+    gap: 4px;
   }
   .hero-panel {
     width: 100%;
-    padding: 8px 10px;
+    padding: 5px 8px;
   }
   .hero-skills-panel {
     width: 100%;
-    padding: 6px 8px;
+    padding: 5px 8px;
   }
   .skill-circle-btn {
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
   }
   .ultimate-circle-btn {
-    width: 46px;
-    height: 46px;
+    width: 40px;
+    height: 40px;
+  }
+  .skill-icon-wrap {
+    font-size: 13px;
+  }
+  .skill-icon-r {
+    font-size: 14px;
+  }
+  .skill-label {
+    font-size: 7px;
+    max-width: 32px;
+  }
+  .inv-slot {
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+  }
+  .shop-btn,
+  .recall-action-btn {
+    padding: 4px 4px;
+    font-size: 0.64rem;
   }
   .controls-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .ui-overlay {
+    padding: 5px;
+  }
+  .match-status-panel {
+    width: clamp(115px, 40vw, 145px);
+    padding: 4px 6px;
+  }
+  .match-status-header {
+    font-size: 0.68rem;
+  }
+  .match-crystals-row {
+    font-size: 0.62rem;
+  }
+  .top-right-column {
+    width: clamp(135px, 48vw, 165px);
+    gap: 3px;
+  }
+  .hero-panel {
+    padding: 4px 6px;
+  }
+  .hero-panel-header h2 {
+    font-size: 0.78rem;
+    max-width: 75px;
+  }
+  .hero-badge {
+    font-size: 0.58rem;
+    padding: 1px 3px;
+  }
+  .builds-header {
+    font-size: 0.62rem;
+  }
+  .gold-badge {
+    font-size: 0.64rem;
+    padding: 0 4px;
+  }
+  .inv-slot {
+    width: 19px;
+    height: 19px;
+    font-size: 9px;
+  }
+  .hero-panel-actions {
+    gap: 3px;
+    margin-top: 3px;
+  }
+  .shop-btn,
+  .recall-action-btn {
+    padding: 3px 3px;
+    font-size: 0.58rem;
+    gap: 2px;
+  }
+  .icon-action-btn,
+  .change-hero-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 0.62rem;
+  }
+  .hero-skills-panel {
+    padding: 4px 6px;
+  }
+  .skills-panel-header {
+    font-size: 0.64rem;
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+  }
+  .skills-keys-hint {
+    font-size: 0.58rem;
+  }
+  .skills-tray {
+    gap: 3px;
+  }
+  .skill-circle-btn {
+    width: 30px;
+    height: 30px;
+  }
+  .ultimate-circle-btn {
+    width: 34px;
+    height: 34px;
+  }
+  .skill-key-badge {
+    width: 13px;
+    height: 13px;
+    font-size: 8px;
+    top: -2px;
+    left: -2px;
+  }
+  .skill-icon-wrap {
+    font-size: 11px;
+  }
+  .skill-icon-r {
+    font-size: 12px;
+  }
+  .skill-label {
     display: none;
   }
 }
