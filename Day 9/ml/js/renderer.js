@@ -61,6 +61,11 @@ class Renderer {
     if (skillManager && skillManager.saberSwords && skillManager.saberSwords.active && !hero.isDead) {
       this.renderOrbitingSwords(hero, camera, skillManager.saberSwords);
     }
+
+    // Render Balmond's Cyclone Sweep (Skill 2 - W)
+    if (skillManager && skillManager.balmondCyclone && skillManager.balmondCyclone.active && !hero.isDead) {
+      this.renderBalmondCyclone(hero, camera, skillManager.balmondCyclone);
+    }
   }
 
   renderBot(bot, camera) {
@@ -68,6 +73,9 @@ class Renderer {
       bot.render(this.ctx, camera);
       if (bot.saberSwords && bot.saberSwords.active && !bot.isDead) {
         this.renderOrbitingSwords(bot, camera, bot.saberSwords);
+      }
+      if (bot.balmondCyclone && bot.balmondCyclone.active && !bot.isDead) {
+        this.renderBalmondCyclone(bot, camera, bot.balmondCyclone);
       }
     }
   }
@@ -77,18 +85,18 @@ class Renderer {
     const sy = unit.y - camera.y;
 
     this.ctx.save();
-    // Orbit guide ring
+    // Orbit guide ring with extended 80px radius
     this.ctx.strokeStyle = "rgba(0, 210, 211, 0.35)";
     this.ctx.lineWidth = 1.5;
     this.ctx.beginPath();
-    this.ctx.arc(sx, sy, 52, 0, Math.PI * 2);
+    this.ctx.arc(sx, sy, 80, 0, Math.PI * 2);
     this.ctx.stroke();
 
     // 4 Orbiting swords with glowing blade shapes and center dots
     for (let k = 0; k < 4; k++) {
       const sAngle = swordsData.angle + (k * Math.PI / 2);
-      const px = sx + Math.cos(sAngle) * 52;
-      const py = sy + Math.sin(sAngle) * 52;
+      const px = sx + Math.cos(sAngle) * 80;
+      const py = sy + Math.sin(sAngle) * 80;
 
       this.ctx.save();
       this.ctx.translate(px, py);
@@ -99,9 +107,9 @@ class Renderer {
       this.ctx.shadowBlur = 10;
       this.ctx.fillStyle = "#00ffff";
       this.ctx.beginPath();
-      this.ctx.moveTo(0, -10);
+      this.ctx.moveTo(0, -11);
       this.ctx.lineTo(4, 0);
-      this.ctx.lineTo(0, 10);
+      this.ctx.lineTo(0, 11);
       this.ctx.lineTo(-4, 0);
       this.ctx.closePath();
       this.ctx.fill();
@@ -112,6 +120,64 @@ class Renderer {
 
       // Core dot
       this.ctx.fillStyle = "#ffffff";
+      this.ctx.beginPath();
+      this.ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      this.ctx.restore();
+    }
+    this.ctx.restore();
+  }
+
+  renderBalmondCyclone(unit, camera, cycloneData) {
+    const sx = unit.x - camera.x;
+    const sy = unit.y - camera.y;
+
+    this.ctx.save();
+    // Fiery crimson whirlwind vortex aura at short range (46px)
+    this.ctx.strokeStyle = "rgba(231, 76, 60, 0.45)";
+    this.ctx.lineWidth = 4;
+    this.ctx.beginPath();
+    this.ctx.arc(sx, sy, 46, 0, Math.PI * 2);
+    this.ctx.stroke();
+
+    this.ctx.strokeStyle = "rgba(243, 156, 18, 0.35)";
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.arc(sx, sy, 42, 0, Math.PI * 2);
+    this.ctx.stroke();
+
+    // 3 Fast-spinning heavy double-edged orc battleaxe heads
+    for (let k = 0; k < 3; k++) {
+      const aAngle = cycloneData.angle + (k * (Math.PI * 2 / 3));
+      const px = sx + Math.cos(aAngle) * 46;
+      const py = sy + Math.sin(aAngle) * 46;
+
+      this.ctx.save();
+      this.ctx.translate(px, py);
+      this.ctx.rotate(aAngle + Math.PI / 2);
+
+      // Crimson axe glow
+      this.ctx.shadowColor = "#e74c3c";
+      this.ctx.shadowBlur = 10;
+
+      // Curved battleaxe head shape
+      this.ctx.fillStyle = "#c0392b";
+      this.ctx.beginPath();
+      this.ctx.moveTo(-7, -8);
+      this.ctx.quadraticCurveTo(0, -12, 7, -8);
+      this.ctx.lineTo(8, 6);
+      this.ctx.quadraticCurveTo(0, 10, -8, 6);
+      this.ctx.closePath();
+      this.ctx.fill();
+
+      // Sharpened axe cutting edge
+      this.ctx.strokeStyle = "#ffd700";
+      this.ctx.lineWidth = 1.5;
+      this.ctx.stroke();
+
+      // Central axe core
+      this.ctx.fillStyle = "#f39c12";
       this.ctx.beginPath();
       this.ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
       this.ctx.fill();

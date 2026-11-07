@@ -148,7 +148,7 @@ class BotHero {
       },
       balmond: {
         q: { name: "Soul Lock", cd: 0, maxCd: 6, damage: 340, range: 240 },
-        w: { name: "Cyclone Sweep", cd: 0, maxCd: 5, damage: 420, range: 180 },
+        w: { name: "Cyclone Sweep", cd: 0, maxCd: 5, damage: 680, range: 180 },
         r: { name: "Lethal Counter", cd: 0, maxCd: 20, damage: 620, range: 220 }
       },
       saber: {
@@ -644,34 +644,34 @@ class BotHero {
       }
     }
 
-    // Saber Orbiting Swords ticks (Skill 1 - Q)
+    // Saber Orbiting Swords ticks (Skill 1 - Q) - extended radius (100px), smooth spin (3.2)
     if (this.saberSwords && this.saberSwords.active) {
       this.saberSwords.timer -= dt;
-      this.saberSwords.angle += dt * 6.0;
+      this.saberSwords.angle += dt * 3.2; // Smooth glide, not too fast
       this.saberSwords.damageTickTimer -= dt;
 
       if (this.saberSwords.damageTickTimer <= 0) {
-        this.saberSwords.damageTickTimer = 0.32;
+        this.saberSwords.damageTickTimer = 0.30;
         const swordDmg = Math.round(85 * (this.attackDamage ? (this.attackDamage / 120) : 1));
-        if (player && !player.isDead && player.team !== this.team && Math.hypot(player.x - this.x, player.y - this.y) <= 72) {
+        if (player && !player.isDead && player.team !== this.team && Math.hypot(player.x - this.x, player.y - this.y) <= 100) {
           player.takeDamage(swordDmg, this, combatTexts, particles, sound, scoreboard);
           if (particles && particles.spawnSlash) {
-            particles.spawnSlash(this.x, this.y, player.x, player.y, "#00d2d3", 28);
+            particles.spawnSlash(this.x, this.y, player.x, player.y, "#00d2d3", 34);
           }
         }
         if (allBots && Array.isArray(allBots)) {
           allBots.forEach(b => {
-            if (b !== this && !b.isDead && b.team !== this.team && Math.hypot(b.x - this.x, b.y - this.y) <= 72) {
+            if (b !== this && !b.isDead && b.team !== this.team && Math.hypot(b.x - this.x, b.y - this.y) <= 100) {
               b.takeDamage(swordDmg, this, combatTexts, particles, sound, scoreboard);
               if (particles && particles.spawnSlash) {
-                particles.spawnSlash(this.x, this.y, b.x, b.y, "#00d2d3", 28);
+                particles.spawnSlash(this.x, this.y, b.x, b.y, "#00d2d3", 34);
               }
             }
           });
         }
         if (minionManager && minionManager.minions) {
           minionManager.minions.forEach(m => {
-            if (m.team !== this.team && m.hp > 0 && Math.hypot(m.x - this.x, m.y - this.y) <= 72) {
+            if (m.team !== this.team && m.hp > 0 && Math.hypot(m.x - this.x, m.y - this.y) <= 100) {
               m.hp -= swordDmg;
             }
           });
@@ -680,6 +680,45 @@ class BotHero {
 
       if (this.saberSwords.timer <= 0 || this.isDead) {
         this.saberSwords.active = false;
+      }
+    }
+
+    // Balmond Cyclone Sweep ticks (Skill 2 - W) - short melee range (60px), fast furious spin (11.5), heavy damage (130)
+    if (this.balmondCyclone && this.balmondCyclone.active) {
+      this.balmondCyclone.timer -= dt;
+      this.balmondCyclone.angle += dt * 11.5; // Fast furious spin!
+      this.balmondCyclone.damageTickTimer -= dt;
+
+      if (this.balmondCyclone.damageTickTimer <= 0) {
+        this.balmondCyclone.damageTickTimer = 0.22;
+        const spinDmg = Math.round(130 * (this.attackDamage ? (this.attackDamage / 120) : 1));
+        if (player && !player.isDead && player.team !== this.team && Math.hypot(player.x - this.x, player.y - this.y) <= 60) {
+          player.takeDamage(spinDmg, this, combatTexts, particles, sound, scoreboard);
+          if (particles && particles.spawnSlash) {
+            particles.spawnSlash(this.x, this.y, player.x, player.y, "#c0392b", 34);
+          }
+        }
+        if (allBots && Array.isArray(allBots)) {
+          allBots.forEach(b => {
+            if (b !== this && !b.isDead && b.team !== this.team && Math.hypot(b.x - this.x, b.y - this.y) <= 60) {
+              b.takeDamage(spinDmg, this, combatTexts, particles, sound, scoreboard);
+              if (particles && particles.spawnSlash) {
+                particles.spawnSlash(this.x, this.y, b.x, b.y, "#c0392b", 34);
+              }
+            }
+          });
+        }
+        if (minionManager && minionManager.minions) {
+          minionManager.minions.forEach(m => {
+            if (m.team !== this.team && m.hp > 0 && Math.hypot(m.x - this.x, m.y - this.y) <= 60) {
+              m.hp -= spinDmg;
+            }
+          });
+        }
+      }
+
+      if (this.balmondCyclone.timer <= 0 || this.isDead) {
+        this.balmondCyclone.active = false;
       }
     }
 
@@ -1122,9 +1161,10 @@ class BotHero {
         }
         if (particles) particles.spawnBurst(targetHero.x, targetHero.y, "#f39c12", 14, 120);
       } else if (hid === "balmond") {
+        this.balmondCyclone = { active: true, timer: 3.2, angle: 0, damageTickTimer: 0.05 };
         if (particles) {
-          particles.spawnRing(this.x, this.y, 55, "#e67e22", 0.4);
-          particles.spawnBurst(this.x, this.y, "#e67e22", 12, 120);
+          particles.spawnRing(this.x, this.y, 48, "#e74c3c", 0.4);
+          particles.spawnBurst(this.x, this.y, "#c0392b", 16, 130);
         }
       } else if (hid === "alucard") {
         if (particles) {
@@ -1261,8 +1301,8 @@ class BotHero {
       } else if (hid === "saber") {
         this.saberSwords = { active: true, timer: 5.0, angle: 0, damageTickTimer: 0.05 };
         if (particles) {
-          particles.spawnRing(this.x, this.y, 55, "#00d2d3", 0.5);
-          particles.spawnBurst(this.x, this.y, "#00ffff", 16, 120);
+          particles.spawnRing(this.x, this.y, 80, "#00d2d3", 0.6);
+          particles.spawnBurst(this.x, this.y, "#00ffff", 16, 130);
         }
       } else {
         if (particles) {

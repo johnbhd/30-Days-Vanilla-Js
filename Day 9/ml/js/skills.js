@@ -36,7 +36,7 @@ const HERO_SKILLS = {
   },
   balmond: {
     q: { name: "Soul Lock", cd: 6, type: "dash_knock", range: 180, indicator: "dash", desc: "Charges forward dealing 340 physical damage, knocking back and slowing enemies by 40%" },
-    w: { name: "Cyclone Sweep", cd: 5, type: "spin_ticks", desc: "Spins giant axe dealing multi-tick damage" },
+    w: { name: "Cyclone Sweep", cd: 5, type: "spin_ticks", desc: "Spins giant battleaxes in a furious fast cyclone dealing 130 heavy damage per hit in melee range" },
     e: { name: "Bloodthirst", cd: 10, type: "heal", desc: "War cry restoring 320 HP + 10% max HP instantly" },
     r: { name: "Lethal Counter", cd: 24, type: "ultimate_execute", range: 160, radius: 105, indicator: "circle_aoe", desc: "Slams axe down dealing 520 base damage + 28% of target's lost HP as true execute damage" }
   },
@@ -47,7 +47,7 @@ const HERO_SKILLS = {
     r: { name: "Blade Barrage", cd: 20, type: "ultimate_storm", desc: "Unleashes 12 hyper-velocity blades in all directions dealing 380 burst each" }
   },
   saber: {
-    q: { name: "Orbiting Swords", cd: 6, type: "swords_orbit", desc: "Spawns 4 spinning swords circling Saber that strike enemies for 85 contact damage and fly to target on attacks" },
+    q: { name: "Orbiting Swords", cd: 6, type: "swords_orbit", desc: "Spawns 4 spinning swords with extended radius (80px) circling smoothly around Saber dealing contact damage" },
     w: { name: "Charge", cd: 6, type: "dash", range: 140, indicator: "dash", desc: "Dashes forward slicing through enemy lines" },
     e: { name: "Enemy's Bane", cd: 8, type: "armor_shred", range: 220, indicator: "target", desc: "Armor-piercing strike dealing true damage" },
     r: { name: "Triple Sweep", cd: 26, type: "ultimate_sweep", range: 260, indicator: "target", desc: "Locks onto target, knocks airborne with 3 slashes" }
@@ -509,7 +509,7 @@ class SkillManager {
       }
 
       case "swords_orbit": {
-        // Saber Orbiting Swords: 4 flying swords circle Saber dealing contact damage
+        // Saber Orbiting Swords: 4 flying swords circle smoothly around Saber with extended radius
         this.saberSwords = {
           active: true,
           timer: 5.0,
@@ -522,7 +522,7 @@ class SkillManager {
         };
         if (sound && sound.playSkill) sound.playSkill("q");
         if (particles) {
-          particles.spawnRing(hero.x, hero.y, 55, "#00d2d3", 0.5);
+          particles.spawnRing(hero.x, hero.y, 80, "#00d2d3", 0.6);
           particles.spawnBurst(hero.x, hero.y, "#00ffff", 16, 130);
         }
         if (combatTexts) {
@@ -539,7 +539,33 @@ class SkillManager {
       }
 
       case "spin_ticks": {
-        this.cycloneTimer = 3.0;
+        // Balmond Cyclone Sweep: fast furious spin of 3 battleaxes in short melee range with heavy damage
+        this.cycloneTimer = 3.2;
+        this.balmondCyclone = {
+          active: true,
+          timer: 3.2,
+          maxTimer: 3.2,
+          count: 3,
+          angle: 0,
+          damageTickTimer: 0.05,
+          heroRef: hero,
+          team: hero.team
+        };
+        if (sound && sound.playSlash) sound.playSlash();
+        if (particles) {
+          particles.spawnRing(hero.x, hero.y, 48, "#e74c3c", 0.4);
+          particles.spawnBurst(hero.x, hero.y, "#c0392b", 16, 130);
+        }
+        if (combatTexts) {
+          combatTexts.push({
+            x: hero.x,
+            y: hero.y - 25,
+            text: "CYCLONE SWEEP!",
+            color: "#e74c3c",
+            life: 1.0,
+            maxLife: 1.0
+          });
+        }
         break;
       }
 
@@ -1024,33 +1050,53 @@ class SkillManager {
       }
     }
 
-    // Cyclone spin ticks (Balmond W)
-    if (this.cycloneTimer > 0) {
-      this.cycloneTimer -= dt;
-      const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
-      enemies.forEach(e => {
-        if (getDistance(hero.x, hero.y, e.x, e.y) <= 75) {
-          const dmg = 45 * dt * 6;
-          this.applySkillDamage(e, dmg, hero, combatTexts, gameStats, scoreboard, sound, particles);
-        }
-      });
+    // Balmond Cyclone Sweep (Skill 2 - W): fast furious spin in short melee range with heavy damage
+    if (this.balmondCyclone && this.balmondCyclone.active) {
+      this.balmondCyclone.timer -= dt;
+      this.balmondCyclone.angle += dt * 11.5; // Fast furious spin!
+      this.balmondCyclone.damageTickTimer -= dt;
+
+      if (this.balmondCyclone.damageTickTimer <= 0) {
+        this.balmondCyclone.damageTickTimer = 0.22;
+        const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
+        enemies.forEach(e => {
+          if (getDistance(hero.x, hero.y, e.x, e.y) <= 60) { // Short melee range
+            const rank = (hero.skillLevels && hero.skillLevels.w) ? hero.skillLevels.w : 1;
+            const dmgMultiplier = 1 + (rank - 1) * 0.22;
+            const atkScaling = hero.attackDamage ? (hero.attackDamage / 120) : 1;
+            const spinDmg = Math.round(130 * dmgMultiplier * atkScaling); // Heavy damage!
+            this.applySkillDamage(e, spinDmg, hero, combatTexts, gameStats, scoreboard, sound, particles);
+            if (particles) {
+              if (particles.spawnSlash) particles.spawnSlash(hero.x, hero.y, e.x, e.y, "#c0392b", 34);
+              if (Math.random() < 0.4) particles.spawnBurst(e.x, e.y, "#e74c3c", 4, 80);
+            }
+          }
+        });
+      }
+
+      if (this.balmondCyclone.timer <= 0 || (hero && hero.isDead)) {
+        this.balmondCyclone.active = false;
+        this.cycloneTimer = 0;
+      }
+    } else if (this.cycloneTimer > 0) {
+      this.cycloneTimer = 0;
     }
 
-    // Saber Orbiting Swords ticks (Saber Q)
+    // Saber Orbiting Swords ticks (Saber Q) - wider radius (80px), smooth deliberate spin
     if (this.saberSwords && this.saberSwords.active) {
       this.saberSwords.timer -= dt;
-      this.saberSwords.angle += dt * 6.0;
+      this.saberSwords.angle += dt * 3.2; // Not too fast, smooth glide
       this.saberSwords.damageTickTimer -= dt;
 
       if (this.saberSwords.damageTickTimer <= 0) {
-        this.saberSwords.damageTickTimer = 0.32;
+        this.saberSwords.damageTickTimer = 0.30;
         const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
         enemies.forEach(e => {
-          if (getDistance(hero.x, hero.y, e.x, e.y) <= 72) {
+          if (getDistance(hero.x, hero.y, e.x, e.y) <= 100) { // Extended radius range
             const swordDmg = Math.round(85 * (hero.attackDamage ? (hero.attackDamage / 120) : 1));
             this.applySkillDamage(e, swordDmg, hero, combatTexts, gameStats, scoreboard, sound, particles);
             if (particles && particles.spawnSlash) {
-              particles.spawnSlash(hero.x, hero.y, e.x, e.y, "#00d2d3", 30);
+              particles.spawnSlash(hero.x, hero.y, e.x, e.y, "#00d2d3", 34);
             }
           }
         });
@@ -1189,7 +1235,7 @@ class SkillManager {
       ctx.restore();
     });
 
-    // Render Saber's Orbiting Swords
+    // Render Saber's Orbiting Swords (Extended radius 80px, smooth deliberate spin)
     if (this.saberSwords && this.saberSwords.active && this.saberSwords.heroRef && !this.saberSwords.heroRef.isDead) {
       const h = this.saberSwords.heroRef;
       const sx = h.x - camera.x;
@@ -1200,14 +1246,14 @@ class SkillManager {
       ctx.strokeStyle = "rgba(0, 210, 211, 0.35)";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(sx, sy, 52, 0, Math.PI * 2);
+      ctx.arc(sx, sy, 80, 0, Math.PI * 2);
       ctx.stroke();
 
       // 4 Orbiting swords / glowing dots
       for (let k = 0; k < 4; k++) {
         const sAngle = this.saberSwords.angle + (k * Math.PI / 2);
-        const px = sx + Math.cos(sAngle) * 52;
-        const py = sy + Math.sin(sAngle) * 52;
+        const px = sx + Math.cos(sAngle) * 80;
+        const py = sy + Math.sin(sAngle) * 80;
 
         ctx.save();
         ctx.translate(px, py);
@@ -1218,9 +1264,9 @@ class SkillManager {
         ctx.shadowBlur = 10;
         ctx.fillStyle = "#00ffff";
         ctx.beginPath();
-        ctx.moveTo(0, -10);
+        ctx.moveTo(0, -11);
         ctx.lineTo(4, 0);
-        ctx.lineTo(0, 10);
+        ctx.lineTo(0, 11);
         ctx.lineTo(-4, 0);
         ctx.closePath();
         ctx.fill();
@@ -1231,6 +1277,66 @@ class SkillManager {
 
         // Core dot
         ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    // Render Balmond's Cyclone Sweep (Short range 46px, fast-spinning fiery orc battleaxes)
+    if (this.balmondCyclone && this.balmondCyclone.active && this.balmondCyclone.heroRef && !this.balmondCyclone.heroRef.isDead) {
+      const h = this.balmondCyclone.heroRef;
+      const sx = h.x - camera.x;
+      const sy = h.y - camera.y;
+
+      ctx.save();
+      // Fiery crimson whirlwind vortex aura
+      ctx.strokeStyle = "rgba(231, 76, 60, 0.45)";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 46, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(243, 156, 18, 0.35)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 42, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 3 Fast-spinning heavy double-edged orc battleaxe heads
+      for (let k = 0; k < 3; k++) {
+        const aAngle = this.balmondCyclone.angle + (k * (Math.PI * 2 / 3));
+        const px = sx + Math.cos(aAngle) * 46;
+        const py = sy + Math.sin(aAngle) * 46;
+
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(aAngle + Math.PI / 2);
+
+        // Crimson axe glow
+        ctx.shadowColor = "#e74c3c";
+        ctx.shadowBlur = 10;
+
+        // Curved battleaxe head shape
+        ctx.fillStyle = "#c0392b";
+        ctx.beginPath();
+        ctx.moveTo(-7, -8);
+        ctx.quadraticCurveTo(0, -12, 7, -8);
+        ctx.lineTo(8, 6);
+        ctx.quadraticCurveTo(0, 10, -8, 6);
+        ctx.closePath();
+        ctx.fill();
+
+        // Sharpened axe cutting edge
+        ctx.strokeStyle = "#ffd700";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Central axe core / gem
+        ctx.fillStyle = "#f39c12";
         ctx.beginPath();
         ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
         ctx.fill();
