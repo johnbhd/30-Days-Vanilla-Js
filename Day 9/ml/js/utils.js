@@ -46,6 +46,17 @@ function tileToScreen(tileX, tileY, camera) {
 }
 
 /**
+ * Safely extract world pixel coordinates for any entity (Hero, Bot, Minion, Boss, Turret, Base).
+ * Prioritizes worldX/worldY (used by Turrets & Bases) over tile index x/y.
+ */
+function getEntityPos(entity) {
+  if (!entity) return { x: 0, y: 0 };
+  const x = entity.worldX !== undefined ? entity.worldX : entity.x;
+  const y = entity.worldY !== undefined ? entity.worldY : entity.y;
+  return { x: (x !== undefined ? x : 0), y: (y !== undefined ? y : 0) };
+}
+
+/**
  * Load an image and return a Promise
  */
 function loadImage(src) {
@@ -60,6 +71,7 @@ function loadImage(src) {
 if (typeof window !== "undefined") {
   window.clamp = clamp;
   window.getDistance = getDistance;
+  window.getEntityPos = getEntityPos;
   window.normalize = normalize;
   window.screenToTile = screenToTile;
   window.tileToScreen = tileToScreen;
@@ -68,6 +80,7 @@ if (typeof window !== "undefined") {
 if (typeof global !== "undefined") {
   global.clamp = clamp;
   global.getDistance = getDistance;
+  global.getEntityPos = getEntityPos;
   global.normalize = normalize;
   global.screenToTile = screenToTile;
   global.tileToScreen = tileToScreen;

@@ -302,8 +302,8 @@ class Hero {
 
     if (clickedEnemy) {
       this.attackTarget = clickedEnemy;
-      const enemyX = clickedEnemy.x !== undefined ? clickedEnemy.x : clickedEnemy.worldX;
-      const enemyY = clickedEnemy.y !== undefined ? clickedEnemy.y : clickedEnemy.worldY;
+      const enemyX = clickedEnemy.worldX !== undefined ? clickedEnemy.worldX : clickedEnemy.x;
+      const enemyY = clickedEnemy.worldY !== undefined ? clickedEnemy.worldY : clickedEnemy.y;
       const distToEnemy = Math.hypot(enemyX - this.x, enemyY - this.y);
 
       // If ranged and already in attack range, stop and attack immediately!
@@ -647,7 +647,9 @@ class Hero {
     // Verify current target
     if (this.attackTarget) {
       const isDead = this.attackTarget.hp <= 0 || this.attackTarget.destroyed;
-      const d = getDistance(this.x, this.y, this.attackTarget.x || this.attackTarget.worldX, this.attackTarget.y || this.attackTarget.worldY);
+      const targetX = this.attackTarget.worldX !== undefined ? this.attackTarget.worldX : this.attackTarget.x;
+      const targetY = this.attackTarget.worldY !== undefined ? this.attackTarget.worldY : this.attackTarget.y;
+      const d = getDistance(this.x, this.y, targetX, targetY);
       if (isDead || d > this.attackRange + 30) {
         this.attackTarget = null;
       }
@@ -716,10 +718,10 @@ class Hero {
       const aimY = (typeof Input !== "undefined" && typeof camera !== "undefined") ? (Input.mouseY + camera.y) : this.y;
 
       potentialTargets.sort((a, b) => {
-        const ax = a.unit.x !== undefined ? a.unit.x : a.unit.worldX;
-        const ay = a.unit.y !== undefined ? a.unit.y : a.unit.worldY;
-        const bx = b.unit.x !== undefined ? b.unit.x : b.unit.worldX;
-        const by = b.unit.y !== undefined ? b.unit.y : b.unit.worldY;
+        const ax = a.unit.worldX !== undefined ? a.unit.worldX : a.unit.x;
+        const ay = a.unit.worldY !== undefined ? a.unit.worldY : a.unit.y;
+        const bx = b.unit.worldX !== undefined ? b.unit.worldX : b.unit.x;
+        const by = b.unit.worldY !== undefined ? b.unit.worldY : b.unit.y;
         const aimA = Math.hypot(ax - aimX, ay - aimY);
         const aimB = Math.hypot(bx - aimX, by - aimY);
         return (a.priority * 70 + aimA) - (b.priority * 70 + aimB);
@@ -737,8 +739,8 @@ class Hero {
         cooldown /= skillManager.activeBuffs.attackSpeedBoost;
       }
       this.attackTimer = cooldown;
-      const tx = this.attackTarget.x !== undefined ? this.attackTarget.x : this.attackTarget.worldX;
-      const ty = this.attackTarget.y !== undefined ? this.attackTarget.y : this.attackTarget.worldY;
+      const tx = this.attackTarget.worldX !== undefined ? this.attackTarget.worldX : this.attackTarget.x;
+      const ty = this.attackTarget.worldY !== undefined ? this.attackTarget.worldY : this.attackTarget.y;
 
       let effectiveDmg = this.attackDamage;
       if (skillManager && skillManager.activeBuffs && skillManager.activeBuffs.bonusDamage > 0) {

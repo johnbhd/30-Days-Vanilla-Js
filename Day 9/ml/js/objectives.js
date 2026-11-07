@@ -357,8 +357,8 @@ class ObjectiveManager {
 
         if (combatTexts) {
           combatTexts.push({
-            x: (boss.target.x !== undefined ? boss.target.x : boss.target.worldX),
-            y: (boss.target.y !== undefined ? boss.target.y : boss.target.worldY) - 18,
+            x: (boss.target.worldX !== undefined ? boss.target.worldX : boss.target.x),
+            y: (boss.target.worldY !== undefined ? boss.target.worldY : boss.target.y) - 18,
             text: `-${dmg}`,
             color: "#e74c3c",
             life: 0.7,

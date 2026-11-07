@@ -382,8 +382,8 @@ class GameMap {
       // Check current target validity
       if (turret.target) {
         const isDead = turret.target.hp <= 0 || turret.target.isDead;
-        const tx = turret.target.x !== undefined ? turret.target.x : turret.target.worldX;
-        const ty = turret.target.y !== undefined ? turret.target.y : turret.target.worldY;
+        const tx = turret.target.worldX !== undefined ? turret.target.worldX : turret.target.x;
+        const ty = turret.target.worldY !== undefined ? turret.target.worldY : turret.target.y;
         const dist = getDistance(turret.worldX, turret.worldY, tx, ty);
         if (isDead || dist > turret.range) {
           turret.target = null;
@@ -457,8 +457,8 @@ class GameMap {
       // Check existing target
       if (base.target) {
         const isDead = base.target.hp <= 0 || base.target.isDead;
-        const tx = base.target.x !== undefined ? base.target.x : base.target.worldX;
-        const ty = base.target.y !== undefined ? base.target.y : base.target.worldY;
+        const tx = base.target.worldX !== undefined ? base.target.worldX : base.target.x;
+        const ty = base.target.worldY !== undefined ? base.target.worldY : base.target.y;
         const dist = getDistance(base.worldX, base.worldY, tx, ty);
         if (isDead || dist > base.defenseRange) {
           base.target = null;
@@ -534,8 +534,8 @@ class GameMap {
         continue;
       }
 
-      const tx = p.target.x !== undefined ? p.target.x : p.target.worldX;
-      const ty = p.target.y !== undefined ? p.target.y : p.target.worldY;
+      const tx = p.target.worldX !== undefined ? p.target.worldX : p.target.x;
+      const ty = p.target.worldY !== undefined ? p.target.worldY : p.target.y;
       const dx = tx - p.x;
       const dy = ty - p.y;
       const dist = Math.sqrt(dx * dx + dy * dy);

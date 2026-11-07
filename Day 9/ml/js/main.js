@@ -588,8 +588,55 @@ function renderTeamLineupsUI() {
   });
 }
 
+let isFormatReset = false;
+
+function resetGameForNewFormat() {
+  disarmSkill(false);
+  map = new GameMap(GAME.MAP.WIDTH, GAME.MAP.HEIGHT, GAME.TILE_SIZE);
+  minionManager = new MinionManager();
+  skillManager = new SkillManager();
+  objectiveManager = new ObjectiveManager();
+  itemShop = new ItemShop();
+  selectedHero = null;
+  bots = [];
+  enemyBot = null;
+  scoreboard.stats = {
+    player: { kills: 0, deaths: 0, assists: 0, cs: 0, gold: 0, damageDealt: 0 },
+    bot: { kills: 0, deaths: 0, assists: 0, cs: 0, gold: 0, damageDealt: 0 },
+    blueTurretsDestroyed: 0,
+    redTurretsDestroyed: 0,
+    turtlesTaken: 0,
+    lordsTaken: 0
+  };
+  if (scoreboard.teamScores) {
+    scoreboard.teamScores = { blue: 0, red: 0 };
+  }
+  if (Array.isArray(scoreboard.killEvents)) scoreboard.killEvents.length = 0;
+  if (Array.isArray(scoreboard.eventFeed)) scoreboard.eventFeed.length = 0;
+
+  combatTexts.length = 0;
+  if (particles && Array.isArray(particles.particles)) particles.particles.length = 0;
+  matchTime = 0;
+  passiveGoldTimer = 0;
+  gameStats.minionsKilled = 0;
+  gameStats.turretsDestroyed = 0;
+  gameStats.damageDealt = 0;
+  gameStats.gold = 0;
+  gameStats.deaths = 0;
+
+  if (typeof window !== "undefined") {
+    window.player = null;
+    window.selectedHero = null;
+    window.objectiveManager = objectiveManager;
+    window.gameStats = gameStats;
+    window.bots = bots;
+  }
+}
+
 function selectMatchMode(mode) {
   matchMode = mode;
+  isFormatReset = true;
+  resetGameForNewFormat();
   activeSlot = { team: "blue", index: 0 };
   document.querySelectorAll(".mode-card").forEach(c => {
     c.classList.toggle("selected", c.getAttribute("data-mode") === mode);
@@ -740,16 +787,18 @@ function startMatch() {
   }
 
   // Preserve progression when changing hero mid-match (player, ally bots, enemy bots)
-  const prevHeroLevel = (selectedHero && selectedHero.level > 1) ? selectedHero.level : 1;
-  const prevHeroExp = (selectedHero && selectedHero.exp) ? selectedHero.exp : 0;
-  const prevHeroSkillLevels = (selectedHero && selectedHero.skillLevels) ? JSON.parse(JSON.stringify(selectedHero.skillLevels)) : null;
-  const prevHeroSkillPoints = selectedHero ? selectedHero.skillPoints : 1;
-  const prevHeroHpRatio = (selectedHero && selectedHero.maxHp > 0) ? (selectedHero.hp / selectedHero.maxHp) : 1;
+  // Only preserve progression if this is NOT a format reset
+  const shouldPreserve = !isFormatReset && selectedHero && selectedHero.level > 1;
+  const prevHeroLevel = shouldPreserve ? selectedHero.level : 1;
+  const prevHeroExp = shouldPreserve ? (selectedHero.exp || 0) : 0;
+  const prevHeroSkillLevels = (shouldPreserve && selectedHero.skillLevels) ? JSON.parse(JSON.stringify(selectedHero.skillLevels)) : null;
+  const prevHeroSkillPoints = shouldPreserve ? selectedHero.skillPoints : 1;
+  const prevHeroHpRatio = (shouldPreserve && selectedHero.maxHp > 0) ? (selectedHero.hp / selectedHero.maxHp) : 1;
 
   // Bot states mapped by team and index
   const prevBlueBotStates = [];
   const prevRedBotStates = [];
-  if (Array.isArray(bots) && bots.length > 0) {
+  if (shouldPreserve && Array.isArray(bots) && bots.length > 0) {
     bots.filter(b => b.team === "BLUE").forEach(b => {
       prevBlueBotStates.push({
         level: b.level,
@@ -853,6 +902,8 @@ function startMatch() {
 
   // Snap camera directly to hero
   updateCamera(true);
+
+  isFormatReset = false;
 
   if (typeof window !== "undefined") {
     window.player = selectedHero;
@@ -1033,32 +1084,8 @@ function triggerSkill(slot, customTargetX, customTargetY) {
 }
 
 function resetGame() {
-  disarmSkill(false);
-  map = new GameMap(GAME.MAP.WIDTH, GAME.MAP.HEIGHT, GAME.TILE_SIZE);
-  minionManager = new MinionManager();
-  skillManager = new SkillManager();
-  objectiveManager = new ObjectiveManager();
-  itemShop = new ItemShop();
-  selectedHero = null;
-  bots = [];
-  enemyBot = null;
-  scoreboard.stats = {
-    player: { kills: 0, deaths: 0, assists: 0, cs: 0, gold: 0, damageDealt: 0 },
-    bot: { kills: 0, deaths: 0, assists: 0, cs: 0, gold: 0, damageDealt: 0 },
-    blueTurretsDestroyed: 0,
-    redTurretsDestroyed: 0,
-    turtlesTaken: 0,
-    lordsTaken: 0
-  };
-
-  combatTexts.length = 0;
-  matchTime = 0;
-  passiveGoldTimer = 0;
-  gameStats.minionsKilled = 0;
-  gameStats.turretsDestroyed = 0;
-  gameStats.damageDealt = 0;
-  gameStats.gold = 0;
-  gameStats.deaths = 0;
+  isFormatReset = true;
+  resetGameForNewFormat();
   gameState = "PLAYING";
 
   gameOverOverlay.classList.add("hidden");

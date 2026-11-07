@@ -5,6 +5,7 @@
 
 class BotHero {
   constructor(heroData, lane = "MID", team = "RED") {
+    this.heroData = heroData;
     this.id = heroData.id;
     this.name = heroData.name;
     this.role = heroData.role;
@@ -52,6 +53,7 @@ class BotHero {
 
     // Hero-specific signature burst and magical skills
     this.skills = this.initHeroSkills(heroData);
+    this.skillActionTimer = 0;
 
     // State: "LANING", "COMBAT", "RETREAT", "CLASH", "OBJECTIVE", "DEAD"
     this.state = "LANING";
@@ -137,7 +139,7 @@ class BotHero {
       tigreal: {
         q: { name: "Attack Wave", cd: 0, maxCd: 5, damage: 220, range: 250 },
         w: { name: "Sacred Hammer", cd: 0, maxCd: 8, damage: 260, range: 180 },
-        r: { name: "Implosion", cd: 0, maxCd: 25, damage: 420, range: 200 }
+        r: { name: "Implosion", cd: 0, maxCd: 25, damage: 420, range: 240 }
       },
       alucard: {
         q: { name: "Groundsplitter", cd: 0, maxCd: 6, damage: 280, range: 240 },
@@ -591,6 +593,7 @@ class BotHero {
 
     // 2. Cooldown tickers
     this.attackTimer = Math.max(0, this.attackTimer - dt);
+    this.skillActionTimer = Math.max(0, (this.skillActionTimer || 0) - dt);
     this.recallCooldown = Math.max(0, this.recallCooldown - dt);
     this.recentDamageTimer = Math.max(0, this.recentDamageTimer - dt);
     this.skills.q.cd = Math.max(0, this.skills.q.cd - dt);
@@ -728,9 +731,22 @@ class BotHero {
       }
 
       const chaseCutoff = this.getLaneFrontlineBoundary(map);
-      const isOppWithinCutoff = closestOpp ? (this.team === "RED" ? closestOpp.x >= chaseCutoff : closestOpp.x <= chaseCutoff) : false;
+      const isPastCutoff = closestOpp ? (this.team === "RED" ? closestOpp.x < chaseCutoff : closestOpp.x > chaseCutoff) : false;
 
-      if (closestOpp && distToClosestOpp < 320 && isOppWithinCutoff) {
+      // Smart combat engagement range: consider bot's maximum ability reach
+      const maxSkillReach = Math.max(
+        360,
+        (this.skills && this.skills.q) ? (this.skills.q.range || 260) : 260,
+        (this.skills && this.skills.w) ? (this.skills.w.range || 260) : 260,
+        (this.skills && this.skills.r) ? (this.skills.r.range || 320) : 320
+      );
+
+      const combatThreatRange = Math.max(380, maxSkillReach + 50);
+
+      // Bot engages if opposing hero is within reach, defending if enemy approaches
+      const shouldEngageHero = closestOpp && distToClosestOpp < combatThreatRange && (!isPastCutoff || distToClosestOpp < 240);
+
+      if (shouldEngageHero) {
         this.state = "COMBAT";
         this.engageEnemyHero(closestOpp, distToClosestOpp, dt, combatTexts, sound, particles, scoreboard, map);
       } else if (lordTarget) {
@@ -741,7 +757,7 @@ class BotHero {
         this.engageObjective(objectiveManager, dt, combatTexts, sound, particles, scoreboard);
       } else {
         this.state = "LANING";
-        this.engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard);
+        this.engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard, closestOpp, distToClosestOpp);
       }
     }
 
@@ -749,44 +765,46 @@ class BotHero {
     this.stepMovement(dt, map);
   }
 
-  engageEnemyHero(targetHero, dist, dt, combatTexts, sound, particles, scoreboard, map) {
-    const chaseCutoff = this.getLaneFrontlineBoundary(map);
+  castBotSkills(targetHero, dist, combatTexts, sound, particles, scoreboard) {
+    if (!this.skills || this.skillActionTimer > 0) return false;
+    const hid = (this.id || (this.heroData && this.heroData.id) || "").toLowerCase();
 
-    // Stop chasing if enemy is past dive cutoff
-    const isPastCutoff = this.team === "RED" ? targetHero.x < chaseCutoff : targetHero.x > chaseCutoff;
-    if (isPastCutoff) {
-      this.state = "LANING";
-      this.targetX = this.team === "RED" ? Math.max(this.x, chaseCutoff + 30) : Math.min(this.x, chaseCutoff - 30);
-      this.targetY = this.laneY;
-      return;
+    // 1. Ultimate Decision (Smart execution / initiation / buff) - Available at Level 4+
+    let shouldCastR = false;
+    const hasUlt = this.skills.r && this.skills.r.cd <= 0 && (this.level >= 4 || (this.skillLevels && this.skillLevels.r > 0));
+    if (hasUlt && dist <= this.skills.r.range) {
+      if (hid === "tigreal" && dist <= 240) shouldCastR = true; // Initiator pull & stun
+      else if (hid === "nana" && dist <= 380) shouldCastR = true; // AOE morph & stun
+      else if (hid === "pharsa" && dist <= 520) shouldCastR = true; // Artillery bombardment
+      else if (hid === "angela" && (this.hp < this.maxHp * 0.65 || targetHero.hp < targetHero.maxHp * 0.6)) shouldCastR = true; // Shield & boost
+      else if (hid === "miya" && dist <= 380) shouldCastR = true; // Conceal & attack speed steroid
+      else if (hid === "alucard" && dist <= 320) shouldCastR = true; // Lifesteal aura
+      else if (hid === "balmond" && targetHero.hp < targetHero.maxHp * 0.5) shouldCastR = true; // Execute finisher
+      else if (hid === "saber" && dist <= 260) shouldCastR = true; // Knockup finisher
+      else if (hid === "layla" && (dist <= 550 || targetHero.hp < targetHero.maxHp * 0.65)) shouldCastR = true; // Destruction rush
+      else if (hid === "gusion" && dist <= 360) shouldCastR = true; // Blade storm
+      else if (targetHero.hp < targetHero.maxHp * 0.6) shouldCastR = true; // Generic kill threat
     }
 
-    // Positioning
-    if (dist > this.attackRange * 0.85) {
-      this.targetX = this.team === "RED" ? Math.max(targetHero.x, chaseCutoff + 15) : Math.min(targetHero.x, chaseCutoff - 15);
-      this.targetY = targetHero.y;
-    } else if (dist < this.attackRange * 0.35) {
-      // Kite backwards
-      const angle = Math.atan2(this.y - targetHero.y, this.x - targetHero.x);
-      this.targetX = this.x + Math.cos(angle) * 70;
-      this.targetY = this.y + Math.sin(angle) * 70;
-    } else {
-      this.targetX = this.x;
-      this.targetY = this.y;
-    }
-
-    // Cast Ultimate (R)
-    if (this.skills.r.cd <= 0 && dist <= this.skills.r.range && targetHero.hp < targetHero.maxHp * 0.6) {
+    if (shouldCastR) {
       this.skills.r.cd = this.skills.r.maxCd;
+      this.skillActionTimer = 0.35;
       if (sound) sound.playSkill("r");
       if (particles) {
-        particles.spawnRing(targetHero.x, targetHero.y, 60, this.color, 0.5);
-        particles.spawnBurst(targetHero.x, targetHero.y, this.color, 18, 160);
+        particles.spawnRing(targetHero.x, targetHero.y, 65, this.color, 0.5);
+        particles.spawnBurst(targetHero.x, targetHero.y, this.color, 20, 160);
       }
       if (typeof targetHero.takeDamage === "function") {
         targetHero.takeDamage(this.skills.r.damage, this, combatTexts, particles, sound, scoreboard);
       } else {
         targetHero.hp -= this.skills.r.damage;
+      }
+      if ((hid === "tigreal" || hid === "nana" || hid === "saber") && typeof targetHero.applyStun === "function") {
+        targetHero.applyStun(1.4, combatTexts);
+      }
+      if (hid === "angela") {
+        this.shield = (this.shield || 0) + 1100;
+        this.hp = Math.min(this.maxHp, this.hp + 300);
       }
       if (combatTexts) {
         combatTexts.push({
@@ -798,40 +816,24 @@ class BotHero {
           maxLife: 1.2
         });
       }
+      return true;
     }
-    // Cast Skill 1 (Q)
-    else if (this.skills.q.cd <= 0 && dist <= this.skills.q.range) {
-      this.skills.q.cd = this.skills.q.maxCd;
-      if (sound) sound.playSkill("q");
-      if (particles) particles.spawnBurst(targetHero.x, targetHero.y, "#f39c12", 10, 110);
-      if (typeof targetHero.takeDamage === "function") {
-        targetHero.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
-      } else {
-        targetHero.hp -= this.skills.q.damage;
-      }
-      if (combatTexts) {
-        combatTexts.push({
-          x: targetHero.x,
-          y: targetHero.y - 20,
-          text: `[${this.team}] ${this.skills.q.name.toUpperCase()} -${this.skills.q.damage}!`,
-          color: "#f39c12",
-          life: 1.0,
-          maxLife: 1.0
-        });
-      }
-    }
-    // Cast Skill 2 (W)
-    else if (this.skills.w.cd <= 0 && dist <= this.skills.w.range) {
+
+    // 2. Skill 2 (W) Decision (Crowd-control / Dash / AOE burst)
+    if (this.skills.w && this.skills.w.cd <= 0 && dist <= this.skills.w.range) {
       this.skills.w.cd = this.skills.w.maxCd;
+      this.skillActionTimer = 0.32;
       if (sound) sound.playSkill("w");
-      if (particles) particles.spawnRing(this.x, this.y, 45, "#e67e22", 0.35);
+      if (particles) {
+        particles.spawnRing(this.x, this.y, 45, "#e67e22", 0.35);
+        particles.spawnBurst(targetHero.x, targetHero.y, "#e67e22", 12, 120);
+      }
       if (typeof targetHero.takeDamage === "function") {
         targetHero.takeDamage(this.skills.w.damage, this, combatTexts, particles, sound, scoreboard);
       } else {
         targetHero.hp -= this.skills.w.damage;
       }
-      // Angela Puppet String or Nana Molina morph stun CC
-      const hid = (this.heroData && this.heroData.id) ? this.heroData.id.toLowerCase() : "";
+      // CC checks
       if ((hid === "angela" || hid === "nana" || hid === "tigreal") && typeof targetHero.applyStun === "function") {
         targetHero.applyStun(1.0, combatTexts);
       }
@@ -845,12 +847,88 @@ class BotHero {
           maxLife: 1.0
         });
       }
+      return true;
     }
+
+    // 3. Skill 1 (Q) Decision (Poke / Burst / Wave Damage)
+    if (this.skills.q && this.skills.q.cd <= 0 && dist <= this.skills.q.range) {
+      this.skills.q.cd = this.skills.q.maxCd;
+      this.skillActionTimer = 0.3;
+      if (sound) sound.playSkill("q");
+      if (particles) {
+        particles.spawnBurst(targetHero.x, targetHero.y, "#f39c12", 12, 110);
+      }
+      if (typeof targetHero.takeDamage === "function") {
+        targetHero.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
+      } else {
+        targetHero.hp -= this.skills.q.damage;
+      }
+      if (hid === "angela" && this.hp < this.maxHp) {
+        this.hp = Math.min(this.maxHp, this.hp + 240);
+        if (combatTexts) {
+          combatTexts.push({ x: this.x, y: this.y - 25, text: "+240 HP", color: "#2ecc71", life: 1.0, maxLife: 1.0 });
+        }
+      }
+      if (combatTexts) {
+        combatTexts.push({
+          x: targetHero.x,
+          y: targetHero.y - 20,
+          text: `[${this.team}] ${this.skills.q.name.toUpperCase()} -${this.skills.q.damage}!`,
+          color: "#f39c12",
+          life: 1.0,
+          maxLife: 1.0
+        });
+      }
+      return true;
+    }
+
+    return false;
+  }
+
+  engageEnemyHero(targetHero, dist, dt, combatTexts, sound, particles, scoreboard, map) {
+    const chaseCutoff = this.getLaneFrontlineBoundary(map);
+
+    // Stop deep tower-diving past cutoff unless enemy is low and within striking range
+    const isPastCutoff = this.team === "RED" ? targetHero.x < chaseCutoff : targetHero.x > chaseCutoff;
+    if (isPastCutoff && targetHero.hp > targetHero.maxHp * 0.25 && dist > 180) {
+      this.state = "LANING";
+      this.targetX = this.team === "RED" ? Math.max(this.x, chaseCutoff + 30) : Math.min(this.x, chaseCutoff - 30);
+      this.targetY = this.laneY;
+      return;
+    }
+
+    // Positioning: Ranged heroes kite and keep distance; Melee heroes close in
+    const isRanged = this.attackRange > 130;
+    if (isRanged) {
+      if (dist > this.attackRange * 0.9) {
+        this.targetX = targetHero.x;
+        this.targetY = targetHero.y;
+      } else if (dist < this.attackRange * 0.45) {
+        // Kite backwards smoothly
+        const angle = Math.atan2(this.y - targetHero.y, this.x - targetHero.x);
+        this.targetX = this.x + Math.cos(angle) * 80;
+        this.targetY = this.y + Math.sin(angle) * 80;
+      } else {
+        this.targetX = this.x;
+        this.targetY = this.y;
+      }
+    } else {
+      // Melee gap closing
+      if (dist > this.attackRange * 0.85) {
+        this.targetX = targetHero.x;
+        this.targetY = targetHero.y;
+      } else {
+        this.targetX = this.x;
+        this.targetY = this.y;
+      }
+    }
+
+    // High-IQ Bot Skill Combo Rotation
+    this.castBotSkills(targetHero, dist, combatTexts, sound, particles, scoreboard);
 
     // Basic Attack
     if (this.attackTimer <= 0 && dist <= this.attackRange) {
       this.attackTimer = this.attackCooldown;
-      const isRanged = this.attackRange > 130;
       if (sound) {
         if (isRanged) sound.playShoot();
         else if (sound.playSlash) sound.playSlash();
@@ -913,8 +991,44 @@ class BotHero {
       this.targetY = this.y;
     }
 
+    // Cast Q or W to DPS objective boss faster
+    if (this.skills && this.skillActionTimer <= 0 && dist <= Math.max(this.attackRange + 40, (this.skills.q ? this.skills.q.range : 260))) {
+      if (this.skills.q && this.skills.q.cd <= 0) {
+        this.skills.q.cd = this.skills.q.maxCd;
+        this.skillActionTimer = 0.3;
+        if (sound) sound.playSkill("q");
+        if (particles) particles.spawnBurst(targetBoss.x, targetBoss.y, "#f39c12", 10, 100);
+        if (typeof targetBoss.takeDamage === "function") {
+          targetBoss.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
+        } else {
+          targetBoss.hp = Math.max(0, targetBoss.hp - this.skills.q.damage);
+          targetBoss.lastAttacker = this;
+        }
+      } else if (this.skills.w && this.skills.w.cd <= 0 && dist <= (this.skills.w.range || 260)) {
+        this.skills.w.cd = this.skills.w.maxCd;
+        this.skillActionTimer = 0.3;
+        if (sound) sound.playSkill("w");
+        if (particles) particles.spawnBurst(targetBoss.x, targetBoss.y, "#e67e22", 10, 100);
+        if (typeof targetBoss.takeDamage === "function") {
+          targetBoss.takeDamage(this.skills.w.damage, this, combatTexts, particles, sound, scoreboard);
+        } else {
+          targetBoss.hp = Math.max(0, targetBoss.hp - this.skills.w.damage);
+          targetBoss.lastAttacker = this;
+        }
+      }
+    }
+
     if (dist <= this.attackRange + 25 && this.attackTimer <= 0) {
       this.attackTimer = this.attackCooldown;
+      const isRanged = this.attackRange > 130;
+      if (sound) {
+        if (isRanged) sound.playShoot();
+        else if (sound.playSlash) sound.playSlash();
+        else sound.playAttack();
+      }
+      if (particles && !isRanged && particles.spawnSlash) {
+        particles.spawnSlash(this.x, this.y, targetBoss.x, targetBoss.y, this.color, 40);
+      }
       if (typeof targetBoss.takeDamage === "function") {
         targetBoss.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
       } else {
@@ -934,15 +1048,55 @@ class BotHero {
       this.targetY = this.y;
     }
 
+    // Cast Q or W to burn summoned Lord faster
+    if (this.skills && this.skillActionTimer <= 0 && dist <= Math.max(this.attackRange + 40, (this.skills.q ? this.skills.q.range : 260))) {
+      if (this.skills.q && this.skills.q.cd <= 0) {
+        this.skills.q.cd = this.skills.q.maxCd;
+        this.skillActionTimer = 0.3;
+        if (sound) sound.playSkill("q");
+        if (particles) particles.spawnBurst(lord.x, lord.y, "#f39c12", 10, 100);
+        if (typeof lord.takeDamage === "function") {
+          lord.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
+        }
+      } else if (this.skills.w && this.skills.w.cd <= 0 && dist <= (this.skills.w.range || 260)) {
+        this.skills.w.cd = this.skills.w.maxCd;
+        this.skillActionTimer = 0.3;
+        if (sound) sound.playSkill("w");
+        if (particles) particles.spawnBurst(lord.x, lord.y, "#e67e22", 10, 100);
+        if (typeof lord.takeDamage === "function") {
+          lord.takeDamage(this.skills.w.damage, this, combatTexts, particles, sound, scoreboard);
+        }
+      }
+    }
+
     if (dist <= this.attackRange + 25 && this.attackTimer <= 0) {
       this.attackTimer = this.attackCooldown;
+      const isRanged = this.attackRange > 130;
+      if (sound) {
+        if (isRanged) sound.playShoot();
+        else if (sound.playSlash) sound.playSlash();
+        else sound.playAttack();
+      }
+      if (particles && !isRanged && particles.spawnSlash) {
+        particles.spawnSlash(this.x, this.y, lord.x, lord.y, this.color, 40);
+      }
       if (typeof lord.takeDamage === "function") {
         lord.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
       }
     }
   }
 
-  engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard) {
+  engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard, closestOpp = null, distToClosestOpp = Infinity) {
+    // 0. Poke opposing hero during laning if in skill range
+    const maxSkillReach = Math.max(
+      260,
+      (this.skills && this.skills.q) ? (this.skills.q.range || 260) : 260,
+      (this.skills && this.skills.w) ? (this.skills.w.range || 260) : 260
+    );
+    if (closestOpp && distToClosestOpp <= maxSkillReach && this.skillActionTimer <= 0) {
+      this.castBotSkills(closestOpp, distToClosestOpp, combatTexts, sound, particles, scoreboard);
+    }
+
     // 1. Search for nearest Opposing Minion in current lane
     let nearestMinion = null;
     let minDist = Infinity;
@@ -962,14 +1116,18 @@ class BotHero {
     }
 
     // Cast Q or W to fast-clear wave when clustered
-    if (clusterCount >= 2 && nearestMinion && minDist <= 240) {
-      if (this.skills.q.cd <= 0) {
+    if (clusterCount >= 2 && nearestMinion && minDist <= 240 && this.skillActionTimer <= 0) {
+      if (this.skills.q && this.skills.q.cd <= 0) {
         this.skills.q.cd = this.skills.q.maxCd;
+        this.skillActionTimer = 0.3;
         if (sound) sound.playSkill("q");
+        if (particles) particles.spawnBurst(nearestMinion.x, nearestMinion.y, "#f39c12", 8, 90);
         nearestMinion.hp -= this.skills.q.damage;
-      } else if (this.skills.w.cd <= 0) {
+      } else if (this.skills.w && this.skills.w.cd <= 0) {
         this.skills.w.cd = this.skills.w.maxCd;
+        this.skillActionTimer = 0.3;
         if (sound) sound.playSkill("w");
+        if (particles) particles.spawnBurst(nearestMinion.x, nearestMinion.y, "#e67e22", 8, 90);
         nearestMinion.hp -= this.skills.w.damage;
       }
     }
@@ -992,6 +1150,9 @@ class BotHero {
           else if (sound.playSlash) sound.playSlash();
           else sound.playAttack();
         }
+        if (particles && !isRanged && particles.spawnSlash) {
+          particles.spawnSlash(this.x, this.y, nearestMinion.x, nearestMinion.y, this.color, 36);
+        }
         nearestMinion.hp -= this.attackDamage;
         if (nearestMinion.hp <= 0) {
           this.cs++;
@@ -1012,15 +1173,49 @@ class BotHero {
       if (nearTurret) {
         this.targetX = this.x;
         this.targetY = this.y;
+
+        // Bot casts Q to damage turret faster
+        if (this.skills && this.skills.q && this.skills.q.cd <= 0 && this.skillActionTimer <= 0) {
+          this.skills.q.cd = this.skills.q.maxCd;
+          this.skillActionTimer = 0.3;
+          if (sound) sound.playSkill("q");
+          if (typeof nearTurret.takeDamage === "function") {
+            nearTurret.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
+          } else {
+            nearTurret.hp -= this.skills.q.damage;
+            nearTurret.lastAttacker = this;
+          }
+          if (combatTexts) {
+            combatTexts.push({
+              x: nearTurret.worldX,
+              y: nearTurret.worldY - 25,
+              text: `[${this.team}] ${this.skills.q.name.toUpperCase()} -${this.skills.q.damage}!`,
+              color: "#f39c12",
+              life: 1.0,
+              maxLife: 1.0
+            });
+          }
+        }
+
         if (this.attackTimer <= 0) {
           this.attackTimer = this.attackCooldown;
-          if (sound && sound.playAttack) sound.playAttack();
+          const isRanged = this.attackRange > 130;
+          if (sound) {
+            if (isRanged) sound.playShoot();
+            else if (sound.playSlash) sound.playSlash();
+            else sound.playAttack();
+          }
+          if (particles) {
+            if (!isRanged && particles.spawnSlash) {
+              particles.spawnSlash(this.x, this.y, nearTurret.worldX, nearTurret.worldY, this.color, 40);
+            }
+            particles.spawnBurst(nearTurret.worldX, nearTurret.worldY, "#ffd700", 6, 80);
+          }
           if (typeof nearTurret.takeDamage === "function") {
             nearTurret.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
           } else {
             nearTurret.lastAttacker = this;
             nearTurret.hp -= this.attackDamage;
-            if (particles) particles.spawnBurst(nearTurret.worldX, nearTurret.worldY, "#ffd700", 6, 80);
           }
         }
       } else {

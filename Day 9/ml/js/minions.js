@@ -77,8 +77,8 @@ class Minion {
     // 1. Verify existing target
     if (this.target) {
       const isDead = this.target.hp <= 0 || this.target.isDead || this.target.destroyed || (this.target.crystalHp !== undefined && this.target.crystalHp <= 0);
-      const tx = this.target.x !== undefined ? this.target.x : this.target.worldX;
-      const ty = this.target.y !== undefined ? this.target.y : this.target.worldY;
+      const tx = this.target.worldX !== undefined ? this.target.worldX : this.target.x;
+      const ty = this.target.worldY !== undefined ? this.target.worldY : this.target.y;
       const d = getDistance(this.x, this.y, tx, ty);
       if (isDead || d > this.attackRange + 45) {
         this.target = null;
@@ -154,8 +154,8 @@ class Minion {
 
     // 3. Combat or Lane Movement
     if (this.target) {
-      const tx = this.target.x !== undefined ? this.target.x : this.target.worldX;
-      const ty = this.target.y !== undefined ? this.target.y : this.target.worldY;
+      const tx = this.target.worldX !== undefined ? this.target.worldX : this.target.x;
+      const ty = this.target.worldY !== undefined ? this.target.worldY : this.target.y;
       const d = getDistance(this.x, this.y, tx, ty);
 
       if (d <= this.attackRange) {
@@ -383,4 +383,13 @@ class MinionManager {
       minion.render(ctx, camera);
     });
   }
+}
+
+if (typeof window !== "undefined") {
+  window.Minion = Minion;
+  window.MinionManager = MinionManager;
+}
+if (typeof global !== "undefined") {
+  global.Minion = Minion;
+  global.MinionManager = MinionManager;
 }
