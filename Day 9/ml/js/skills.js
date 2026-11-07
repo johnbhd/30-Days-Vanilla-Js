@@ -35,22 +35,22 @@ const HERO_SKILLS = {
     r: { name: "Fission Wave", cd: 24, type: "ultimate_wave", range: 500, indicator: "line", desc: "50% lifesteal aura and massive shockwave" }
   },
   balmond: {
-    q: { name: "Soul Lock", cd: 6, type: "dash_knock", range: 140, indicator: "dash", desc: "Charges forward dealing damage and knockback" },
+    q: { name: "Soul Lock", cd: 6, type: "dash_knock", range: 180, indicator: "dash", desc: "Charges forward dealing 340 physical damage, knocking back and slowing enemies by 40%" },
     w: { name: "Cyclone Sweep", cd: 5, type: "spin_ticks", desc: "Spins giant axe dealing multi-tick damage" },
-    e: { name: "Bloodthirst", cd: 10, type: "heal", desc: "War cry restoring 250 HP instantly" },
-    r: { name: "Lethal Counter", cd: 24, type: "ultimate_execute", range: 120, radius: 85, indicator: "circle_aoe", desc: "Slams axe down dealing heavy execute damage" }
+    e: { name: "Bloodthirst", cd: 10, type: "heal", desc: "War cry restoring 320 HP + 10% max HP instantly" },
+    r: { name: "Lethal Counter", cd: 24, type: "ultimate_execute", range: 160, radius: 105, indicator: "circle_aoe", desc: "Slams axe down dealing 520 base damage + 28% of target's lost HP as true execute damage" }
   },
   gusion: {
-    q: { name: "Sword Spike", cd: 3.5, type: "dagger_teleport", range: 420, indicator: "line", desc: "Throws piercing dagger dealing 320 damage; recast dashes behind target" },
-    w: { name: "Shadowblade", cd: 4.5, type: "dagger_fan", range: 380, indicator: "cone", desc: "Throws fan of 5 high-damage daggers dealing 210 each (1050+ burst) and return" },
+    q: { name: "Sword Spike", cd: 3.5, type: "dagger_teleport", range: 420, indicator: "line", desc: "Throws piercing dagger dealing 440 damage; recast dashes behind target" },
+    w: { name: "Shadowblade", cd: 4.5, type: "dagger_fan", range: 380, indicator: "cone", desc: "Throws fan of 5 high-damage daggers dealing 280 each (1400+ burst) and return" },
     e: { name: "Incandescence", cd: 9, type: "dash_reset", range: 140, indicator: "dash", desc: "Dashes forward and immediately resets Q and W cooldowns" },
-    r: { name: "Blade Barrage", cd: 20, type: "ultimate_storm", desc: "Unleashes 12 hyper-velocity blades in all directions dealing 280 burst each" }
+    r: { name: "Blade Barrage", cd: 20, type: "ultimate_storm", desc: "Unleashes 12 hyper-velocity blades in all directions dealing 380 burst each" }
   },
   saber: {
-    q: { name: "Orbiting Swords", cd: 6, type: "swords_orbit", desc: "Spawns 4 spinning swords that strike enemies" },
+    q: { name: "Orbiting Swords", cd: 6, type: "swords_orbit", desc: "Spawns 4 spinning swords circling Saber that strike enemies for 85 contact damage and fly to target on attacks" },
     w: { name: "Charge", cd: 6, type: "dash", range: 140, indicator: "dash", desc: "Dashes forward slicing through enemy lines" },
     e: { name: "Enemy's Bane", cd: 8, type: "armor_shred", range: 220, indicator: "target", desc: "Armor-piercing strike dealing true damage" },
-    r: { name: "Triple Sweep", cd: 26, type: "ultimate_execute", range: 260, indicator: "target", desc: "Locks onto target, knocks airborne with 3 slashes" }
+    r: { name: "Triple Sweep", cd: 26, type: "ultimate_sweep", range: 260, indicator: "target", desc: "Locks onto target, knocks airborne with 3 slashes" }
   },
   pharsa: {
     q: { name: "Curse of Crow", cd: 4.5, type: "aoe", radius: 60, range: 460, indicator: "circle_aoe", desc: "Crow mark dealing 310 magic damage and stunning enemies" },
@@ -433,7 +433,6 @@ class SkillManager {
       }
 
       case "dash":
-      case "dash_knock":
       case "dash_push": {
         const origX = hero.x;
         const origY = hero.y;
@@ -459,6 +458,86 @@ class SkillManager {
         break;
       }
 
+      case "dash_knock": {
+        // Balmond Soul Lock: charges forward, knocking back and damaging enemies
+        const origX = hero.x;
+        const origY = hero.y;
+        const mapMaxX = map ? map.width * map.tileSize : 1280;
+        const mapMaxY = map ? map.height * map.tileSize : 720;
+        let destX = clamp(hero.x + dirX * 180, 60, mapMaxX - 60);
+        let destY = clamp(hero.y + dirY * 180, 60, mapMaxY - 60);
+
+        const safePos = this.resolveTurretCollision(destX, destY, map, origX, origY);
+        hero.x = safePos.x;
+        hero.y = safePos.y;
+        hero.targetX = hero.x;
+        hero.targetY = hero.y;
+
+        if (particles) {
+          if (particles.spawnSlash) particles.spawnSlash(origX, origY, destX, destY, "#c0392b", 55);
+          particles.spawnRing(hero.x, hero.y, 65, "#e74c3c", 0.4);
+          particles.spawnBurst(hero.x, hero.y, "#c0392b", 16, 140);
+        }
+        if (sound && sound.playSlash) sound.playSlash();
+
+        const dashDmg = Math.round(340 * dmgMultiplier);
+        this.activeAOEs.push({
+          type: "circle",
+          x: hero.x, y: hero.y,
+          radius: 65,
+          damage: dashDmg,
+          team: hero.team,
+          color: "rgba(192, 57, 43, 0.6)",
+          life: 0.35, maxLife: 0.35,
+          isCC: true,
+          ccDuration: 0.5
+        });
+
+        const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
+        enemies.forEach(e => {
+          if (getDistance(hero.x, hero.y, e.x, e.y) <= 75) {
+            this.applySkillDamage(e, dashDmg, hero, combatTexts, gameStats, scoreboard, sound, particles);
+            if (typeof e.applyStun === "function") {
+              e.applyStun(0.5, combatTexts);
+            }
+            if (e.stats && e.stats.spd) {
+              e.slowTimer = 2.0;
+            }
+          }
+        });
+        break;
+      }
+
+      case "swords_orbit": {
+        // Saber Orbiting Swords: 4 flying swords circle Saber dealing contact damage
+        this.saberSwords = {
+          active: true,
+          timer: 5.0,
+          maxTimer: 5.0,
+          count: 4,
+          angle: 0,
+          damageTickTimer: 0.05,
+          heroRef: hero,
+          team: hero.team
+        };
+        if (sound && sound.playSkill) sound.playSkill("q");
+        if (particles) {
+          particles.spawnRing(hero.x, hero.y, 55, "#00d2d3", 0.5);
+          particles.spawnBurst(hero.x, hero.y, "#00ffff", 16, 130);
+        }
+        if (combatTexts) {
+          combatTexts.push({
+            x: hero.x,
+            y: hero.y - 25,
+            text: "ORBITING SWORDS!",
+            color: "#00d2d3",
+            life: 1.0,
+            maxLife: 1.0
+          });
+        }
+        break;
+      }
+
       case "spin_ticks": {
         this.cycloneTimer = 3.0;
         break;
@@ -466,10 +545,24 @@ class SkillManager {
 
       case "heal": {
         if (!hero.isDead && hero.hp > 0) {
-          hero.hp = Math.min(hero.maxHp, hero.hp + Math.round(280 * dmgMultiplier));
+          const healBonus = hero.id === "balmond" ? Math.round(hero.maxHp * 0.10) : 0;
+          const healAmt = Math.round((320 + healBonus) * dmgMultiplier);
+          hero.hp = Math.min(hero.maxHp, hero.hp + healAmt);
           if (combatTexts) {
-            combatTexts.push({ x: hero.x, y: hero.y - 20, text: `+${Math.round(280 * dmgMultiplier)} HP`, color: "#2ecc71", life: 1, maxLife: 1 });
+            combatTexts.push({
+              x: hero.x,
+              y: hero.y - 20,
+              text: hero.id === "balmond" ? `WAR CRY! +${healAmt} HP` : `+${healAmt} HP`,
+              color: "#2ecc71",
+              life: 1,
+              maxLife: 1
+            });
           }
+          if (particles) {
+            particles.spawnRing(hero.x, hero.y, 50, "#2ecc71", 0.5);
+            particles.spawnBurst(hero.x, hero.y, "#2ecc71", 12, 110);
+          }
+          if (sound && sound.playHeal) sound.playHeal();
         }
         break;
       }
@@ -511,24 +604,24 @@ class SkillManager {
       }
 
       case "dagger_fan": {
-        // Gusion Shadowblade: 5 daggers dealing shotgun burst blade damage
+        // Gusion Shadowblade: 5 daggers dealing shotgun burst blade damage (increased damage)
         for (let i = -2; i <= 2; i++) {
           const angle = Math.atan2(dirY, dirX) + (i * 0.16);
           this.activeProjectiles.push({
             x: hero.x, y: hero.y,
-            vx: Math.cos(angle) * 520, vy: Math.sin(angle) * 520,
-            radius: 6, damage: Math.round(210 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 0.8
+            vx: Math.cos(angle) * 540, vy: Math.sin(angle) * 540,
+            radius: 6, damage: Math.round(280 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 0.85
           });
         }
         break;
       }
 
       case "dagger_teleport": {
-        // Gusion Sword Spike: sharp dagger dealing heavy burst blade damage
+        // Gusion Sword Spike: sharp dagger dealing heavy burst blade damage (increased damage)
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,
-          vx: dirX * 620, vy: dirY * 620,
-          radius: 8, damage: Math.round(320 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 0.85
+          vx: dirX * 640, vy: dirY * 640,
+          radius: 8, damage: Math.round(440 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 0.85
         });
         break;
       }
@@ -611,16 +704,92 @@ class SkillManager {
 
   executeUltimate(type, hero, targetX, targetY, dirX, dirY, map, minions, objectives, combatTexts, enemyBot, sound, particles, gameStats, dmgMultiplier = 1) {
     if (type === "ultimate_execute") {
-      // Execute slam
+      // Balmond Lethal Counter: giant execute slam dealing base + 28% missing HP
+      const slamDist = Math.min(140, Math.hypot(targetX - hero.x, targetY - hero.y) || 70);
+      const slamX = hero.x + dirX * slamDist;
+      const slamY = hero.y + dirY * slamDist;
+
+      if (particles) {
+        particles.spawnRing(slamX, slamY, 105, "#c0392b", 0.6);
+        particles.spawnBurst(slamX, slamY, "#e74c3c", 24, 180);
+        particles.spawnBurst(slamX, slamY, "#ffd700", 12, 130);
+        if (particles.spawnSlash) {
+          particles.spawnSlash(hero.x, hero.y, slamX, slamY, "#c0392b", 60);
+        }
+      }
+      if (sound && sound.playSlash) sound.playSlash();
+
       this.activeAOEs.push({
         type: "circle",
-        x: hero.x + dirX * 60, y: hero.y + dirY * 60,
-        radius: 85,
-        damage: Math.round(480 * dmgMultiplier),
+        x: slamX, y: slamY,
+        radius: 105,
+        damage: Math.round(520 * dmgMultiplier),
         team: hero.team,
-        color: "rgba(231, 76, 60, 0.6)",
-        life: 0.6, maxLife: 0.6
+        color: "rgba(192, 57, 43, 0.65)",
+        life: 0.55, maxLife: 0.55
       });
+
+      const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
+      enemies.forEach(e => {
+        if (getDistance(slamX, slamY, e.x, e.y) <= 110) {
+          const missingHp = Math.max(0, (e.maxHp || 1200) - e.hp);
+          const executeBonus = Math.round(missingHp * 0.28);
+          const totalDmg = Math.round((520 + executeBonus) * dmgMultiplier);
+          this.applySkillDamage(e, totalDmg, hero, combatTexts, gameStats, (typeof scoreboard !== "undefined" ? scoreboard : null), sound, particles);
+          if (combatTexts) {
+            combatTexts.push({
+              x: e.x,
+              y: e.y - 35,
+              text: `LETHAL EXECUTE! -${totalDmg}`,
+              color: "#e74c3c",
+              life: 1.4,
+              maxLife: 1.4
+            });
+          }
+        }
+      });
+    } else if (type === "ultimate_sweep") {
+      // Saber Triple Sweep: locks onto enemy and delivers 3 airborne slashes
+      const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
+      let target = null;
+      let closest = 280;
+      enemies.forEach(e => {
+        const d = getDistance(hero.x, hero.y, e.x, e.y);
+        if (d < closest) {
+          closest = d;
+          target = e;
+        }
+      });
+
+      const strikeX = target ? target.x : hero.x + dirX * 120;
+      const strikeY = target ? target.y : hero.y + dirY * 120;
+
+      if (particles) {
+        particles.spawnRing(strikeX, strikeY, 65, "#3498db", 0.6);
+        particles.spawnBurst(strikeX, strikeY, "#3498db", 20, 160);
+        if (particles.spawnSlash) {
+          particles.spawnSlash(hero.x, hero.y, strikeX, strikeY, "#3498db", 55);
+        }
+      }
+      if (sound && sound.playSlash) sound.playSlash();
+
+      if (target) {
+        const sweepDmg = Math.round(780 * dmgMultiplier);
+        this.applySkillDamage(target, sweepDmg, hero, combatTexts, gameStats, (typeof scoreboard !== "undefined" ? scoreboard : null), sound, particles);
+        if (typeof target.applyStun === "function") {
+          target.applyStun(1.2, combatTexts);
+        }
+        if (combatTexts) {
+          combatTexts.push({
+            x: target.x,
+            y: target.y - 30,
+            text: `TRIPLE SWEEP -${sweepDmg}!`,
+            color: "#3498db",
+            life: 1.3,
+            maxLife: 1.3
+          });
+        }
+      }
     } else if (type === "ultimate_wave") {
       this.activeBuffs.lifesteal = 0.5;
       this.activeProjectiles.push({
@@ -629,7 +798,7 @@ class SkillManager {
         radius: 20, damage: Math.round(420 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 1.2
       });
     } else if (type === "ultimate_storm") {
-      // Gusion Blade Barrage: dashes forward, resets Q & W cooldowns, and fires 12 ring blades
+      // Gusion Blade Barrage: dashes forward, resets Q & W cooldowns, and fires 12 ring blades (increased damage)
       const origX = hero.x;
       const origY = hero.y;
       const mapMaxX = map ? map.width * map.tileSize : 1280;
@@ -654,8 +823,8 @@ class SkillManager {
         const angle = (Math.PI * 2 / 12) * i;
         this.activeProjectiles.push({
           x: hero.x, y: hero.y,
-          vx: Math.cos(angle) * 460, vy: Math.sin(angle) * 460,
-          radius: 6, damage: Math.round(280 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 0.95
+          vx: Math.cos(angle) * 480, vy: Math.sin(angle) * 480,
+          radius: 7, damage: Math.round(380 * dmgMultiplier), team: hero.team, color: "#9b59b6", life: 0.95
         });
       }
     } else if (type === "ultimate_meteor") {
@@ -867,6 +1036,31 @@ class SkillManager {
       });
     }
 
+    // Saber Orbiting Swords ticks (Saber Q)
+    if (this.saberSwords && this.saberSwords.active) {
+      this.saberSwords.timer -= dt;
+      this.saberSwords.angle += dt * 6.0;
+      this.saberSwords.damageTickTimer -= dt;
+
+      if (this.saberSwords.damageTickTimer <= 0) {
+        this.saberSwords.damageTickTimer = 0.32;
+        const enemies = this.getAllEnemies(hero, minions, map, objectives, enemyBot);
+        enemies.forEach(e => {
+          if (getDistance(hero.x, hero.y, e.x, e.y) <= 72) {
+            const swordDmg = Math.round(85 * (hero.attackDamage ? (hero.attackDamage / 120) : 1));
+            this.applySkillDamage(e, swordDmg, hero, combatTexts, gameStats, scoreboard, sound, particles);
+            if (particles && particles.spawnSlash) {
+              particles.spawnSlash(hero.x, hero.y, e.x, e.y, "#00d2d3", 30);
+            }
+          }
+        });
+      }
+
+      if (this.saberSwords.timer <= 0 || (hero && hero.isDead)) {
+        this.saberSwords.active = false;
+      }
+    }
+
     // 3. Projectiles movement & collision
     for (let i = this.activeProjectiles.length - 1; i >= 0; i--) {
       const p = this.activeProjectiles[i];
@@ -994,6 +1188,57 @@ class SkillManager {
       ctx.fill();
       ctx.restore();
     });
+
+    // Render Saber's Orbiting Swords
+    if (this.saberSwords && this.saberSwords.active && this.saberSwords.heroRef && !this.saberSwords.heroRef.isDead) {
+      const h = this.saberSwords.heroRef;
+      const sx = h.x - camera.x;
+      const sy = h.y - camera.y;
+
+      ctx.save();
+      // Orbit guide ring
+      ctx.strokeStyle = "rgba(0, 210, 211, 0.35)";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 52, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 4 Orbiting swords / glowing dots
+      for (let k = 0; k < 4; k++) {
+        const sAngle = this.saberSwords.angle + (k * Math.PI / 2);
+        const px = sx + Math.cos(sAngle) * 52;
+        const py = sy + Math.sin(sAngle) * 52;
+
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(sAngle + Math.PI / 2);
+
+        // Glowing sword dagger shape
+        ctx.shadowColor = "#00d2d3";
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = "#00ffff";
+        ctx.beginPath();
+        ctx.moveTo(0, -10);
+        ctx.lineTo(4, 0);
+        ctx.lineTo(0, 10);
+        ctx.lineTo(-4, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // Core dot
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+      ctx.restore();
+    }
   }
 }
 

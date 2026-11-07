@@ -56,12 +56,69 @@ class Renderer {
       this.ctx.fill();
       this.ctx.restore();
     }
+
+    // Render Saber's Orbiting Swords (Skill 1 - Q)
+    if (skillManager && skillManager.saberSwords && skillManager.saberSwords.active && !hero.isDead) {
+      this.renderOrbitingSwords(hero, camera, skillManager.saberSwords);
+    }
   }
 
   renderBot(bot, camera) {
     if (bot) {
       bot.render(this.ctx, camera);
+      if (bot.saberSwords && bot.saberSwords.active && !bot.isDead) {
+        this.renderOrbitingSwords(bot, camera, bot.saberSwords);
+      }
     }
+  }
+
+  renderOrbitingSwords(unit, camera, swordsData) {
+    const sx = unit.x - camera.x;
+    const sy = unit.y - camera.y;
+
+    this.ctx.save();
+    // Orbit guide ring
+    this.ctx.strokeStyle = "rgba(0, 210, 211, 0.35)";
+    this.ctx.lineWidth = 1.5;
+    this.ctx.beginPath();
+    this.ctx.arc(sx, sy, 52, 0, Math.PI * 2);
+    this.ctx.stroke();
+
+    // 4 Orbiting swords with glowing blade shapes and center dots
+    for (let k = 0; k < 4; k++) {
+      const sAngle = swordsData.angle + (k * Math.PI / 2);
+      const px = sx + Math.cos(sAngle) * 52;
+      const py = sy + Math.sin(sAngle) * 52;
+
+      this.ctx.save();
+      this.ctx.translate(px, py);
+      this.ctx.rotate(sAngle + Math.PI / 2);
+
+      // Glowing sword dagger shape
+      this.ctx.shadowColor = "#00d2d3";
+      this.ctx.shadowBlur = 10;
+      this.ctx.fillStyle = "#00ffff";
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, -10);
+      this.ctx.lineTo(4, 0);
+      this.ctx.lineTo(0, 10);
+      this.ctx.lineTo(-4, 0);
+      this.ctx.closePath();
+      this.ctx.fill();
+
+      this.ctx.strokeStyle = "#ffffff";
+      this.ctx.lineWidth = 1.2;
+      this.ctx.stroke();
+
+      // Core dot
+      this.ctx.fillStyle = "#ffffff";
+      this.ctx.beginPath();
+      this.ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      this.ctx.restore();
+    }
+    this.ctx.restore();
   }
 
   renderParticles(particleEngine, camera) {

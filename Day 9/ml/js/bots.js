@@ -107,9 +107,9 @@ class BotHero {
     // Signature kit presets with custom burst and magical damages
     const signatureKits = {
       gusion: {
-        q: { name: "Sword Spike", cd: 0, maxCd: 5, damage: 320, range: 350 },
-        w: { name: "Shadowblade", cd: 0, maxCd: 6, damage: 600, range: 300 },
-        r: { name: "Blade Barrage", cd: 0, maxCd: 20, damage: 880, range: 360 }
+        q: { name: "Sword Spike", cd: 0, maxCd: 4, damage: 440, range: 380 },
+        w: { name: "Shadowblade", cd: 0, maxCd: 5, damage: 780, range: 340 },
+        r: { name: "Blade Barrage", cd: 0, maxCd: 18, damage: 1150, range: 380 }
       },
       layla: {
         q: { name: "Malefic Bomb", cd: 0, maxCd: 4, damage: 360, range: 480 },
@@ -147,14 +147,14 @@ class BotHero {
         r: { name: "Fission Wave", cd: 0, maxCd: 22, damage: 480, range: 320 }
       },
       balmond: {
-        q: { name: "Soul Lock", cd: 0, maxCd: 6, damage: 220, range: 220 },
-        w: { name: "Cyclone Sweep", cd: 0, maxCd: 5, damage: 280, range: 160 },
-        r: { name: "Lethal Counter", cd: 0, maxCd: 20, damage: 580, range: 220 }
+        q: { name: "Soul Lock", cd: 0, maxCd: 6, damage: 340, range: 240 },
+        w: { name: "Cyclone Sweep", cd: 0, maxCd: 5, damage: 420, range: 180 },
+        r: { name: "Lethal Counter", cd: 0, maxCd: 20, damage: 620, range: 220 }
       },
       saber: {
-        q: { name: "Flying Sword", cd: 0, maxCd: 5, damage: 240, range: 280 },
-        w: { name: "Charge", cd: 0, maxCd: 6, damage: 220, range: 200 },
-        r: { name: "Triple Sweep", cd: 0, maxCd: 22, damage: 620, range: 240 }
+        q: { name: "Orbiting Swords", cd: 0, maxCd: 6, damage: 85, range: 260 },
+        w: { name: "Charge", cd: 0, maxCd: 6, damage: 240, range: 200 },
+        r: { name: "Triple Sweep", cd: 0, maxCd: 22, damage: 780, range: 260 }
       }
     };
 
@@ -644,6 +644,45 @@ class BotHero {
       }
     }
 
+    // Saber Orbiting Swords ticks (Skill 1 - Q)
+    if (this.saberSwords && this.saberSwords.active) {
+      this.saberSwords.timer -= dt;
+      this.saberSwords.angle += dt * 6.0;
+      this.saberSwords.damageTickTimer -= dt;
+
+      if (this.saberSwords.damageTickTimer <= 0) {
+        this.saberSwords.damageTickTimer = 0.32;
+        const swordDmg = Math.round(85 * (this.attackDamage ? (this.attackDamage / 120) : 1));
+        if (player && !player.isDead && player.team !== this.team && Math.hypot(player.x - this.x, player.y - this.y) <= 72) {
+          player.takeDamage(swordDmg, this, combatTexts, particles, sound, scoreboard);
+          if (particles && particles.spawnSlash) {
+            particles.spawnSlash(this.x, this.y, player.x, player.y, "#00d2d3", 28);
+          }
+        }
+        if (allBots && Array.isArray(allBots)) {
+          allBots.forEach(b => {
+            if (b !== this && !b.isDead && b.team !== this.team && Math.hypot(b.x - this.x, b.y - this.y) <= 72) {
+              b.takeDamage(swordDmg, this, combatTexts, particles, sound, scoreboard);
+              if (particles && particles.spawnSlash) {
+                particles.spawnSlash(this.x, this.y, b.x, b.y, "#00d2d3", 28);
+              }
+            }
+          });
+        }
+        if (minionManager && minionManager.minions) {
+          minionManager.minions.forEach(m => {
+            if (m.team !== this.team && m.hp > 0 && Math.hypot(m.x - this.x, m.y - this.y) <= 72) {
+              m.hp -= swordDmg;
+            }
+          });
+        }
+      }
+
+      if (this.saberSwords.timer <= 0 || this.isDead) {
+        this.saberSwords.active = false;
+      }
+    }
+
     // Collect all opposing heroes (Player + Opposing Bots)
     const opposingHeroes = [];
     if (player && !player.isDead && player.hp > 0 && player.team !== this.team) {
@@ -965,10 +1004,16 @@ class BotHero {
         }
       }
 
+      let rDmg = this.skills.r.damage;
+      if (hid === "balmond") {
+        const missingHp = Math.max(0, (targetHero.maxHp || 1200) - targetHero.hp);
+        rDmg = Math.round(rDmg + missingHp * 0.28);
+      }
+
       if (typeof targetHero.takeDamage === "function") {
-        targetHero.takeDamage(this.skills.r.damage, this, combatTexts, particles, sound, scoreboard);
+        targetHero.takeDamage(rDmg, this, combatTexts, particles, sound, scoreboard);
       } else {
-        targetHero.hp -= this.skills.r.damage;
+        targetHero.hp -= rDmg;
       }
       if ((hid === "tigreal" || hid === "nana" || hid === "saber") && typeof targetHero.applyStun === "function") {
         targetHero.applyStun(1.4, combatTexts);
@@ -981,7 +1026,7 @@ class BotHero {
         combatTexts.push({
           x: targetHero.x,
           y: targetHero.y - 25,
-          text: `[${this.team}] ${this.skills.r.name.toUpperCase()} -${this.skills.r.damage}!`,
+          text: hid === "balmond" ? `[${this.team}] LETHAL EXECUTE -${rDmg}!` : `[${this.team}] ${this.skills.r.name.toUpperCase()} -${rDmg}!`,
           color: this.color,
           life: 1.2,
           maxLife: 1.2
@@ -1198,16 +1243,26 @@ class BotHero {
           particles.spawnBurst(targetHero.x, targetHero.y, "#2ecc71", 10, 110);
         }
       } else if (hid === "balmond") {
-        if (particles && particles.spawnSlash) {
-          particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#e67e22", 40);
+        const angle = Math.atan2(targetHero.y - this.y, targetHero.x - this.x);
+        this.x += Math.cos(angle) * 70;
+        this.y += Math.sin(angle) * 70;
+        if (particles) {
+          if (particles.spawnSlash) particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#c0392b", 50);
+          particles.spawnRing(this.x, this.y, 65, "#c0392b", 0.4);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#c0392b", 14, 120);
+        }
+        if (typeof targetHero.applyStun === "function") {
+          targetHero.applyStun(0.5, combatTexts);
         }
       } else if (hid === "gusion") {
         if (particles && particles.spawnSlash) {
-          particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#9b59b6", 40);
+          particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#9b59b6", 45);
         }
       } else if (hid === "saber") {
+        this.saberSwords = { active: true, timer: 5.0, angle: 0, damageTickTimer: 0.05 };
         if (particles) {
-          particles.spawnRing(this.x, this.y, 50, "#3498db", 0.5);
+          particles.spawnRing(this.x, this.y, 55, "#00d2d3", 0.5);
+          particles.spawnBurst(this.x, this.y, "#00ffff", 16, 120);
         }
       } else {
         if (particles) {

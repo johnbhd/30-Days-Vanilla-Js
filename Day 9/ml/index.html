@@ -242,6 +242,47 @@
       </div>
     </div>
 
+    <!-- Hero Detail & Skills Popup Modal -->
+    <div id="heroDetailOverlay" class="hero-detail-overlay hidden">
+      <div class="hero-detail-modal">
+        <div class="hero-detail-header">
+          <div class="hero-detail-title-group">
+            <div class="hero-detail-avatar-wrap" id="detailHeroAvatarWrap">
+              <img id="detailHeroAvatar" src="" alt="Hero Avatar" />
+            </div>
+            <div class="hero-detail-names">
+              <div class="hero-detail-heading-row">
+                <h2 id="detailHeroName">Hero Name</h2>
+                <span class="hero-detail-epithet" id="detailHeroTitle">Hero Title</span>
+              </div>
+              <div class="hero-detail-badges">
+                <span class="detail-badge role-badge" id="detailHeroRole"><i class="fa-solid fa-crosshairs"></i> Role</span>
+                <span class="detail-badge lane-badge" id="detailHeroLane"><i class="fa-solid fa-route"></i> Lane</span>
+              </div>
+            </div>
+          </div>
+          <button id="closeHeroDetailBtn" class="close-btn" title="Close Modal">&times;</button>
+        </div>
+
+        <div class="hero-detail-body">
+          <div class="hero-detail-section">
+            <h3 class="section-title"><i class="fa-solid fa-book-open"></i> Hero Overview</h3>
+            <p id="detailHeroDesc" class="hero-bio-text"></p>
+            <div class="hero-stats-chips" id="detailHeroStatsChips"></div>
+          </div>
+
+          <div class="hero-detail-section">
+            <h3 class="section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Champion Abilities</h3>
+            <div class="hero-skills-list" id="detailHeroSkillsList"></div>
+          </div>
+        </div>
+
+        <div class="hero-detail-footer">
+          <button id="footerCloseHeroDetailBtn" class="hero-detail-close-btn" type="button"><i class="fa-solid fa-check"></i> Close</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Game Over Overlay -->
     <div id="gameOverOverlay" class="game-over-overlay hidden">
       <div class="game-over-box">
@@ -263,12 +304,12 @@
             <div class="hero-panel-header">
               <div class="hero-header-top">
                 <span class="hero-lvl-circle" id="heroLevelBadge" title="Hero Level">1</span>
-                <h2 id="heroName">Select a Hero</h2>
+                <h2 id="heroName" class="clickable-hero-title" title="Click to view hero description and skills">Select a Hero</h2>
                 <button id="toggleHeroPanelBtn" class="toggle-card-btn" title="Collapse / Expand Card"><i class="fa-solid fa-chevron-up"></i></button>
               </div>
               <div class="hero-badges">
-                <span id="heroRoleBadge" class="hero-badge role-badge"><i class="fa-solid fa-crosshairs"></i> -</span>
-                <span id="heroLaneBadge" class="hero-badge lane-badge"><i class="fa-solid fa-route"></i> -</span>
+                <span id="heroRoleBadge" class="hero-badge role-badge clickable-badge" title="Click to view hero description and skills"><i class="fa-solid fa-crosshairs"></i> -</span>
+                <span id="heroLaneBadge" class="hero-badge lane-badge clickable-badge" title="Click to view hero description and skills"><i class="fa-solid fa-route"></i> -</span>
               </div>
             </div>
             <div class="exp-bar-container" title="EXP Progress to Next Level">

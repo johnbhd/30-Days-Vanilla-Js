@@ -54,92 +54,122 @@ const HEROES = [
   {
     id: "miya",
     name: "Miya",
+    title: "Moonlight Archer",
     role: "Marksman",
     lane: "Gold Lane",
     color: "#f1c40f",
     sprite: "assets/sprites/heroes/miya/",
-    stats: { hp: 1650, atk: 110, spd: 3.2, range: 175 }
+    stats: { hp: 1650, atk: 110, spd: 3.2, range: 175 },
+    description: "Miya is an agile marksman blessed by the Moon Goddess. Her attacks ramp up in attack speed and split into multi-arrows, allowing her to melt objectives and kite foes.",
+    passive: { name: "Moon Blessing", desc: "Basic attacks grant +5% attack speed (up to 5 stacks). At max stacks, summons Moonlight Shadows dealing bonus damage." }
   },
   {
     id: "tigreal",
     name: "Tigreal",
+    title: "Warrior of Dawn",
     role: "Tank",
     lane: "Roam",
     color: "#3498db",
     sprite: "assets/sprites/heroes/tigreal/",
-    stats: { hp: 2900, atk: 95, spd: 2.4, range: 70 }
+    stats: { hp: 2900, atk: 95, spd: 2.4, range: 70 },
+    description: "Leader of the Imperial Knights. Tigreal is a resolute frontline vanguard who charges enemies, knocks them airborne, and initiates team clashes with Implosion.",
+    passive: { name: "Fearless", desc: "Gains blessings on skill/attacks. After 4 layers, completely absorbs and nullifies the next incoming basic attack." }
   },
   {
     id: "alucard",
     name: "Alucard",
+    title: "Demon Hunter",
     role: "Fighter / Assassin",
     lane: "Jungle",
     color: "#9b59b6",
     sprite: "assets/sprites/heroes/alucard/",
-    stats: { hp: 2100, atk: 130, spd: 2.8, range: 75 }
+    stats: { hp: 2100, atk: 130, spd: 2.8, range: 75 },
+    description: "A demon hunter wielding a cursed greatsword. Alucard excels in aggressive duels, leaping onto targets and sustaining through heavy lifesteal.",
+    passive: { name: "Pursuit", desc: "After casting any ability, the next basic attack lunges to the target, dealing 1.2x physical damage." }
   },
   {
     id: "layla",
     name: "Layla",
+    title: "Shining Star",
     role: "Marksman",
     lane: "Gold Lane",
     color: "#e67e22",
     sprite: "assets/sprites/heroes/layla/",
-    stats: { hp: 1620, atk: 115, spd: 3.0, range: 185 }
+    stats: { hp: 1620, atk: 115, spd: 3.0, range: 185 },
+    description: "Wielding the Malefic Gun inherited from her father, Layla dominates from ultra-long range, out-ranging turrets and firing piercing destruction lasers.",
+    passive: { name: "Malefic Gun", desc: "Basic attack and skill damage increase with distance to the target, dealing from 100% up to 140% at max range." }
   },
   {
     id: "angela",
     name: "Angela",
+    title: "Bunnylove",
     role: "Support / Mage",
     lane: "Roam",
     color: "#f39c12",
     sprite: "assets/sprites/heroes/angela/",
-    stats: { hp: 2000, atk: 80, spd: 2.6, range: 180 }
+    stats: { hp: 2000, atk: 80, spd: 2.6, range: 180 },
+    description: "A kind-hearted mechanical android. Angela restores ally health with Love Waves, binds foes with puppet strings, and shields champions from across the map.",
+    passive: { name: "Smart Heart", desc: "Each skill cast increases movement speed by 15% for 4s (stacks up to 30%), speeding up nearby allies." }
   },
   {
     id: "gusion",
     name: "Gusion",
+    title: "Holy Blade",
     role: "Assassin",
     lane: "Jungle",
     color: "#e74c3c",
     sprite: "assets/sprites/heroes/gusion/",
-    stats: { hp: 1750, atk: 150, spd: 3.4, range: 68 }
+    stats: { hp: 1750, atk: 150, spd: 3.4, range: 68 },
+    description: "Prodigy of the Paxley family who combines sacred light magic with swift blade arts. Gusion bursts down targets with rapid dagger fans and teleport dashes.",
+    passive: { name: "Dagger Specialist", desc: "Each skill cast adds a rune to his blade. At 3 runes, the next basic attack deals 15% missing HP bonus magic burst and heals Gusion." }
   },
   {
     id: "pharsa",
     name: "Pharsa",
+    title: "Wings of Vengeance",
     role: "Mage",
     lane: "Mid Lane",
     color: "#9b59b6",
     sprite: "assets/sprites/heroes/pharsa/",
-    stats: { hp: 1700, atk: 125, spd: 2.6, range: 185 }
+    stats: { hp: 1700, atk: 125, spd: 2.6, range: 185 },
+    description: "A vengeful mage of the Askati race accompanied by her spiritual companion Verri. Pharsa casts high-voltage laser bursts and artillery meteor bombardments.",
+    passive: { name: "Spiritual Unity", desc: "Every 10s, Verri enters hunting mode, causing Pharsa's next strike to deal bonus magic burst and slow the enemy by 60%." }
   },
   {
     id: "balmond",
     name: "Balmond",
+    title: "Bloody Beast",
     role: "Fighter",
     lane: "Jungle / EXP",
     color: "#e67e22",
     sprite: "assets/sprites/heroes/balmond/",
-    stats: { hp: 2300, atk: 120, spd: 2.7, range: 75 }
+    stats: { hp: 2300, atk: 120, spd: 2.7, range: 75 },
+    description: "The fierce Orc Berserker. Balmond charges fearlessly through frontlines, spins his massive greataxe in a cyclone of death, and executes low-health foes.",
+    passive: { name: "Bloodthirst", desc: "Recovers 8% of max HP on minion kills and 20% of max HP on enemy hero eliminations." }
   },
   {
     id: "nana",
     name: "Nana",
+    title: "Sweet Leonin",
     role: "Mage / Support",
     lane: "Mid Lane",
     color: "#2ecc71",
     sprite: "assets/sprites/heroes/nana/",
-    stats: { hp: 1680, atk: 120, spd: 2.8, range: 170 }
+    stats: { hp: 1680, atk: 120, spd: 2.8, range: 170 },
+    description: "A mischievous Leonin endowed with potent spiritual energy. Nana morphs dangerous enemies into harmless cats and crushes teamfights with giant paw slams.",
+    passive: { name: "Molina's Gift", desc: "Upon taking fatal damage, transforms and becomes immune to all damage for 2s while gaining +70% movement speed." }
   },
   {
     id: "saber",
     name: "Saber",
+    title: "Spacetime Swordmaster",
     role: "Assassin",
     lane: "Jungle / Roam",
     color: "#34495e",
     sprite: "assets/sprites/heroes/saber/",
-    stats: { hp: 1800, atk: 140, spd: 3.1, range: 68 }
+    stats: { hp: 1800, atk: 140, spd: 3.1, range: 68 },
+    description: "A synthetic warrior with peerless swordsmanship. Saber summons orbiting flying swords that shred enemy armor and locks onto priority targets with Triple Sweep.",
+    passive: { name: "Enemy's Bane", desc: "Each attack shreds 5 points of enemy Physical Defense for 5s (stacks up to 5 times, dealing true damage)." }
   }
 ];
 

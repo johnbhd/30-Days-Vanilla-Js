@@ -87,6 +87,20 @@ const openSettingsBtn = document.getElementById("openSettingsBtn");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const soundVolumeSlider = document.getElementById("soundVolumeSlider");
 
+// Hero Detail Modal UI references
+const heroDetailOverlay = document.getElementById("heroDetailOverlay");
+const closeHeroDetailBtn = document.getElementById("closeHeroDetailBtn");
+const footerCloseHeroDetailBtn = document.getElementById("footerCloseHeroDetailBtn");
+const detailHeroAvatar = document.getElementById("detailHeroAvatar");
+const detailHeroAvatarWrap = document.getElementById("detailHeroAvatarWrap");
+const detailHeroName = document.getElementById("detailHeroName");
+const detailHeroTitle = document.getElementById("detailHeroTitle");
+const detailHeroRole = document.getElementById("detailHeroRole");
+const detailHeroLane = document.getElementById("detailHeroLane");
+const detailHeroDesc = document.getElementById("detailHeroDesc");
+const detailHeroStatsChips = document.getElementById("detailHeroStatsChips");
+const detailHeroSkillsList = document.getElementById("detailHeroSkillsList");
+
 // Cached Ability & Recall DOM elements for 60 FPS performance
 const recallBtnEl = document.getElementById("btnRecall");
 const cdOverlayEls = {
@@ -367,9 +381,22 @@ function buildHeroGrid() {
         <img src="${hero.sprite}idle.png" alt="${hero.name}" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'font-weight:bold;color:${hero.color}\\'>${hero.name[0]}</span>';" />
       </div>
       <h3>${hero.name}</h3>
-      <span class="role">${hero.role}</span>
-      <span class="lane">${hero.lane}</span>
+      <span class="role" title="Click to view hero details">${hero.role}</span>
+      <span class="lane" title="Click to view hero details">${hero.lane}</span>
     `;
+
+    // Clicking hero name, role, or lane opens the hero detail popup modal
+    const nameEl = card.querySelector("h3");
+    const roleEl = card.querySelector(".role");
+    const laneEl = card.querySelector(".lane");
+    [nameEl, roleEl, laneEl].forEach(el => {
+      if (el) {
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          openHeroDetailModal(hero);
+        });
+      }
+    });
 
     card.addEventListener("click", () => {
       assignHeroToActiveSlot(hero);
@@ -1225,6 +1252,163 @@ if (particleQualitySelect) {
   });
 }
 
+// Hero Detail Modal Functions
+function openHeroDetailModal(target = null) {
+  if (!heroDetailOverlay) return;
+
+  let heroData = null;
+  if (typeof target === "string") {
+    heroData = HEROES.find(h => h.id === target.toLowerCase()) || null;
+  } else if (target && target.id) {
+    heroData = HEROES.find(h => h.id === target.id) || target;
+  }
+
+  if (!heroData) {
+    heroData = (selectedHero && selectedHero.heroData) || chosenHeroData || HEROES[0];
+  }
+  if (!heroData) return;
+
+  const color = heroData.color || "#ffd700";
+
+  // Avatar & Header
+  if (detailHeroAvatar) {
+    detailHeroAvatar.src = `${heroData.sprite || ""}idle.png`;
+    detailHeroAvatar.onerror = function() {
+      this.onerror = null;
+      if (this.parentElement) {
+        this.parentElement.innerHTML = `<span style="font-size:1.8rem;font-weight:bold;color:${color}">${heroData.name ? heroData.name[0] : "H"}</span>`;
+      }
+    };
+  }
+  if (detailHeroAvatarWrap) {
+    detailHeroAvatarWrap.style.borderColor = color;
+    detailHeroAvatarWrap.style.boxShadow = `0 0 16px ${color}55`;
+  }
+
+  if (detailHeroName) detailHeroName.textContent = heroData.name || "Hero";
+  if (detailHeroTitle) detailHeroTitle.textContent = heroData.title || heroData.role || "Champion";
+
+  if (detailHeroRole) {
+    detailHeroRole.innerHTML = `${getRoleIcon(heroData.role || "")} ${heroData.role || "Fighter"}`;
+    detailHeroRole.style.borderColor = `${color}66`;
+    detailHeroRole.style.color = color;
+  }
+  if (detailHeroLane) {
+    detailHeroLane.innerHTML = `<i class="fa-solid fa-route"></i> ${heroData.lane || "Mid Lane"}`;
+  }
+
+  // Description / Bio
+  if (detailHeroDesc) {
+    detailHeroDesc.textContent = heroData.description || `${heroData.name} is a powerful champion fighting for victory in the Land of Dawn.`;
+    detailHeroDesc.style.borderLeftColor = color;
+  }
+
+  // Stats Chips
+  if (detailHeroStatsChips) {
+    const stats = heroData.stats || {};
+    detailHeroStatsChips.innerHTML = `
+      <div class="stat-chip"><i class="fa-solid fa-heart" style="color:#e74c3c"></i> HP: <strong>${stats.hp || 2000}</strong></div>
+      <div class="stat-chip"><i class="fa-solid fa-khanda" style="color:#f39c12"></i> Attack: <strong>${stats.atk || 120}</strong></div>
+      <div class="stat-chip"><i class="fa-solid fa-crosshairs" style="color:#3498db"></i> Range: <strong>${stats.range || 100}px</strong></div>
+      <div class="stat-chip"><i class="fa-solid fa-person-running" style="color:#2ecc71"></i> Speed: <strong>${stats.spd || 3.0}</strong></div>
+    `;
+  }
+
+  // Skills List (Passive + Q + W + E + R)
+  if (detailHeroSkillsList) {
+    detailHeroSkillsList.innerHTML = "";
+
+    // 1. Passive Skill
+    const passiveData = heroData.passive || { name: "Champion's Aura", desc: "Grants permanent battle surge on attacks and abilities." };
+    const passiveCard = document.createElement("div");
+    passiveCard.className = "detail-skill-card";
+    passiveCard.innerHTML = `
+      <div class="detail-skill-icon" style="border-color: #ffd700; color: #ffd700;">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span class="detail-skill-slot-tag" style="background:#ffd700;color:#000;">PAS</span>
+      </div>
+      <div class="detail-skill-info">
+        <div class="detail-skill-header">
+          <span class="detail-skill-name" style="color:#ffd700;">${passiveData.name}</span>
+          <span class="detail-skill-meta"><span class="detail-skill-cd">Passive Trait</span></span>
+        </div>
+        <p class="detail-skill-desc">${passiveData.desc}</p>
+      </div>
+    `;
+    detailHeroSkillsList.appendChild(passiveCard);
+
+    // 2. Active Skills (Q, W, E, R)
+    const skillsDict = (typeof HERO_SKILLS !== "undefined" && HERO_SKILLS[heroData.id]) ? HERO_SKILLS[heroData.id] : null;
+    const slots = [
+      { key: "q", label: "SKILL 1 (Q)", icon: "fa-bolt", fallbackName: "Skill 1" },
+      { key: "w", label: "SKILL 2 (W)", icon: "fa-crosshairs", fallbackName: "Skill 2" },
+      { key: "e", label: "SKILL 3 / MOBILITY (E)", icon: "fa-person-running", fallbackName: "Mobility" },
+      { key: "r", label: "ULTIMATE (R)", icon: "fa-skull", fallbackName: "Ultimate" }
+    ];
+
+    slots.forEach(s => {
+      const sData = (skillsDict && skillsDict[s.key]) || { name: s.fallbackName, cd: 6, desc: "Activates combat skill." };
+      const isUlt = s.key === "r";
+      const card = document.createElement("div");
+      card.className = "detail-skill-card";
+      card.innerHTML = `
+        <div class="detail-skill-icon" style="border-color: ${isUlt ? '#e74c3c' : color}; color: ${isUlt ? '#e74c3c' : color};">
+          <i class="fa-solid ${s.icon}"></i>
+          <span class="detail-skill-slot-tag" style="background:${isUlt ? '#e74c3c' : '#ffd700'}; color:#000;">${s.key.toUpperCase()}</span>
+        </div>
+        <div class="detail-skill-info">
+          <div class="detail-skill-header">
+            <span class="detail-skill-name" style="color:${isUlt ? '#ff6b6b' : '#fff'};">${sData.name}</span>
+            <span class="detail-skill-meta">
+              <span class="detail-skill-cd"><i class="fa-regular fa-clock"></i> ${sData.cd || 5}s CD</span>
+              <span class="detail-skill-mana"><i class="fa-solid fa-droplet"></i> ${isUlt ? 100 : 50} Mana</span>
+            </span>
+          </div>
+          <p class="detail-skill-desc">${sData.desc || "Executes powerful combat ability."}</p>
+        </div>
+      `;
+      detailHeroSkillsList.appendChild(card);
+    });
+  }
+
+  heroDetailOverlay.classList.remove("hidden");
+}
+
+function closeHeroDetailModal() {
+  if (heroDetailOverlay) {
+    heroDetailOverlay.classList.add("hidden");
+  }
+}
+
+if (closeHeroDetailBtn) {
+  closeHeroDetailBtn.addEventListener("click", closeHeroDetailModal);
+}
+if (footerCloseHeroDetailBtn) {
+  footerCloseHeroDetailBtn.addEventListener("click", closeHeroDetailModal);
+}
+if (heroDetailOverlay) {
+  heroDetailOverlay.addEventListener("click", (e) => {
+    if (e.target === heroDetailOverlay) {
+      closeHeroDetailModal();
+    }
+  });
+}
+
+// Click on builds card / hero panel: Name, Role badge, Lane badge
+const heroNameEl = document.getElementById("heroName");
+const heroRoleBadgeEl = document.getElementById("heroRoleBadge");
+const heroLaneBadgeEl = document.getElementById("heroLaneBadge");
+
+if (heroNameEl) {
+  heroNameEl.addEventListener("click", () => openHeroDetailModal());
+}
+if (heroRoleBadgeEl) {
+  heroRoleBadgeEl.addEventListener("click", () => openHeroDetailModal());
+}
+if (heroLaneBadgeEl) {
+  heroLaneBadgeEl.addEventListener("click", () => openHeroDetailModal());
+}
+
 // Click inventory slot to sell item (minus 50% gold value)
 for (let i = 0; i < 6; i++) {
   const slotEl = document.getElementById(`invSlot${i}`);
@@ -1304,6 +1488,7 @@ window.addEventListener("keydown", (e) => {
     shopOverlay.classList.add("hidden");
     if (scoreboardOverlay) scoreboardOverlay.classList.add("hidden");
     if (settingsOverlay) settingsOverlay.classList.add("hidden");
+    closeHeroDetailModal();
   }
 });
 
