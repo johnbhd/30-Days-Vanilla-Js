@@ -44,6 +44,9 @@ class Hero {
     // Stun crowd-control
     this.stunTimer = 0;
 
+    // Active Jungle Buffs { blue: seconds, red: seconds }
+    this.buffs = { blue: 0, red: 0 };
+
     // Progression & Leveling (Levels 1 to 15)
     this.level = 1;
     this.exp = 0;
@@ -619,6 +622,12 @@ class Hero {
       this.gainExp(2, combatTexts, particles, sound);
     }
 
+    // Active Jungle Buffs decay
+    if (this.buffs) {
+      if (this.buffs.blue > 0) this.buffs.blue = Math.max(0, this.buffs.blue - dt);
+      if (this.buffs.red > 0) this.buffs.red = Math.max(0, this.buffs.red - dt);
+    }
+
     // Movement with speed boosts
     let currentSpeed = this.speed;
     if (skillManager && skillManager.activeBuffs && skillManager.activeBuffs.speedBoost > 0) {
@@ -757,6 +766,16 @@ class Hero {
           const d = getDistance(this.x, this.y, objectives.summonedLord.x, objectives.summonedLord.y);
           if (d <= this.attackRange + 15) potentialTargets.push({ unit: objectives.summonedLord, dist: d, priority: 1.2 });
         }
+        if (objectives.jungleCamps && Array.isArray(objectives.jungleCamps)) {
+          objectives.jungleCamps.forEach(c => {
+            if (c.alive && c.hp > 0) {
+              const d = getDistance(this.x, this.y, c.x, c.y);
+              if (d <= this.attackRange + 25) {
+                potentialTargets.push({ unit: c, dist: d, priority: 3.5 });
+              }
+            }
+          });
+        }
       }
 
       // Enemy Base Crystal
@@ -800,6 +819,23 @@ class Hero {
       let effectiveDmg = this.attackDamage;
       if (skillManager && skillManager.activeBuffs && skillManager.activeBuffs.bonusDamage > 0) {
         effectiveDmg += skillManager.activeBuffs.bonusDamage;
+      }
+
+      // Red Buff True Damage & Slow
+      if (this.buffs && this.buffs.red > 0) {
+        const bonusTrueDmg = 35 + Math.round(this.level * 4);
+        effectiveDmg += bonusTrueDmg;
+        if (particles && particles.spawnBurst) particles.spawnBurst(tx, ty, "#ff4757", 5, 80);
+        if (combatTexts) {
+          combatTexts.push({
+            x: tx + (Math.random() - 0.5) * 14,
+            y: ty - 32,
+            text: `[TRUE] +${bonusTrueDmg}`,
+            color: "#ff4757",
+            life: 0.8,
+            maxLife: 0.8
+          });
+        }
       }
 
       // Spawn projectile if ranged or instant strike if melee
@@ -917,6 +953,24 @@ class Hero {
     ctx.beginPath();
     ctx.arc(sx, sy, this.radius + 6, 0, Math.PI * 2);
     ctx.fill();
+
+    // Render Blue & Red buff auras
+    if (this.buffs) {
+      if (this.buffs.blue > 0) {
+        ctx.strokeStyle = "rgba(0, 210, 211, 0.85)";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(sx, sy, this.radius + 5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (this.buffs.red > 0) {
+        ctx.strokeStyle = "rgba(231, 76, 60, 0.85)";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(sx, sy, this.radius + (this.buffs.blue > 0 ? 8 : 5), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
 
     // Draw sprite or circular portrait
     if (this.loaded && this.image) {

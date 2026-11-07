@@ -23,6 +23,71 @@ const GAME = {
       RED:  { x: 30, y: 12 }
     }
   },
+  MAP_COMPACT: {
+    WIDTH: 32,
+    HEIGHT: 24,
+    TILE_SIZE: 40,
+    LANES: {
+      GOLD:  { y: 6,  name: "Gold Lane", role: "Marksman" },
+      MID:   { y: 12, name: "Mid Lane",  role: "Mage" },
+      EXP:   { y: 18, name: "EXP Lane",  role: "Fighter" }
+    },
+    BASES: {
+      BLUE: { x: 2,  y: 12 },
+      RED:  { x: 30, y: 12 }
+    }
+  },
+  MAP_LAND_OF_DAWN: {
+    WIDTH: 44,
+    HEIGHT: 32,
+    TILE_SIZE: 40,
+    LANES: {
+      GOLD:  { y: 5,  name: "Gold Lane", role: "Marksman" },
+      MID:   { y: 16, name: "Mid Lane",  role: "Mage" },
+      EXP:   { y: 27, name: "EXP Lane",  role: "Fighter" }
+    },
+    BASES: {
+      BLUE: { x: 3,  y: 16 },
+      RED:  { x: 41, y: 16 }
+    }
+  },
+  JUNGLE: {
+    BLUE_BUFF: {
+      name: "Blue Buff (Statue Fiend)",
+      hp: 1900,
+      attackDamage: 40,
+      bounty: 90,
+      exp: 140,
+      duration: 45,
+      cdr: 0.15,
+      manaRegen: 12
+    },
+    RED_BUFF: {
+      name: "Red Buff (Lava Fiend)",
+      hp: 1900,
+      attackDamage: 45,
+      bounty: 90,
+      exp: 140,
+      duration: 45,
+      trueDamage: 38,
+      slow: 0.20
+    },
+    GOLD_CRAB: {
+      name: "Gold Crab",
+      hp: 850,
+      attackDamage: 18,
+      bounty: 85,
+      exp: 70
+    },
+    SMALL_CREEP: {
+      name: "Crammer",
+      hp: 750,
+      attackDamage: 22,
+      bounty: 45,
+      exp: 60,
+      healRatio: 0.15
+    }
+  },
   WAVE: {
     INTERVAL: 25, // seconds between waves
     INITIAL_DELAY: 2 // seconds before first wave

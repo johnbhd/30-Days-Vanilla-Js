@@ -16,10 +16,22 @@ const MAP_TILES = {
 };
 
 class GameMap {
-  constructor(width = 32, height = 24, tileSize = 40) {
-    this.width = width || (typeof GAME !== "undefined" && GAME.MAP ? GAME.MAP.WIDTH : 32);
-    this.height = height || (typeof GAME !== "undefined" && GAME.MAP ? GAME.MAP.HEIGHT : 24);
-    this.tileSize = tileSize || (typeof GAME !== "undefined" ? GAME.TILE_SIZE : 40);
+  constructor(mapTypeOrWidth = "COMPACT", height = null, tileSize = 40) {
+    if (typeof mapTypeOrWidth === "string") {
+      this.mapType = mapTypeOrWidth.toUpperCase();
+      const cfg = (this.mapType === "LAND_OF_DAWN" && typeof GAME !== "undefined" && GAME.MAP_LAND_OF_DAWN)
+        ? GAME.MAP_LAND_OF_DAWN
+        : (typeof GAME !== "undefined" && GAME.MAP_COMPACT ? GAME.MAP_COMPACT : (typeof GAME !== "undefined" && GAME.MAP ? GAME.MAP : { WIDTH: 32, HEIGHT: 24, TILE_SIZE: 40 }));
+      this.width = cfg.WIDTH || 32;
+      this.height = cfg.HEIGHT || 24;
+      this.tileSize = cfg.TILE_SIZE || 40;
+    } else {
+      this.mapType = "COMPACT";
+      this.width = mapTypeOrWidth || (typeof GAME !== "undefined" && GAME.MAP ? GAME.MAP.WIDTH : 32);
+      this.height = height || (typeof GAME !== "undefined" && GAME.MAP ? GAME.MAP.HEIGHT : 24);
+      this.tileSize = tileSize || (typeof GAME !== "undefined" ? GAME.TILE_SIZE : 40);
+    }
+
     this.grid = [];
     this.turrets = [];
     this.bases = [];
@@ -28,6 +40,14 @@ class GameMap {
   }
 
   init() {
+    if (this.mapType === "LAND_OF_DAWN") {
+      this.initLandOfDawn();
+    } else {
+      this.initCompact();
+    }
+  }
+
+  initCompact() {
     // 1. Fill ground with grass
     for (let y = 0; y < this.height; y++) {
       this.grid[y] = [];
@@ -97,7 +117,117 @@ class GameMap {
     this.addBase(GAME.MAP.BASES.RED.x, GAME.MAP.BASES.RED.y, 4, 6, "RED");
 
     // 8. Turrets along each lane
-    this.addTurrets();
+    this.addTurretsCompact();
+  }
+
+  initLandOfDawn() {
+    this.width = 44;
+    this.height = 32;
+    this.grid = [];
+    this.turrets = [];
+    this.bases = [];
+    this.projectiles = [];
+
+    // 1. Fill ground with grass
+    for (let y = 0; y < this.height; y++) {
+      this.grid[y] = [];
+      for (let x = 0; x < this.width; x++) {
+        this.grid[y][x] = MAP_TILES.GRASS.id;
+      }
+    }
+
+    // 2. Vertical River through middle (x = 21..23)
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 21; x <= 23; x++) {
+        this.grid[y][x] = MAP_TILES.RIVER.id;
+      }
+    }
+
+    // Upper River Pit (Turtle Alcove at x = 19..25, y = 7..11)
+    for (let y = 7; y <= 11; y++) {
+      for (let x = 19; x <= 25; x++) {
+        this.grid[y][x] = MAP_TILES.RIVER.id;
+      }
+    }
+
+    // Lower River Pit (Lord Alcove at x = 19..25, y = 21..25)
+    for (let y = 21; y <= 25; y++) {
+      for (let x = 19; x <= 25; x++) {
+        this.grid[y][x] = MAP_TILES.RIVER.id;
+      }
+    }
+
+    // 3. Central Mid Lane (y = 15..17, straight highway)
+    for (let y = 15; y <= 17; y++) {
+      for (let x = 3; x <= 41; x++) {
+        this.grid[y][x] = MAP_TILES.LANE.id;
+      }
+    }
+
+    // 4. Curved Top Lane (Northern arch)
+    // Blue ascent: x = 5..7, y = 5..16
+    for (let y = 5; y <= 16; y++) {
+      for (let x = 5; x <= 7; x++) {
+        this.grid[y][x] = MAP_TILES.LANE.id;
+      }
+    }
+    // Northern highway: y = 4..6, x = 6..37
+    for (let y = 4; y <= 6; y++) {
+      for (let x = 6; x <= 37; x++) {
+        this.grid[y][x] = MAP_TILES.LANE.id;
+      }
+    }
+    // Red descent: x = 36..38, y = 5..16
+    for (let y = 5; y <= 16; y++) {
+      for (let x = 36; x <= 38; x++) {
+        this.grid[y][x] = MAP_TILES.LANE.id;
+      }
+    }
+
+    // 5. Curved Bottom Lane (Southern arch)
+    // Blue descent: x = 5..7, y = 16..27
+    for (let y = 16; y <= 27; y++) {
+      for (let x = 5; x <= 7; x++) {
+        this.grid[y][x] = MAP_TILES.LANE.id;
+      }
+    }
+    // Southern highway: y = 26..28, x = 6..37
+    for (let y = 26; y <= 28; y++) {
+      for (let x = 6; x <= 37; x++) {
+        this.grid[y][x] = MAP_TILES.LANE.id;
+      }
+    }
+    // Red ascent: x = 36..38, y = 16..27
+    for (let y = 16; y <= 27; y++) {
+      for (let x = 36; x <= 38; x++) {
+        this.grid[y][x] = MAP_TILES.LANE.id;
+      }
+    }
+
+    // 6. 4 Jungle Quadrants (dense jungle patches)
+    this.addJunglePatch(9, 7, 10, 7);   // Top-Left (Blue Jungle North)
+    this.addJunglePatch(9, 19, 10, 6);  // Bottom-Left (Blue Jungle South)
+    this.addJunglePatch(25, 7, 10, 7);  // Top-Right (Red Jungle North)
+    this.addJunglePatch(25, 19, 10, 6); // Bottom-Right (Red Jungle South)
+
+    // 7. Bushes along river, lane arches, and buff camps
+    this.addBush(20, 5, 2, 1);
+    this.addBush(23, 5, 2, 1);
+    this.addBush(20, 27, 2, 1);
+    this.addBush(23, 27, 2, 1);
+    this.addBush(19, 14, 1, 3); // Mid left bush
+    this.addBush(24, 14, 1, 3); // Mid right bush
+    this.addBush(11, 8, 2, 1);  // Blue buff bush
+    this.addBush(11, 23, 2, 1); // Red buff bush
+    this.addBush(31, 8, 2, 1);
+    this.addBush(31, 23, 2, 1);
+
+    // 8. Bases
+    this.addBase(3, 16, 4, 6, "BLUE");
+    this.addBase(40, 16, 4, 6, "RED");
+
+    // 9. Turrets along curved lanes
+    this.addTurretsLandOfDawn();
   }
 
   addJunglePatch(cx, cy, w, h) {
@@ -152,11 +282,19 @@ class GameMap {
   }
 
   addTurrets() {
+    if (this.mapType === "LAND_OF_DAWN") {
+      this.addTurretsLandOfDawn();
+    } else {
+      this.addTurretsCompact();
+    }
+  }
+
+  addTurretsCompact() {
     this.turrets = [];
     const lanes = [
-      { name: "GOLD", y: GAME.MAP.LANES.GOLD.y },
-      { name: "MID",  y: GAME.MAP.LANES.MID.y },
-      { name: "EXP",  y: GAME.MAP.LANES.EXP.y }
+      { name: "GOLD", y: (typeof GAME !== "undefined" && GAME.MAP && GAME.MAP.LANES ? GAME.MAP.LANES.GOLD.y : 6) },
+      { name: "MID",  y: (typeof GAME !== "undefined" && GAME.MAP && GAME.MAP.LANES ? GAME.MAP.LANES.MID.y : 12) },
+      { name: "EXP",  y: (typeof GAME !== "undefined" && GAME.MAP && GAME.MAP.LANES ? GAME.MAP.LANES.EXP.y : 18) }
     ];
 
     lanes.forEach(lane => {
@@ -179,7 +317,42 @@ class GameMap {
       });
     });
 
-    // 7. Pre-render static ground tiles to an offscreen canvas for 60 FPS mobile performance
+    // Pre-render static ground tiles to an offscreen canvas for 60 FPS mobile performance
+    this.initOffscreen();
+  }
+
+  addTurretsLandOfDawn() {
+    this.turrets = [];
+    const turretList = [
+      // Mid Lane (straight highway)
+      { x: 9,  y: 16, team: "BLUE", lane: "MID",  tier: "Base" },
+      { x: 14, y: 16, team: "BLUE", lane: "MID",  tier: "Inner" },
+      { x: 18, y: 16, team: "BLUE", lane: "MID",  tier: "Outer" },
+      { x: 26, y: 16, team: "RED",  lane: "MID",  tier: "Outer" },
+      { x: 30, y: 16, team: "RED",  lane: "MID",  tier: "Inner" },
+      { x: 35, y: 16, team: "RED",  lane: "MID",  tier: "Base" },
+
+      // Top Lane (curved northern arch)
+      { x: 6,  y: 12, team: "BLUE", lane: "GOLD", tier: "Base" },
+      { x: 9,  y: 5,  team: "BLUE", lane: "GOLD", tier: "Inner" },
+      { x: 16, y: 5,  team: "BLUE", lane: "GOLD", tier: "Outer" },
+      { x: 28, y: 5,  team: "RED",  lane: "GOLD", tier: "Outer" },
+      { x: 35, y: 5,  team: "RED",  lane: "GOLD", tier: "Inner" },
+      { x: 38, y: 12, team: "RED",  lane: "GOLD", tier: "Base" },
+
+      // Bottom Lane (curved southern arch)
+      { x: 6,  y: 20, team: "BLUE", lane: "EXP",  tier: "Base" },
+      { x: 9,  y: 27, team: "BLUE", lane: "EXP",  tier: "Inner" },
+      { x: 16, y: 27, team: "BLUE", lane: "EXP",  tier: "Outer" },
+      { x: 28, y: 27, team: "RED",  lane: "EXP",  tier: "Outer" },
+      { x: 35, y: 27, team: "RED",  lane: "EXP",  tier: "Inner" },
+      { x: 38, y: 20, team: "RED",  lane: "EXP",  tier: "Base" }
+    ];
+
+    turretList.forEach(t => {
+      this.createTurret(t.x, t.y, t.team, t.lane, t.tier);
+    });
+
     this.initOffscreen();
   }
 

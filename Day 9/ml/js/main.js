@@ -22,6 +22,7 @@ const scoreboard = new Scoreboard();
 let matchMode = "3v3"; // "1v1" | "2v2" | "3v3"
 let bots = []; // Array of BotHero instances (Blue Allies + Red Enemies)
 let teamRoster = { blue: [], red: [] };
+if (typeof window !== "undefined") window.teamRoster = teamRoster;
 let activeSlot = { team: "blue", index: 0 }; // Currently active slot for hero assignment ({ team: 'blue'|'red', index: number })
 let enemyBot = null;
 
@@ -511,6 +512,84 @@ function generateTeamRosters(playerHero = null) {
       lane: allyLane,
       isPlayer: false
     });
+  } else if (matchMode === "4v4") {
+    // 4v4 Format: Squad War (TOP, MID, BOT, JUNGLE)
+    const allRoles = ["TOP", "MID", "BOT", "JUNGLE"];
+    let effectivePlayerRole = playerLane;
+    if (!allRoles.includes(effectivePlayerRole)) effectivePlayerRole = "MID";
+
+    teamRoster.blue.push({
+      hero: chosen,
+      lane: effectivePlayerRole,
+      isPlayer: true
+    });
+
+    const remainingBlueRoles = allRoles.filter(r => r !== effectivePlayerRole);
+    remainingBlueRoles.forEach(role => {
+      const prefLane = role === "TOP" ? ["Gold"] : (role === "BOT" ? ["EXP"] : (role === "JUNGLE" ? ["Jungle"] : ["Mid"]));
+      const prefRole = role === "TOP" ? ["Marksman"] : (role === "BOT" ? ["Fighter", "Tank"] : (role === "JUNGLE" ? ["Assassin"] : ["Mage"]));
+      const ally = pickHero(prefLane, prefRole);
+      teamRoster.blue.push({
+        hero: ally,
+        lane: role,
+        isPlayer: false
+      });
+    });
+
+    allRoles.forEach(role => {
+      const prefLane = role === "TOP" ? ["Gold"] : (role === "BOT" ? ["EXP"] : (role === "JUNGLE" ? ["Jungle"] : ["Mid"]));
+      const prefRole = role === "TOP" ? ["Marksman"] : (role === "BOT" ? ["Fighter", "Tank"] : (role === "JUNGLE" ? ["Assassin"] : ["Mage"]));
+      const enemy = pickHero(prefLane, prefRole);
+      teamRoster.red.push({
+        hero: enemy,
+        lane: role,
+        isPlayer: false
+      });
+    });
+  } else if (matchMode === "5v5") {
+    // 5v5 Format: Grand 5v5 Land of Dawn (TOP, MID, BOT, JUNGLE, ROAM)
+    const allRoles = ["TOP", "MID", "BOT", "JUNGLE", "ROAM"];
+    let effectivePlayerRole = playerLane;
+    if (!allRoles.includes(effectivePlayerRole)) effectivePlayerRole = "MID";
+
+    teamRoster.blue.push({
+      hero: chosen,
+      lane: effectivePlayerRole,
+      isPlayer: true
+    });
+
+    const remainingBlueRoles = allRoles.filter(r => r !== effectivePlayerRole);
+    remainingBlueRoles.forEach(role => {
+      let prefLane = ["Mid"];
+      let prefRole = ["Mage"];
+      if (role === "TOP") { prefLane = ["Gold"]; prefRole = ["Marksman"]; }
+      else if (role === "BOT") { prefLane = ["EXP"]; prefRole = ["Fighter"]; }
+      else if (role === "JUNGLE") { prefLane = ["Jungle"]; prefRole = ["Assassin"]; }
+      else if (role === "ROAM") { prefLane = ["Roam"]; prefRole = ["Tank", "Support"]; }
+
+      const ally = pickHero(prefLane, prefRole);
+      teamRoster.blue.push({
+        hero: ally,
+        lane: role,
+        isPlayer: false
+      });
+    });
+
+    allRoles.forEach(role => {
+      let prefLane = ["Mid"];
+      let prefRole = ["Mage"];
+      if (role === "TOP") { prefLane = ["Gold"]; prefRole = ["Marksman"]; }
+      else if (role === "BOT") { prefLane = ["EXP"]; prefRole = ["Fighter"]; }
+      else if (role === "JUNGLE") { prefLane = ["Jungle"]; prefRole = ["Assassin"]; }
+      else if (role === "ROAM") { prefLane = ["Roam"]; prefRole = ["Tank", "Support"]; }
+
+      const enemy = pickHero(prefLane, prefRole);
+      teamRoster.red.push({
+        hero: enemy,
+        lane: role,
+        isPlayer: false
+      });
+    });
   } else {
     // 3v3 Format: Full 3-Lane Classic MOBA (TOP, MID, BOT)
     const lanes = ["TOP", "MID", "BOT"];
@@ -545,6 +624,8 @@ function generateTeamRosters(playerHero = null) {
       });
     });
   }
+
+  if (typeof window !== "undefined") window.teamRoster = teamRoster;
 
   // Ensure chosenHeroData matches player
   chosenHeroData = teamRoster.blue[0].hero;
@@ -629,10 +710,11 @@ let isFormatReset = false;
 
 function resetGameForNewFormat() {
   disarmSkill(false);
-  map = new GameMap(GAME.MAP.WIDTH, GAME.MAP.HEIGHT, GAME.TILE_SIZE);
-  minionManager = new MinionManager();
+  const mapType = (matchMode === "4v4" || matchMode === "5v5") ? "LAND_OF_DAWN" : "COMPACT";
+  map = new GameMap(mapType);
+  minionManager = new MinionManager(mapType);
   skillManager = new SkillManager();
-  objectiveManager = new ObjectiveManager();
+  objectiveManager = new ObjectiveManager(mapType);
   itemShop = new ItemShop();
   selectedHero = null;
   bots = [];
@@ -877,13 +959,22 @@ function startMatch() {
 
   // Position hero at their designated lane from team roster
   const playerSlot = teamRoster.blue.find(m => m.isPlayer) || { lane: chosenHeroData.lane || "MID" };
-  let spawnY = 480;
-  if (playerSlot.lane === "TOP" || (playerSlot.lane && playerSlot.lane.includes("Gold"))) spawnY = 240;
-  else if (playerSlot.lane === "BOT" || (playerSlot.lane && playerSlot.lane.includes("EXP"))) spawnY = 720;
+  const isLod = (matchMode === "4v4" || matchMode === "5v5");
+  let spawnX = isLod ? 140 : 100;
+  let spawnY = isLod ? 640 : 480;
 
-  selectedHero.x = 100;
+  if (isLod) {
+    if (playerSlot.lane === "TOP" || (playerSlot.lane && playerSlot.lane.includes("Gold"))) spawnY = 200;
+    else if (playerSlot.lane === "BOT" || (playerSlot.lane && playerSlot.lane.includes("EXP"))) spawnY = 1080;
+    else if (playerSlot.lane === "JUNGLE") { spawnX = 260; spawnY = 440; }
+  } else {
+    if (playerSlot.lane === "TOP" || (playerSlot.lane && playerSlot.lane.includes("Gold"))) spawnY = 240;
+    else if (playerSlot.lane === "BOT" || (playerSlot.lane && playerSlot.lane.includes("EXP"))) spawnY = 720;
+  }
+
+  selectedHero.x = spawnX;
   selectedHero.y = spawnY;
-  selectedHero.targetX = 100;
+  selectedHero.targetX = spawnX;
   selectedHero.targetY = spawnY;
   selectedHero.team = "BLUE";
 

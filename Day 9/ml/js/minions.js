@@ -285,14 +285,87 @@ class Minion {
 }
 
 class MinionManager {
-  constructor() {
+  constructor(mapType = "COMPACT") {
+    this.mapType = (mapType || "COMPACT").toUpperCase();
     this.minions = [];
     this.spawnTimer = GAME.WAVE.INITIAL_DELAY || 2;
     this.waveInterval = GAME.WAVE.INTERVAL || 30; // 30s per wave as documented
     this.waveCount = 0;
   }
 
-  getWaypoints(team, lane) {
+  getWaypoints(team, lane, map = null) {
+    const isLod = (map && map.mapType === "LAND_OF_DAWN") || this.mapType === "LAND_OF_DAWN";
+
+    if (isLod) {
+      if (team === "BLUE") {
+        if (lane === "MID") {
+          return [
+            { x: 180,  y: 640 },
+            { x: 880,  y: 640 },
+            { x: 1540, y: 640 },
+            { x: 1620, y: 640 }
+          ];
+        } else if (lane === "GOLD") {
+          // Curved Top Lane northern arch
+          return [
+            { x: 160,  y: 640 },
+            { x: 240,  y: 480 },
+            { x: 240,  y: 200 },
+            { x: 880,  y: 200 },
+            { x: 1480, y: 200 },
+            { x: 1480, y: 480 },
+            { x: 1580, y: 640 },
+            { x: 1620, y: 640 }
+          ];
+        } else {
+          // Curved Bottom Lane southern arch
+          return [
+            { x: 160,  y: 640 },
+            { x: 240,  y: 800 },
+            { x: 240,  y: 1080 },
+            { x: 880,  y: 1080 },
+            { x: 1480, y: 1080 },
+            { x: 1480, y: 800 },
+            { x: 1580, y: 640 },
+            { x: 1620, y: 640 }
+          ];
+        }
+      } else {
+        // Red team (mirror reverse)
+        if (lane === "MID") {
+          return [
+            { x: 1540, y: 640 },
+            { x: 880,  y: 640 },
+            { x: 180,  y: 640 },
+            { x: 120,  y: 640 }
+          ];
+        } else if (lane === "GOLD") {
+          return [
+            { x: 1580, y: 640 },
+            { x: 1480, y: 480 },
+            { x: 1480, y: 200 },
+            { x: 880,  y: 200 },
+            { x: 240,  y: 200 },
+            { x: 240,  y: 480 },
+            { x: 160,  y: 640 },
+            { x: 120,  y: 640 }
+          ];
+        } else {
+          return [
+            { x: 1580, y: 640 },
+            { x: 1480, y: 800 },
+            { x: 1480, y: 1080 },
+            { x: 880,  y: 1080 },
+            { x: 240,  y: 1080 },
+            { x: 240,  y: 800 },
+            { x: 160,  y: 640 },
+            { x: 120,  y: 640 }
+          ];
+        }
+      }
+    }
+
+    // Default Compact Map 32x24 waypoints
     const laneY = lane === "GOLD" ? 240 : lane === "EXP" ? 720 : 480;
 
     if (team === "BLUE") {
@@ -328,32 +401,37 @@ class MinionManager {
     }
   }
 
-  spawnWave() {
+  spawnWave(map = null) {
     this.waveCount++;
     const lanes = ["GOLD", "MID", "EXP"];
+    const isLod = (map && map.mapType === "LAND_OF_DAWN") || this.mapType === "LAND_OF_DAWN";
 
     lanes.forEach(lane => {
-      // 3 Melee + 2 Ranged per lane as specified in GAMEPLAY_PHASES.md
-      const blueWp = this.getWaypoints("BLUE", lane);
-      this.minions.push(new Minion({ team: "BLUE", lane, type: "melee", x: 105, y: 470, waypoints: blueWp }));
-      this.minions.push(new Minion({ team: "BLUE", lane, type: "melee", x: 105, y: 490, waypoints: blueWp }));
-      this.minions.push(new Minion({ team: "BLUE", lane, type: "melee", x: 90,  y: 480, waypoints: blueWp }));
-      this.minions.push(new Minion({ team: "BLUE", lane, type: "ranged", x: 75, y: 472, waypoints: blueWp }));
-      this.minions.push(new Minion({ team: "BLUE", lane, type: "ranged", x: 75, y: 488, waypoints: blueWp }));
+      // 3 Melee + 2 Ranged per lane
+      const blueWp = this.getWaypoints("BLUE", lane, map);
+      const bX = isLod ? 140 : 105;
+      const bY = isLod ? 640 : 480;
+      this.minions.push(new Minion({ team: "BLUE", lane, type: "melee", x: bX,      y: bY - 10, waypoints: blueWp }));
+      this.minions.push(new Minion({ team: "BLUE", lane, type: "melee", x: bX,      y: bY + 10, waypoints: blueWp }));
+      this.minions.push(new Minion({ team: "BLUE", lane, type: "melee", x: bX - 15, y: bY,      waypoints: blueWp }));
+      this.minions.push(new Minion({ team: "BLUE", lane, type: "ranged", x: bX - 30, y: bY - 8,  waypoints: blueWp }));
+      this.minions.push(new Minion({ team: "BLUE", lane, type: "ranged", x: bX - 30, y: bY + 8,  waypoints: blueWp }));
 
-      const redWp = this.getWaypoints("RED", lane);
-      this.minions.push(new Minion({ team: "RED", lane, type: "melee", x: 1175, y: 470, waypoints: redWp }));
-      this.minions.push(new Minion({ team: "RED", lane, type: "melee", x: 1175, y: 490, waypoints: redWp }));
-      this.minions.push(new Minion({ team: "RED", lane, type: "melee", x: 1190, y: 480, waypoints: redWp }));
-      this.minions.push(new Minion({ team: "RED", lane, type: "ranged", x: 1205, y: 472, waypoints: redWp }));
-      this.minions.push(new Minion({ team: "RED", lane, type: "ranged", x: 1205, y: 488, waypoints: redWp }));
+      const redWp = this.getWaypoints("RED", lane, map);
+      const rX = isLod ? 1620 : 1175;
+      const rY = isLod ? 640 : 480;
+      this.minions.push(new Minion({ team: "RED", lane, type: "melee", x: rX,      y: rY - 10, waypoints: redWp }));
+      this.minions.push(new Minion({ team: "RED", lane, type: "melee", x: rX,      y: rY + 10, waypoints: redWp }));
+      this.minions.push(new Minion({ team: "RED", lane, type: "melee", x: rX + 15, y: rY,      waypoints: redWp }));
+      this.minions.push(new Minion({ team: "RED", lane, type: "ranged", x: rX + 30, y: rY - 8,  waypoints: redWp }));
+      this.minions.push(new Minion({ team: "RED", lane, type: "ranged", x: rX + 30, y: rY + 8,  waypoints: redWp }));
     });
   }
 
   update(dt, map, hero, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager) {
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
-      this.spawnWave();
+      this.spawnWave(map);
       this.spawnTimer = this.waveInterval;
 
       if (combatTexts) {

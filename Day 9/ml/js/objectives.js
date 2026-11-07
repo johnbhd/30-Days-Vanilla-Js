@@ -4,15 +4,21 @@
  */
 
 class ObjectiveManager {
-  constructor() {
+  constructor(mapType = "COMPACT") {
+    this.mapType = (mapType || "COMPACT").toUpperCase();
+
     // River Pit Locations
-    // Exactly horizontally centered in blue river (x = 660)
-    // Upper Pit: vertically centered between Top Lane & Mid Lane (y = 380)
-    // Lower Pit: vertically centered between Mid Lane & Bottom Lane (y = 620)
-    this.pits = {
-      upper: { x: 660, y: 380, name: "UPPER RIVER PIT" },
-      lower: { x: 660, y: 620, name: "LOWER RIVER PIT" }
-    };
+    if (this.mapType === "LAND_OF_DAWN") {
+      this.pits = {
+        upper: { x: 880, y: 360, name: "UPPER RIVER PIT" },
+        lower: { x: 880, y: 920, name: "LOWER RIVER PIT" }
+      };
+    } else {
+      this.pits = {
+        upper: { x: 660, y: 380, name: "UPPER RIVER PIT" },
+        lower: { x: 660, y: 620, name: "LOWER RIVER PIT" }
+      };
+    }
     this.turtlePit = "upper"; // Spawns between Top Lane & Mid Lane
 
     this.turtle = {
@@ -60,6 +66,7 @@ class ObjectiveManager {
 
     this.summonedLord = null;
     this.announcements = [];
+    this.jungleCamps = [];
 
     const makeBossTakeDamage = (boss) => {
       boss.takeDamage = function(amount, attacker, combatTexts, particles, sound) {
@@ -82,30 +89,158 @@ class ObjectiveManager {
     };
     makeBossTakeDamage(this.turtle);
     makeBossTakeDamage(this.lord);
+
+    this.initJungleCamps();
+  }
+
+  initJungleCamps() {
+    this.jungleCamps = [];
+    if (this.mapType !== "LAND_OF_DAWN") return;
+
+    const campDefs = [
+      // Quadrant 1 (Top-Left / Blue North Jungle)
+      { id: "blue_buff_blue", name: "Blue Buff", type: "blue_buff", x: 500,  y: 420,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#00d2d3" },
+      { id: "small_creep_1",  name: "Crammer",   type: "small_creep", x: 660, y: 340,  hp: 750,  maxHp: 750,  radius: 14, bounty: 45, exp: 60,  respawnInterval: 35, color: "#2ecc71" },
+
+      // Quadrant 2 (Bottom-Left / Blue South Jungle)
+      { id: "red_buff_blue",  name: "Red Buff",  type: "red_buff",  x: 500,  y: 900,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#e74c3c" },
+      { id: "small_creep_2",  name: "Rockursa",  type: "small_creep", x: 660, y: 980,  hp: 750,  maxHp: 750,  radius: 14, bounty: 45, exp: 60,  respawnInterval: 35, color: "#a29bfe" },
+
+      // Quadrant 3 (Top-Right / Red North Jungle)
+      { id: "red_buff_red",   name: "Red Buff",  type: "red_buff",  x: 1260, y: 420,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#e74c3c" },
+      { id: "small_creep_3",  name: "Crammer",   type: "small_creep", x: 1100, y: 340, hp: 750,  maxHp: 750,  radius: 14, bounty: 45, exp: 60,  respawnInterval: 35, color: "#2ecc71" },
+
+      // Quadrant 4 (Bottom-Right / Red South Jungle)
+      { id: "blue_buff_red",  name: "Blue Buff", type: "blue_buff", x: 1260, y: 900,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#00d2d3" },
+      { id: "small_creep_4",  name: "Rockursa",  type: "small_creep", x: 1100, y: 980, hp: 750,  maxHp: 750,  radius: 14, bounty: 45, exp: 60,  respawnInterval: 35, color: "#a29bfe" },
+
+      // River Gold Crabs
+      { id: "gold_crab_top",  name: "Gold Crab", type: "gold_crab", x: 860,  y: 180,  hp: 850,  maxHp: 850,  radius: 15, bounty: 85, exp: 70,  respawnInterval: 45, color: "#ffd700" },
+      { id: "gold_crab_bot",  name: "Gold Crab", type: "gold_crab", x: 940,  y: 1140, hp: 850,  maxHp: 850,  radius: 15, bounty: 85, exp: 70,  respawnInterval: 45, color: "#ffd700" }
+    ];
+
+    campDefs.forEach(def => {
+      const camp = {
+        ...def,
+        alive: true,
+        respawnTimer: 0,
+        isJungleMonster: true,
+        homeX: def.x,
+        homeY: def.y,
+        attackTimer: 0,
+        target: null,
+        takeDamage: (amount, attacker, combatTexts, particles, sound, scoreboard) => {
+          if (!camp.alive || camp.hp <= 0) return;
+          camp.hp = Math.max(0, camp.hp - amount);
+          camp.lastAttacker = attacker;
+          if (attacker && !camp.target) camp.target = attacker;
+
+          if (particles && particles.spawnBurst) particles.spawnBurst(camp.x, camp.y, def.color || "#ffffff", 5, 80);
+          if (sound && sound.playHit) sound.playHit();
+
+          if (combatTexts) {
+            combatTexts.push({
+              x: camp.x + (Math.random() - 0.5) * 16,
+              y: camp.y - 18,
+              text: `-${Math.round(amount)}`,
+              color: def.color || "#ffd700",
+              life: 0.7,
+              maxLife: 0.7
+            });
+          }
+
+          if (camp.hp <= 0) {
+            this.handleJungleKill(camp, attacker, combatTexts, particles, sound, scoreboard);
+          }
+        }
+      };
+      this.jungleCamps.push(camp);
+    });
+  }
+
+  handleJungleKill(camp, attacker, combatTexts, particles, sound, scoreboard) {
+    camp.alive = false;
+    camp.respawnTimer = camp.respawnInterval;
+    camp.target = null;
+
+    if (!attacker) return;
+    const isPlayer = attacker.team === "BLUE" && (attacker.id || attacker === (typeof window !== "undefined" ? window.selectedHero : null));
+    const teamKey = (attacker.team === "BLUE") ? "player" : "bot";
+
+    // Bounty & EXP
+    if (scoreboard && typeof scoreboard.addGold === "function") {
+      scoreboard.addGold(teamKey, camp.bounty);
+    }
+    if (typeof attacker.gainExp === "function") {
+      attacker.gainExp(camp.exp, combatTexts, particles, sound);
+    }
+
+    // Buff Application
+    if (camp.type === "blue_buff") {
+      if (!attacker.buffs) attacker.buffs = { blue: 0, red: 0 };
+      attacker.buffs.blue = 45; // 45 seconds of Blue Buff (-15% CDR, +12 mana/s)
+      this.addAnnouncement(`[${attacker.team}] ${attacker.name || "CHAMPION"} OBTAINED BLUE BUFF (-15% CDR)!`, "#00d2d3");
+      if (combatTexts) {
+        combatTexts.push({ x: attacker.x, y: attacker.y - 28, text: "+BLUE BUFF (-15% CDR)!", color: "#00d2d3", life: 1.5, maxLife: 1.5 });
+      }
+    } else if (camp.type === "red_buff") {
+      if (!attacker.buffs) attacker.buffs = { blue: 0, red: 0 };
+      attacker.buffs.red = 45; // 45 seconds of Red Buff (True Damage & Slow)
+      this.addAnnouncement(`[${attacker.team}] ${attacker.name || "CHAMPION"} OBTAINED RED BUFF (TRUE DMG & SLOW)!`, "#e74c3c");
+      if (combatTexts) {
+        combatTexts.push({ x: attacker.x, y: attacker.y - 28, text: "+RED BUFF (TRUE DMG & SLOW)!", color: "#e74c3c", life: 1.5, maxLife: 1.5 });
+      }
+    } else if (camp.type === "small_creep") {
+      const healAmount = Math.round((attacker.maxHp || 2000) * 0.15);
+      attacker.hp = Math.min(attacker.maxHp || 2000, (attacker.hp || 0) + healAmount);
+      if (combatTexts) {
+        combatTexts.push({ x: attacker.x, y: attacker.y - 24, text: `+${healAmount} HP HEAL!`, color: "#2ecc71", life: 1.2, maxLife: 1.2 });
+      }
+    } else if (camp.type === "gold_crab") {
+      if (combatTexts) {
+        combatTexts.push({ x: attacker.x, y: attacker.y - 24, text: `+${camp.bounty} GOLD CRAB!`, color: "#ffd700", life: 1.2, maxLife: 1.2 });
+      }
+    }
   }
 
   createSummonedLord(team = "BLUE") {
     const isBlue = team === "BLUE";
-    const startX = isBlue ? 140 : 1220;
-    const waypoints = isBlue
-      ? [
-          { x: 140, y: 480 },
-          { x: 640, y: 480 },
-          { x: 1140, y: 480 },
-          { x: 1220, y: 480 }
-        ]
-      : [
-          { x: 1220, y: 480 },
-          { x: 640, y: 480 },
-          { x: 220, y: 480 },
-          { x: 140, y: 480 }
-        ];
+    const isLod = this.mapType === "LAND_OF_DAWN";
+    const startX = isLod ? (isBlue ? 180 : 1540) : (isBlue ? 140 : 1220);
+    const startY = isLod ? 640 : 480;
+    const waypoints = isLod
+      ? (isBlue
+          ? [
+              { x: 180,  y: 640 },
+              { x: 880,  y: 640 },
+              { x: 1540, y: 640 },
+              { x: 1620, y: 640 }
+            ]
+          : [
+              { x: 1540, y: 640 },
+              { x: 880,  y: 640 },
+              { x: 180,  y: 640 },
+              { x: 120,  y: 640 }
+            ])
+      : (isBlue
+          ? [
+              { x: 140, y: 480 },
+              { x: 640, y: 480 },
+              { x: 1140, y: 480 },
+              { x: 1220, y: 480 }
+            ]
+          : [
+              { x: 1220, y: 480 },
+              { x: 640, y: 480 },
+              { x: 220, y: 480 },
+              { x: 140, y: 480 }
+            ]);
 
     return {
       name: isBlue ? "Allied Lord" : "Enemy Lord",
       team: team,
       x: startX,
-      y: 480,
+      y: startY,
       radius: 26,
       hp: 3600,
       maxHp: 3600,
@@ -288,6 +423,55 @@ class ObjectiveManager {
     for (let i = this.announcements.length - 1; i >= 0; i--) {
       this.announcements[i].life -= dt;
       if (this.announcements[i].life <= 0) this.announcements.splice(i, 1);
+    }
+
+    // 5. Jungle Camps update
+    if (this.jungleCamps && this.jungleCamps.length > 0) {
+      this.jungleCamps.forEach(camp => {
+        if (!camp.alive) {
+          camp.respawnTimer -= dt;
+          if (camp.respawnTimer <= 0) {
+            camp.alive = true;
+            camp.hp = camp.maxHp;
+            camp.target = null;
+            camp.x = camp.homeX;
+            camp.y = camp.homeY;
+          }
+        } else {
+          // If aggroed, attack target if in range or return to home
+          if (camp.target) {
+            const isDead = camp.target.hp <= 0 || camp.target.isDead;
+            const dist = getDistance(camp.x, camp.y, camp.target.x, camp.target.y);
+            const distFromHome = getDistance(camp.target.x, camp.target.y, camp.homeX, camp.homeY);
+            if (isDead || dist > 200 || distFromHome > 160) {
+              camp.target = null;
+            } else {
+              camp.attackTimer = (camp.attackTimer || 0) - dt;
+              if (camp.attackTimer <= 0 && dist <= 75) {
+                camp.attackTimer = 1.3;
+                const dmg = camp.attackDamage || 25;
+                if (typeof camp.target.takeDamage === "function") {
+                  camp.target.takeDamage(dmg, camp, combatTexts, particles, sound, scoreboard);
+                } else if (camp.target.hp !== undefined) {
+                  camp.target.hp = Math.max(0, camp.target.hp - dmg);
+                }
+              }
+            }
+          }
+          if (!camp.target) {
+            const distToHome = getDistance(camp.x, camp.y, camp.homeX, camp.homeY);
+            if (distToHome > 3) {
+              const dx = camp.homeX - camp.x;
+              const dy = camp.homeY - camp.y;
+              camp.x += (dx / distToHome) * 70 * dt;
+              camp.y += (dy / distToHome) * 70 * dt;
+            } else {
+              camp.x = camp.homeX;
+              camp.y = camp.homeY;
+            }
+          }
+        }
+      });
     }
   }
 
@@ -682,6 +866,61 @@ class ObjectiveManager {
       ctx.textAlign = "center";
       ctx.fillText(ann.text, GAME.CANVAS_WIDTH / 2, bannerY + 23);
       ctx.restore();
+    }
+
+    // 5. Render Jungle Camps
+    if (this.jungleCamps && this.jungleCamps.length > 0) {
+      this.jungleCamps.forEach(camp => {
+        const sx = camp.x - camera.x;
+        const sy = camp.y - camera.y;
+        if (sx < -40 || sx > GAME.CANVAS_WIDTH + 40 || sy < -40 || sy > GAME.CANVAS_HEIGHT + 40) return;
+
+        ctx.save();
+        if (camp.alive) {
+          // Camp Monster body
+          ctx.fillStyle = camp.color || "#00d2d3";
+          ctx.beginPath();
+          ctx.arc(sx, sy, camp.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Core Label
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 9px sans-serif";
+          ctx.textAlign = "center";
+          const label = camp.type === "blue_buff" ? "BLUE" : (camp.type === "red_buff" ? "RED" : (camp.type === "gold_crab" ? "CRAB" : "CREEP"));
+          ctx.fillText(label, sx, sy + 3);
+
+          // Name label
+          ctx.fillStyle = camp.color || "#fff";
+          ctx.font = "bold 10px sans-serif";
+          ctx.fillText(camp.name, sx, sy - camp.radius - 8);
+
+          // HP Bar
+          const barW = camp.radius * 2 + 8;
+          const barH = 4;
+          const hpRatio = Math.max(0, camp.hp / camp.maxHp);
+          ctx.fillStyle = "#111";
+          ctx.fillRect(sx - barW / 2, sy - camp.radius - 5, barW, barH);
+          ctx.fillStyle = camp.color || "#2ecc71";
+          ctx.fillRect(sx - barW / 2, sy - camp.radius - 5, barW * hpRatio, barH);
+        } else {
+          // Respawn indicator ring
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(sx, sy, camp.radius * 0.7, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+          ctx.font = "9px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(`${Math.ceil(camp.respawnTimer)}s`, sx, sy + 3);
+        }
+        ctx.restore();
+      });
     }
   }
 }

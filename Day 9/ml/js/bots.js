@@ -12,13 +12,25 @@ class BotHero {
     this.lane = (lane || "MID").toUpperCase();
     this.assignedLane = this.lane;
 
+    // Check if Land of Dawn map is active
+    const isLod = (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
+
     // Map lane to Y pixel coordinate
     if (this.lane.includes("GOLD") || this.lane.includes("TOP")) {
-      this.laneY = 6 * 40; // 240px (Top Lane)
+      this.laneY = isLod ? (5 * 40) : (6 * 40); // 200px or 240px
+      this.assignedLane = "GOLD";
     } else if (this.lane.includes("EXP") || this.lane.includes("BOT")) {
-      this.laneY = 18 * 40; // 720px (Bottom Lane)
+      this.laneY = isLod ? (27 * 40) : (18 * 40); // 1080px or 720px
+      this.assignedLane = "EXP";
+    } else if (this.lane.includes("JUNGLE")) {
+      this.laneY = isLod ? (10 * 40) : (12 * 40);
+      this.assignedLane = "JUNGLE";
+    } else if (this.lane.includes("ROAM")) {
+      this.laneY = isLod ? (16 * 40) : (12 * 40);
+      this.assignedLane = "ROAM";
     } else {
-      this.laneY = 12 * 40; // 480px (Mid Lane)
+      this.laneY = isLod ? (16 * 40) : (12 * 40);
+      this.assignedLane = "MID";
     }
     this.assignedLaneY = this.laneY;
 
@@ -31,15 +43,18 @@ class BotHero {
     this.maxHp = this.hp;
     this.radius = 18;
 
+    // Active Jungle Buffs { blue: seconds, red: seconds }
+    this.buffs = { blue: 0, red: 0 };
+
     // Base Spawns & March Target
     if (this.team === "BLUE") {
-      this.spawnX = 2 * 40; // 80px (Blue Base)
-      this.spawnY = 12 * 40; // 480px
-      this.targetX = 29 * 40; // March towards Red Base
+      this.spawnX = isLod ? 140 : (2 * 40);
+      this.spawnY = isLod ? 640 : (12 * 40);
+      this.targetX = isLod ? 1620 : (29 * 40);
     } else {
-      this.spawnX = 29 * 40; // 1160px (Red Base)
-      this.spawnY = 12 * 40; // 480px
-      this.targetX = 2 * 40; // March towards Blue Base
+      this.spawnX = isLod ? 1620 : (29 * 40);
+      this.spawnY = isLod ? 640 : (12 * 40);
+      this.targetX = isLod ? 140 : (2 * 40);
     }
     this.x = this.spawnX;
     this.y = this.spawnY;
@@ -608,14 +623,21 @@ class BotHero {
       return;
     }
 
-    // 2. Cooldown tickers
+    // 2. Cooldown tickers (Blue Buff reduces cooldowns 15% faster)
+    const cdDt = (this.buffs && this.buffs.blue > 0) ? (dt * 1.15) : dt;
     this.attackTimer = Math.max(0, this.attackTimer - dt);
     this.skillActionTimer = Math.max(0, (this.skillActionTimer || 0) - dt);
     this.recallCooldown = Math.max(0, this.recallCooldown - dt);
     this.recentDamageTimer = Math.max(0, this.recentDamageTimer - dt);
-    this.skills.q.cd = Math.max(0, this.skills.q.cd - dt);
-    this.skills.w.cd = Math.max(0, this.skills.w.cd - dt);
-    this.skills.r.cd = Math.max(0, this.skills.r.cd - dt);
+    this.skills.q.cd = Math.max(0, this.skills.q.cd - cdDt);
+    this.skills.w.cd = Math.max(0, this.skills.w.cd - cdDt);
+    this.skills.r.cd = Math.max(0, this.skills.r.cd - cdDt);
+
+    // Active Buffs decay
+    if (this.buffs) {
+      if (this.buffs.blue > 0) this.buffs.blue = Math.max(0, this.buffs.blue - dt);
+      if (this.buffs.red > 0) this.buffs.red = Math.max(0, this.buffs.red - dt);
+    }
 
     // 3. Passive Gold & EXP Trickle
     this.gold += dt * 5;
@@ -1391,10 +1413,26 @@ class BotHero {
           particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, this.color, 40);
         }
       }
+      let effectiveDmg = this.attackDamage;
+      if (this.buffs && this.buffs.red > 0) {
+        const bonusTrueDmg = 35 + Math.round((this.level || 1) * 4);
+        effectiveDmg += bonusTrueDmg;
+        if (particles && particles.spawnBurst) particles.spawnBurst(targetHero.x, targetHero.y, "#ff4757", 5, 80);
+        if (combatTexts) {
+          combatTexts.push({
+            x: targetHero.x + (Math.random() - 0.5) * 14,
+            y: targetHero.y - 32,
+            text: `[TRUE] +${bonusTrueDmg}`,
+            color: "#ff4757",
+            life: 0.8,
+            maxLife: 0.8
+          });
+        }
+      }
       if (typeof targetHero.takeDamage === "function") {
-        targetHero.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
+        targetHero.takeDamage(effectiveDmg, this, combatTexts, particles, sound, scoreboard);
       } else {
-        targetHero.hp -= this.attackDamage;
+        targetHero.hp -= effectiveDmg;
       }
       if (this.lifesteal > 0 && this.hp < this.maxHp) {
         const healAmt = Math.round(this.attackDamage * this.lifesteal);
@@ -1908,6 +1946,24 @@ class BotHero {
     ctx.beginPath();
     ctx.arc(sx, sy, this.radius + 6, 0, Math.PI * 2);
     ctx.fill();
+
+    // Render Blue & Red buff auras
+    if (this.buffs) {
+      if (this.buffs.blue > 0) {
+        ctx.strokeStyle = "rgba(0, 210, 211, 0.85)";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(sx, sy, this.radius + 5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (this.buffs.red > 0) {
+        ctx.strokeStyle = "rgba(231, 76, 60, 0.85)";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(sx, sy, this.radius + (this.buffs.blue > 0 ? 8 : 5), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
 
     // Sprite or fallback circle
     if (this.loaded && this.image) {

@@ -966,6 +966,11 @@ class SkillManager {
     if (objectives) {
       if (objectives.turtle && objectives.turtle.alive) enemies.push(objectives.turtle);
       if (objectives.lord && objectives.lord.alive) enemies.push(objectives.lord);
+      if (objectives.jungleCamps && Array.isArray(objectives.jungleCamps)) {
+        objectives.jungleCamps.forEach(c => {
+          if (c.alive && c.hp > 0) enemies.push(c);
+        });
+      }
     }
     return enemies;
   }
@@ -1029,10 +1034,11 @@ class SkillManager {
   }
 
   update(dt, hero, map, minions, objectives, combatTexts, gameStats, enemyBot, scoreboard, sound, particles) {
-    // 1. Cooldown timers
+    // 1. Cooldown timers (Blue Buff reduces cooldowns 15% faster)
+    const cdDt = (hero && hero.buffs && hero.buffs.blue > 0) ? (dt * 1.15) : dt;
     for (const slot in this.cooldowns) {
       if (this.cooldowns[slot] > 0) {
-        this.cooldowns[slot] = Math.max(0, this.cooldowns[slot] - dt);
+        this.cooldowns[slot] = Math.max(0, this.cooldowns[slot] - cdDt);
       }
     }
 

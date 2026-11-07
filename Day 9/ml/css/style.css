@@ -1342,6 +1342,16 @@ canvas {
   color: #fff;
 }
 
+.mode-badge.squad-badge {
+  background: linear-gradient(135deg, #0984e3, #6c5ce7);
+  color: #fff;
+}
+
+.mode-badge.grand-badge {
+  background: linear-gradient(135deg, #f1c40f, #e67e22);
+  color: #1a1a2e;
+}
+
 .mode-badge.locked-badge {
   background: #4a5568;
   color: #e2e8f0;
@@ -1571,6 +1581,9 @@ canvas {
   flex-direction: column;
   gap: 6px;
   flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 220px);
+  padding-right: 2px;
 }
 
 .team-slot {
