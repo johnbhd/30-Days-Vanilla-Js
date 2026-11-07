@@ -1728,49 +1728,7 @@ class BotHero {
         this.targetX = this.x;
         this.targetY = this.y;
 
-        // Bot casts Q to damage turret faster
-        if (this.skills && this.skills.q && this.skills.q.cd <= 0 && this.skillActionTimer <= 0) {
-          this.skills.q.cd = this.skills.q.maxCd;
-          this.skillActionTimer = 0.3;
-          const hid = (this.id || (this.heroData && this.heroData.id) || "").toLowerCase();
-          const sm = skillManager || (typeof window !== "undefined" ? window.skillManager : null);
-          if (sound) sound.playSkill("q");
-          if (particles) {
-            particles.spawnBurst(nearTurret.worldX, nearTurret.worldY, "#f39c12", 10, 90);
-            particles.spawnRing(nearTurret.worldX, nearTurret.worldY, 45, "#f39c12", 0.35);
-          }
-          if (sm && sm.activeAOEs && (hid === "layla" || hid === "pharsa" || hid === "tigreal")) {
-            sm.activeAOEs.push({
-              type: "beam",
-              startX: this.x,
-              startY: this.y,
-              endX: nearTurret.worldX,
-              endY: nearTurret.worldY,
-              width: 10,
-              color: this.color || "#f39c12",
-              life: 0.25,
-              maxLife: 0.25,
-              damage: 0
-            });
-          }
-          if (typeof nearTurret.takeDamage === "function") {
-            nearTurret.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
-          } else {
-            nearTurret.hp -= this.skills.q.damage;
-            nearTurret.lastAttacker = this;
-          }
-          if (combatTexts) {
-            combatTexts.push({
-              x: nearTurret.worldX,
-              y: nearTurret.worldY - 25,
-              text: `[${this.team}] ${this.skills.q.name.toUpperCase()} -${this.skills.q.damage}!`,
-              color: "#f39c12",
-              life: 1.0,
-              maxLife: 1.0
-            });
-          }
-        }
-
+        // Turrets are immune to skills - bots only use basic attacks against towers
         if (this.attackTimer <= 0) {
           this.attackTimer = this.attackCooldown;
           const isRanged = this.attackRange > 130;

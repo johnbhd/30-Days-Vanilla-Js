@@ -241,6 +241,7 @@ class GameMap {
     }
     this.turrets.push({
       id: `${team}_${lane}_${tier}`,
+      isTurret: true,
       x: tx,
       y: ty,
       worldX: tx * this.tileSize + this.tileSize / 2,

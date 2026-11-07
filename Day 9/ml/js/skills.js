@@ -962,13 +962,7 @@ class SkillManager {
         if (m.team !== hero.team && m.hp > 0) enemies.push(m);
       });
     }
-    if (map && map.turrets) {
-      map.turrets.forEach(t => {
-        if (t.team !== hero.team && !t.destroyed && t.hp > 0) {
-          enemies.push({ x: t.worldX, y: t.worldY, hp: t.hp, isTurret: true, ref: t });
-        }
-      });
-    }
+    // Turrets are immune to skill damage (MOBA rule: only basic attacks damage towers)
     if (objectives) {
       if (objectives.turtle && objectives.turtle.alive) enemies.push(objectives.turtle);
       if (objectives.lord && objectives.lord.alive) enemies.push(objectives.lord);
@@ -977,6 +971,9 @@ class SkillManager {
   }
 
   applySkillDamage(e, dmg, hero, combatTexts, gameStats, scoreboard, sound, particles) {
+    // Structures/turrets are completely immune to skill damage
+    if (!e || e.isTurret || (e.ref && e.ref.isTurret) || e.tier !== undefined || e.isCrystal || e.isBase) return;
+
     if (typeof e.takeDamage === "function") {
       e.takeDamage(dmg, hero, combatTexts, particles, sound, scoreboard);
       if (gameStats) gameStats.damageDealt += dmg;
