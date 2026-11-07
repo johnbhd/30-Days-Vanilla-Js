@@ -615,7 +615,7 @@ function resetGameForNewFormat() {
   if (Array.isArray(scoreboard.eventFeed)) scoreboard.eventFeed.length = 0;
 
   combatTexts.length = 0;
-  if (particles && Array.isArray(particles.particles)) particles.particles.length = 0;
+  if (particles && typeof particles.clear === "function") particles.clear();
   matchTime = 0;
   passiveGoldTimer = 0;
   gameStats.minionsKilled = 0;

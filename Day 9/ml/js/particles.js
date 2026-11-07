@@ -39,6 +39,14 @@ class ParticleEngine {
     }
   }
 
+  clear() {
+    for (let i = 0; i < this.particles.length; i++) {
+      if (this.particles[i]) {
+        this.particles[i].active = false;
+      }
+    }
+  }
+
   getMultiplier() {
     if (this.quality === "low") return 0.25;
     if (this.quality === "medium") return 0.6;
@@ -126,9 +134,10 @@ class ParticleEngine {
   }
 
   update(dt) {
-    for (let i = 0; i < this.maxParticles; i++) {
+    const total = this.particles ? this.particles.length : 0;
+    for (let i = 0; i < total; i++) {
       const p = this.particles[i];
-      if (!p.active) continue;
+      if (!p || !p.active) continue;
 
       p.life -= dt;
       if (p.life <= 0) {
@@ -149,9 +158,10 @@ class ParticleEngine {
   render(ctx, camera) {
     ctx.save();
 
-    for (let i = 0; i < this.maxParticles; i++) {
+    const total = this.particles ? this.particles.length : 0;
+    for (let i = 0; i < total; i++) {
       const p = this.particles[i];
-      if (!p.active) continue;
+      if (!p || !p.active) continue;
 
       const sx = p.x - camera.x;
       const sy = p.y - camera.y;
