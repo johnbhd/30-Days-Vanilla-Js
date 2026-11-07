@@ -168,6 +168,7 @@ class Minion {
               x: this.x,
               y: this.y,
               target: this.target,
+              attacker: this,
               speed: 360,
               damage: this.attackDamage,
               team: this.team,
@@ -179,6 +180,7 @@ class Minion {
             if (typeof this.target.takeDamage === "function") {
               this.target.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
             } else if (this.target.hp !== undefined) {
+              this.target.lastAttacker = this;
               this.target.hp = Math.max(0, this.target.hp - this.attackDamage);
             } else if (this.target.crystalHp !== undefined) {
               this.target.crystalHp = Math.max(0, this.target.crystalHp - this.attackDamage);

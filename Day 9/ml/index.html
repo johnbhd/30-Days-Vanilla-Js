@@ -95,6 +95,29 @@
             </h3>
             <span class="slot-switch-tip"><i class="fa-solid fa-circle-info"></i> Click any teammate or enemy slot above to change their hero</span>
           </div>
+
+          <!-- 6 Role Filter Tabs: All, Tank, Fighter, Assassin, Mage, Marksman -->
+          <div class="hero-role-tabs" id="heroRoleTabs" role="tablist" aria-label="Hero Role Filters">
+            <button type="button" class="hero-role-tab active" data-role="all" role="tab" aria-selected="true">
+              <i class="fa-solid fa-layer-group"></i> All
+            </button>
+            <button type="button" class="hero-role-tab" data-role="tank" role="tab" aria-selected="false">
+              <i class="fa-solid fa-shield-halved"></i> Tank
+            </button>
+            <button type="button" class="hero-role-tab" data-role="fighter" role="tab" aria-selected="false">
+              <i class="fa-solid fa-hand-fist"></i> Fighter
+            </button>
+            <button type="button" class="hero-role-tab" data-role="assassin" role="tab" aria-selected="false">
+              <i class="fa-solid fa-bolt-lightning"></i> Assassin
+            </button>
+            <button type="button" class="hero-role-tab" data-role="mage" role="tab" aria-selected="false">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Mage
+            </button>
+            <button type="button" class="hero-role-tab" data-role="marksman" role="tab" aria-selected="false">
+              <i class="fa-solid fa-crosshairs"></i> Marksman
+            </button>
+          </div>
+
           <div id="heroGrid" class="hero-grid"></div>
         </div>
 
@@ -212,6 +235,9 @@
 
     <!-- In-Game UI Overlay -->
     <div class="ui-overlay">
+      <!-- Dedicated In-Game Kill & Turret Event Feed -->
+      <div id="killFeed" class="kill-feed" aria-live="polite"></div>
+
       <div class="top-row">
         <div class="top-right-column">
           <div class="hero-panel" id="heroPanel">

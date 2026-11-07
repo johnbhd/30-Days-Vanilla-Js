@@ -236,11 +236,119 @@ function assignHeroToActiveSlot(hero) {
   if (sound && sound.playClick) sound.playClick();
 }
 
-// Build hero selection cards
+let activeHeroRoleTab = "all";
+
+function getHeroPrimaryRank(hero) {
+  if (!hero || !hero.role) return 99;
+  const lower = hero.role.toLowerCase();
+  if (lower.includes("tank")) return 1;
+  if (lower.includes("fighter")) return 2;
+  if (lower.includes("assassin")) return 3;
+  if (lower.includes("mage") || lower.includes("support")) return 4;
+  if (lower.includes("marksman")) return 5;
+  return 99;
+}
+
+function initHeroRoleTabs() {
+  const tabsContainer = document.getElementById("heroRoleTabs");
+  if (!tabsContainer) return;
+
+  const tabButtons = tabsContainer.querySelectorAll(".hero-role-tab");
+  tabButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const selectedRole = btn.getAttribute("data-role") || "all";
+      if (activeHeroRoleTab === selectedRole) return;
+
+      activeHeroRoleTab = selectedRole;
+      tabButtons.forEach(b => {
+        const isMatch = b.getAttribute("data-role") === selectedRole;
+        b.classList.toggle("active", isMatch);
+        b.setAttribute("aria-selected", isMatch ? "true" : "false");
+      });
+
+      if (sound && sound.playClick) sound.playClick();
+      buildHeroGrid();
+    });
+  });
+}
+
+/**
+ * In-game Kill & Event Feed Trigger
+ * Broadcasts recent hero kills & turret destructions in HUD kill feed overlay
+ */
+function triggerKillFeedEvent({ killerName, killerTeam = "BLUE", victimName, victimTeam = "RED", type = "kill" }) {
+  if (typeof document === "undefined") return;
+  const killFeed = document.getElementById("killFeed");
+  if (!killFeed) return;
+
+  const item = document.createElement("div");
+  item.className = `kill-feed-item ${type}`;
+
+  const isTurret = type === "turret";
+  const iconHtml = isTurret
+    ? `<span class="feed-event-icon turret-icon" title="Turret Destroyed"><i class="fa-solid fa-tower-observation"></i></span>`
+    : `<span class="feed-event-icon kill-icon" title="Hero Slain"><i class="fa-solid fa-skull"></i></span>`;
+
+  const killerBadgeClass = (killerTeam || "BLUE").toLowerCase() === "blue" ? "team-blue" : "team-red";
+  const victimBadgeClass = (victimTeam || "RED").toLowerCase() === "blue" ? "team-blue" : "team-red";
+
+  item.innerHTML = `
+    <span class="feed-badge ${killerBadgeClass}">${killerName}</span>
+    ${iconHtml}
+    <span class="feed-badge ${victimBadgeClass}">${victimName}</span>
+  `;
+
+  killFeed.appendChild(item);
+
+  // Auto fade-out after 4.0 seconds, remove from DOM at 4.4 seconds
+  setTimeout(() => {
+    item.classList.add("fade-out");
+    setTimeout(() => {
+      if (item.parentNode) item.parentNode.removeChild(item);
+    }, 400);
+  }, 4000);
+
+  // Limit on-screen feed items to max 4 to avoid visual clutter
+  while (killFeed.children.length > 4) {
+    killFeed.removeChild(killFeed.firstChild);
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.triggerKillFeedEvent = triggerKillFeedEvent;
+}
+
+// Build hero selection cards filtered by active role tab
 function buildHeroGrid() {
   if (!heroGrid) return;
   heroGrid.innerHTML = "";
-  HEROES.forEach((hero) => {
+
+  let filteredHeroes = [...HEROES];
+
+  if (activeHeroRoleTab !== "all") {
+    filteredHeroes = filteredHeroes.filter(hero => {
+      const roleStr = (hero.role || "").toLowerCase();
+      if (activeHeroRoleTab === "tank") return roleStr.includes("tank");
+      if (activeHeroRoleTab === "fighter") return roleStr.includes("fighter");
+      if (activeHeroRoleTab === "assassin") return roleStr.includes("assassin");
+      if (activeHeroRoleTab === "mage") return roleStr.includes("mage") || roleStr.includes("support");
+      if (activeHeroRoleTab === "marksman") return roleStr.includes("marksman");
+      return true;
+    });
+  } else {
+    // When "all" is active, sort by standard MOBA roles (Tank -> Fighter -> Assassin -> Mage -> Marksman)
+    filteredHeroes.sort((a, b) => getHeroPrimaryRank(a) - getHeroPrimaryRank(b));
+  }
+
+  if (filteredHeroes.length === 0) {
+    const emptyMsg = document.createElement("div");
+    emptyMsg.className = "hero-grid-empty";
+    emptyMsg.innerHTML = `<i class="fa-solid fa-circle-question"></i> No champions found for role "${activeHeroRoleTab.toUpperCase()}".`;
+    heroGrid.appendChild(emptyMsg);
+    return;
+  }
+
+  filteredHeroes.forEach((hero) => {
     const card = document.createElement("div");
     card.className = "hero-card";
     card.setAttribute("data-hero-id", hero.id);
@@ -745,6 +853,14 @@ function startMatch() {
 
   // Snap camera directly to hero
   updateCamera(true);
+
+  if (typeof window !== "undefined") {
+    window.player = selectedHero;
+    window.selectedHero = selectedHero;
+    window.objectiveManager = objectiveManager;
+    window.gameStats = gameStats;
+    window.bots = bots;
+  }
 }
 
 /**
@@ -1404,10 +1520,18 @@ function loop(currentTime) {
 }
 
 // Initialization
+initHeroRoleTabs();
 generateTeamRosters(HEROES[0]);
 buildHeroGrid();
 buildShopCatalog();
 renderTeamLineupsUI();
 updateHeroGridSelection();
 updateActiveSlotPrompt();
+
+if (typeof window !== "undefined") {
+  window.objectiveManager = objectiveManager;
+  window.gameStats = gameStats;
+  window.player = selectedHero;
+}
+
 requestAnimationFrame(loop);

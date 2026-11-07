@@ -525,6 +525,19 @@ class SoundEngine {
 
       osc.start(t);
       osc.stop(t + 0.36);
+    } else if (event === "turret") {
+      // Powerful seismic bass rumble for turret collapse
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(140, t);
+      osc.frequency.exponentialRampToValueAtTime(36, t + 0.45);
+      gain.gain.setValueAtTime(0.35, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(t);
+      osc.stop(t + 0.48);
     }
   }
 

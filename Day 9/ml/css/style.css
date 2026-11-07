@@ -45,6 +45,92 @@ canvas {
   justify-content: space-between;
 }
 
+/* Dedicated In-Game Kill & Turret Event Feed */
+.kill-feed {
+  position: absolute;
+  top: 14px;
+  right: 226px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+  z-index: 60;
+  max-width: 350px;
+}
+
+.kill-feed-item {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-end;
+  gap: 7px;
+  background: rgba(16, 25, 47, 0.94);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 5px 12px;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  font-size: 0.78rem;
+  font-weight: 700;
+  animation: feedSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  white-space: nowrap;
+}
+
+.kill-feed-item.fade-out {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.kill-feed-item .feed-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.kill-feed-item .feed-badge.team-blue {
+  background: rgba(49, 130, 206, 0.35);
+  color: #63b3ed;
+  border: 1px solid rgba(99, 179, 237, 0.55);
+  text-shadow: 0 0 6px rgba(99, 179, 237, 0.4);
+}
+
+.kill-feed-item .feed-badge.team-red {
+  background: rgba(229, 62, 62, 0.35);
+  color: #fc8181;
+  border: 1px solid rgba(252, 129, 129, 0.55);
+  text-shadow: 0 0 6px rgba(252, 129, 129, 0.4);
+}
+
+.kill-feed-item .feed-event-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.kill-feed-item .feed-event-icon.kill-icon {
+  color: #ffd700;
+  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.6));
+}
+
+.kill-feed-item .feed-event-icon.turret-icon {
+  color: #f6ad55;
+  filter: drop-shadow(0 0 4px rgba(246, 173, 85, 0.6));
+}
+
+@keyframes feedSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .top-row {
   display: flex;
   justify-content: flex-end;
@@ -1651,6 +1737,60 @@ canvas {
   gap: 5px;
 }
 
+/* 6 Role Filter Tabs: All, Tank, Fighter, Assassin, Mage, Marksman */
+.hero-role-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0 16px 0;
+  width: 100%;
+  overflow-x: auto;
+  padding: 4px 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.hero-role-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.hero-role-tab {
+  background: rgba(16, 25, 47, 0.78);
+  border: 1px solid rgba(78, 204, 163, 0.3);
+  color: #a0aec0;
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hero-role-tab:hover {
+  background: rgba(30, 45, 80, 0.95);
+  border-color: #4ecca3;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.hero-role-tab:active {
+  transform: scale(0.97);
+}
+
+.hero-role-tab.active {
+  background: linear-gradient(135deg, rgba(214, 158, 46, 0.3), rgba(78, 204, 163, 0.3));
+  border-color: #ffd700;
+  color: #ffd700;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.35);
+}
+
 .hero-card {
   position: relative;
   background: rgba(22, 33, 62, 0.85);
@@ -1753,14 +1893,19 @@ canvas {
 }
 
 .hero-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
   margin-bottom: 20px;
   width: 100%;
 }
 
 .hero-card {
+  position: relative;
+  flex: 0 1 calc(20% - 12px);
+  min-width: 125px;
+  max-width: 175px;
   background: rgba(22, 33, 62, 0.85);
   border: 2px solid #0f3460;
   border-radius: 10px;
@@ -1772,6 +1917,19 @@ canvas {
   align-items: center;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+.hero-grid-empty {
+  width: 100%;
+  padding: 24px 12px;
+  color: #a0aec0;
+  font-size: 0.9rem;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .hero-card:hover {
@@ -2243,12 +2401,34 @@ canvas {
     font-size: 0.85rem;
     margin-bottom: 14px;
   }
+  .kill-feed {
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
+    max-width: 290px;
+  }
+  .kill-feed-item {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+  }
+  .hero-role-tabs {
+    justify-content: flex-start;
+    padding: 2px 4px;
+    gap: 6px;
+    margin: 6px 0 10px 0;
+  }
+  .hero-role-tab {
+    padding: 5px 11px;
+    font-size: 0.76rem;
+  }
   .hero-grid {
-    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     margin-bottom: 14px;
   }
   .hero-card {
+    flex: 0 1 calc(50% - 8px);
+    min-width: 105px;
     padding: 8px 6px;
     border-radius: 8px;
   }
@@ -2677,13 +2857,34 @@ canvas {
     font-size: 0.72rem;
     margin-bottom: 6px;
   }
+  .kill-feed {
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
+    max-width: 270px;
+  }
+  .kill-feed-item {
+    font-size: 0.68rem;
+    padding: 2px 7px;
+  }
+  .hero-role-tabs {
+    margin: 4px 0 8px 0;
+    gap: 5px;
+    padding: 1px 2px;
+  }
+  .hero-role-tab {
+    padding: 3px 9px;
+    font-size: 0.72rem;
+  }
   .hero-grid {
-    grid-template-columns: repeat(5, 1fr);
     gap: 6px;
     margin-bottom: 8px;
     width: 100%;
   }
   .hero-card {
+    flex: 0 1 calc(20% - 6px);
+    min-width: 85px;
     padding: 5px 3px;
     border-radius: 6px;
   }

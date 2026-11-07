@@ -411,6 +411,50 @@ class BotHero {
       this.state = "DEAD";
       this.shield = 0;
 
+      // Identify killer
+      let killerName = this.team === "BLUE" ? "Enemy Forces" : "Allied Forces";
+      let killerTeam = this.team === "BLUE" ? "RED" : "BLUE";
+
+      if (source) {
+        if (source.isPlayer || (typeof player !== "undefined" && source === player) || (typeof window !== "undefined" && window.player && source === window.player)) {
+          killerName = `${source.name || "Hero"} (YOU)`;
+          killerTeam = "BLUE";
+          if (typeof gameStats !== "undefined" && gameStats) gameStats.kills++;
+          else if (typeof window !== "undefined" && window.gameStats) window.gameStats.kills++;
+        } else if (source.name) {
+          killerName = source.name;
+          killerTeam = source.team || killerTeam;
+        } else if (source.isTurret || source.tier) {
+          killerName = `${source.team || killerTeam} Turret`;
+          killerTeam = source.team || killerTeam;
+        } else if (source.team) {
+          killerTeam = source.team;
+          killerName = `${source.team === "BLUE" ? "Blue" : "Red"} Minion`;
+        }
+        if (source.kills !== undefined) {
+          source.kills++;
+        }
+      }
+
+      const victimName = this.name;
+      const killAnnouncement = `⚔️ ${killerName} has slain ${victimName}!`;
+      const killColor = killerTeam === "BLUE" ? "#4ecca3" : "#ff4757";
+
+      const objMgr = (typeof objectiveManager !== "undefined" ? objectiveManager : (typeof window !== "undefined" ? window.objectiveManager : null));
+      if (objMgr && objMgr.addAnnouncement) {
+        objMgr.addAnnouncement(killAnnouncement, killColor);
+      }
+
+      if (typeof window !== "undefined" && typeof window.triggerKillFeedEvent === "function") {
+        window.triggerKillFeedEvent({
+          killerName,
+          killerTeam,
+          victimName,
+          victimTeam: this.team,
+          type: "kill"
+        });
+      }
+
       if (combatTexts) {
         combatTexts.push({
           x: this.x,
@@ -423,9 +467,9 @@ class BotHero {
       }
 
       if (source && source.team !== this.team) {
-        if (source.team === "BLUE" && sound && sound.playAnnouncer) sound.playAnnouncer("kill");
+        if (killerTeam === "BLUE" && sound && sound.playAnnouncer) sound.playAnnouncer("kill");
         if (scoreboard) {
-          if (source.team === "BLUE") {
+          if (killerTeam === "BLUE") {
             scoreboard.recordKill("player");
             scoreboard.addGold("player", 250);
           } else {
@@ -971,8 +1015,13 @@ class BotHero {
         if (this.attackTimer <= 0) {
           this.attackTimer = this.attackCooldown;
           if (sound && sound.playAttack) sound.playAttack();
-          nearTurret.hp -= this.attackDamage;
-          if (particles) particles.spawnBurst(nearTurret.worldX, nearTurret.worldY, "#ffd700", 6, 80);
+          if (typeof nearTurret.takeDamage === "function") {
+            nearTurret.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
+          } else {
+            nearTurret.lastAttacker = this;
+            nearTurret.hp -= this.attackDamage;
+            if (particles) particles.spawnBurst(nearTurret.worldX, nearTurret.worldY, "#ffd700", 6, 80);
+          }
         }
       } else {
         // 3. March down lane towards frontline boundary / opposing base

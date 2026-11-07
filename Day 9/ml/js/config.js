@@ -90,7 +90,7 @@ const HEROES = [
   {
     id: "angela",
     name: "Angela",
-    role: "Support",
+    role: "Support / Mage",
     lane: "Roam",
     color: "#f39c12",
     sprite: "assets/sprites/heroes/angela/",
@@ -126,7 +126,7 @@ const HEROES = [
   {
     id: "nana",
     name: "Nana",
-    role: "Mage",
+    role: "Mage / Support",
     lane: "Mid Lane",
     color: "#2ecc71",
     sprite: "assets/sprites/heroes/nana/",
@@ -144,6 +144,19 @@ const HEROES = [
 ];
 
 /**
+ * Standard MOBA Role Sorting Priorities:
+ * 1. Tank, 2. Fighter, 3. Assassin, 4. Mage, 5. Marksman
+ */
+const HERO_ROLE_ORDER = {
+  tank: 1,
+  fighter: 2,
+  assassin: 3,
+  mage: 4,
+  support: 4,
+  marksman: 5
+};
+
+/**
  * Get hero by id
  */
 function getHeroById(id) {
@@ -153,10 +166,12 @@ function getHeroById(id) {
 if (typeof window !== "undefined") {
   window.GAME = GAME;
   window.HEROES = HEROES;
+  window.HERO_ROLE_ORDER = HERO_ROLE_ORDER;
   window.getHeroById = getHeroById;
 }
 if (typeof global !== "undefined") {
   global.GAME = GAME;
   global.HEROES = HEROES;
+  global.HERO_ROLE_ORDER = HERO_ROLE_ORDER;
   global.getHeroById = getHeroById;
 }

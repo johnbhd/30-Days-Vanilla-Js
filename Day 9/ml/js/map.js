@@ -255,7 +255,29 @@ class GameMap {
       attackCooldown: 1.2,
       attackTimer: Math.random() * 0.5,
       target: null,
-      destroyed: false
+      destroyed: false,
+      lastAttacker: null,
+      takeDamage: function(amount, attacker, combatTexts, particles, sound, scoreboard) {
+        if (this.destroyed || this.hp <= 0) return;
+        if (attacker) this.lastAttacker = attacker;
+        this.hp = Math.max(0, this.hp - amount);
+        if (combatTexts) {
+          combatTexts.push({
+            x: this.worldX + (Math.random() - 0.5) * 20,
+            y: this.worldY - 20,
+            text: `-${Math.round(amount)}`,
+            color: (attacker && attacker.team === "BLUE") ? "#38ef7d" : "#ff4757",
+            life: 0.8,
+            maxLife: 0.8
+          });
+        }
+        if (particles && particles.spawnBurst) {
+          particles.spawnBurst(this.worldX, this.worldY, "#ffd700", 6, 90);
+        }
+        if (sound && sound.playHit) {
+          sound.playHit();
+        }
+      }
     });
   }
 
@@ -289,14 +311,54 @@ class GameMap {
         turret.destroyed = true;
         this.grid[turret.y][turret.x] = MAP_TILES.LANE.id;
         this.initOffscreen();
+
+        // Attribute turret destruction to lastAttacker
+        const destroyer = turret.lastAttacker;
+        let destroyerName = turret.team === "RED" ? "Blue Team" : "Red Team";
+        let destroyerTeam = turret.team === "RED" ? "BLUE" : "RED";
+
+        if (destroyer) {
+          if (destroyer === hero || destroyer.isPlayer) {
+            destroyerName = `${hero ? hero.name : "Player"} (YOU)`;
+            destroyerTeam = "BLUE";
+          } else if (destroyer.name) {
+            destroyerName = destroyer.name;
+            destroyerTeam = destroyer.team || destroyerTeam;
+          } else if (destroyer.team) {
+            destroyerTeam = destroyer.team;
+            destroyerName = `${destroyer.team === "BLUE" ? "Blue" : "Red"} Minion`;
+          }
+        }
+
+        const turretColor = turret.team === "RED" ? "#4ecca3" : "#ff4757";
+        const turretAnnouncement = `🏰 ${destroyerName} destroyed a ${turret.team} Turret!`;
+
+        if (objectiveManager && objectiveManager.addAnnouncement) {
+          objectiveManager.addAnnouncement(turretAnnouncement, turretColor);
+        }
+
+        if (typeof window !== "undefined" && typeof window.triggerKillFeedEvent === "function") {
+          window.triggerKillFeedEvent({
+            killerName: destroyerName,
+            killerTeam: destroyerTeam,
+            victimName: `${turret.team} Turret`,
+            victimTeam: turret.team,
+            type: "turret"
+          });
+        }
+
+        if (sound && sound.playAnnouncer) {
+          sound.playAnnouncer("turret");
+        }
+
         if (combatTexts) {
           combatTexts.push({
             x: turret.worldX,
             y: turret.worldY - 25,
-            text: `${turret.team} TURRET DESTROYED!`,
+            text: `${destroyerName.toUpperCase()} DESTROYED TURRET!`,
             color: "#ffd700",
-            life: 2.0,
-            maxLife: 2.0
+            life: 2.2,
+            maxLife: 2.2
           });
         }
         if (turret.team === "RED") {
@@ -481,9 +543,11 @@ class GameMap {
 
       if (dist <= step || dist < 12) {
         // Hit target
+        const projectileAttacker = p.attacker || (p.team === "BLUE" ? hero : null) || { team: p.team, isTurret: !!p.isTurret, isCrystal: !!p.isCrystal };
         if (typeof p.target.takeDamage === "function") {
-          p.target.takeDamage(p.damage, { team: p.team, isTurret: !!p.isTurret, isCrystal: !!p.isCrystal }, combatTexts, particles, sound, scoreboard);
+          p.target.takeDamage(p.damage, projectileAttacker, combatTexts, particles, sound, scoreboard);
         } else {
+          p.target.lastAttacker = projectileAttacker;
           const prevHp = p.target.hp || 0;
           p.target.hp = Math.max(0, p.target.hp - p.damage);
           if (combatTexts) {

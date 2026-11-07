@@ -653,24 +653,42 @@ class ObjectiveManager {
       ctx.restore();
     }
 
-    // 4. Render Global Banner Announcements
-    if (this.announcements.length > 0) {
-      const ann = this.announcements[0];
+    // 4. Render Global Banner Announcements (up to 3 stacked banners)
+    const maxAnnouncements = Math.min(3, this.announcements.length);
+    for (let i = 0; i < maxAnnouncements; i++) {
+      const ann = this.announcements[i];
       const alpha = Math.min(1, ann.life);
+      const bannerY = 85 + i * 42;
 
       ctx.save();
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = "rgba(16, 25, 47, 0.85)";
-      ctx.fillRect(GAME.CANVAS_WIDTH / 2 - 220, 100, 440, 36);
-      ctx.strokeStyle = ann.color;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(GAME.CANVAS_WIDTH / 2 - 220, 100, 440, 36);
+      ctx.fillStyle = "rgba(16, 25, 47, 0.90)";
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(GAME.CANVAS_WIDTH / 2 - 240, bannerY, 480, 36, 6);
+        ctx.fill();
+        ctx.strokeStyle = ann.color || "#ffd700";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        ctx.fillRect(GAME.CANVAS_WIDTH / 2 - 240, bannerY, 480, 36);
+        ctx.strokeStyle = ann.color || "#ffd700";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(GAME.CANVAS_WIDTH / 2 - 240, bannerY, 480, 36);
+      }
 
-      ctx.fillStyle = ann.color;
+      ctx.fillStyle = ann.color || "#ffd700";
       ctx.font = "bold 14px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(ann.text, GAME.CANVAS_WIDTH / 2, 123);
+      ctx.fillText(ann.text, GAME.CANVAS_WIDTH / 2, bannerY + 23);
       ctx.restore();
     }
   }
+}
+
+if (typeof window !== "undefined") {
+  window.ObjectiveManager = ObjectiveManager;
+}
+if (typeof global !== "undefined") {
+  global.ObjectiveManager = ObjectiveManager;
 }

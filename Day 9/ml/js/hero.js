@@ -321,6 +321,10 @@ class Hero {
   takeDamage(amount, source, combatTexts, particles, sound, scoreboard) {
     if (this.isDead || this.hp <= 0) return;
 
+    if (source) {
+      this.lastAttacker = source;
+    }
+
     if (this.isRecalling) {
       this.cancelRecall(combatTexts);
     }
@@ -396,6 +400,49 @@ class Hero {
           this.isRecalling = false;
         }
         if (gameStats) gameStats.deaths++;
+
+        // Identify killer
+        const killer = this.lastAttacker;
+        let killerName = "Enemy Forces";
+        let killerTeam = "RED";
+
+        if (killer) {
+          if (killer.name) {
+            killerName = killer.name;
+            killerTeam = killer.team || "RED";
+          } else if (killer.isTurret || killer.tier) {
+            killerName = `${killer.team || "Red"} Turret`;
+          } else if (killer.team) {
+            killerName = `${killer.team === "BLUE" ? "Blue" : "Red"} Minion`;
+          }
+          if (killer.kills !== undefined) {
+            killer.kills++;
+          }
+        }
+
+        const killText = `⚔️ ${killerName} has slain ${this.name} (YOU)!`;
+        if (objectives && objectives.addAnnouncement) {
+          objectives.addAnnouncement(killText, "#ff4757");
+        }
+
+        if (typeof window !== "undefined" && typeof window.triggerKillFeedEvent === "function") {
+          window.triggerKillFeedEvent({
+            killerName,
+            killerTeam,
+            victimName: `${this.name} (YOU)`,
+            victimTeam: "BLUE",
+            type: "kill"
+          });
+        }
+
+        if (sound && sound.playAnnouncer) {
+          sound.playAnnouncer("defeat");
+        }
+
+        if (scoreboard) {
+          scoreboard.recordKill("bot");
+          scoreboard.addGold("bot", 250);
+        }
 
         // Clear turtle shield aura & all active skill buffs upon death!
         if (skillManager && skillManager.activeBuffs) {
@@ -723,6 +770,7 @@ class Hero {
             x: this.x,
             y: this.y,
             target: this.attackTarget,
+            attacker: this,
             speed: 460,
             damage: effectiveDmg,
             team: this.team,
@@ -743,6 +791,7 @@ class Hero {
         if (typeof this.attackTarget.takeDamage === "function") {
           this.attackTarget.takeDamage(effectiveDmg, this, combatTexts, particles, sound, scoreboard);
         } else if (this.attackTarget.hp !== undefined) {
+          this.attackTarget.lastAttacker = this;
           const prevHp = this.attackTarget.hp || 0;
           this.attackTarget.hp = Math.max(0, this.attackTarget.hp - effectiveDmg);
           if (prevHp > 0 && this.attackTarget.hp <= 0 && this.attackTarget.bounty) {

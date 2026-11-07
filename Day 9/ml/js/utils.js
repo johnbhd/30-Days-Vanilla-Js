@@ -56,3 +56,20 @@ function loadImage(src) {
     img.src = src;
   });
 }
+
+if (typeof window !== "undefined") {
+  window.clamp = clamp;
+  window.getDistance = getDistance;
+  window.normalize = normalize;
+  window.screenToTile = screenToTile;
+  window.tileToScreen = tileToScreen;
+  window.loadImage = loadImage;
+}
+if (typeof global !== "undefined") {
+  global.clamp = clamp;
+  global.getDistance = getDistance;
+  global.normalize = normalize;
+  global.screenToTile = screenToTile;
+  global.tileToScreen = tileToScreen;
+  global.loadImage = loadImage;
+}
