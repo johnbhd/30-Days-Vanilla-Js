@@ -333,6 +333,7 @@ function buildHeroGrid() {
       if (activeHeroRoleTab === "assassin") return roleStr.includes("assassin");
       if (activeHeroRoleTab === "mage") return roleStr.includes("mage") || roleStr.includes("support");
       if (activeHeroRoleTab === "marksman") return roleStr.includes("marksman");
+      if (activeHeroRoleTab === "custom") return hero.isCustom === true;
       return true;
     });
   } else {
@@ -342,8 +343,17 @@ function buildHeroGrid() {
 
   if (filteredHeroes.length === 0) {
     const emptyMsg = document.createElement("div");
-    emptyMsg.className = "hero-grid-empty";
-    emptyMsg.innerHTML = `<i class="fa-solid fa-circle-question"></i> No champions found for role "${activeHeroRoleTab.toUpperCase()}".`;
+    if (activeHeroRoleTab === "custom") {
+      emptyMsg.className = "hero-grid-empty-state";
+      emptyMsg.innerHTML = `
+        <div class="empty-state-icon"><i class="fa-solid fa-sliders"></i></div>
+        <h3>Custom Heroes</h3>
+        <p>Custom hero creator and imported champions will appear here.</p>
+      `;
+    } else {
+      emptyMsg.className = "hero-grid-empty";
+      emptyMsg.innerHTML = `<i class="fa-solid fa-circle-question"></i> No champions found for role "${activeHeroRoleTab.toUpperCase()}".`;
+    }
     heroGrid.appendChild(emptyMsg);
     return;
   }
@@ -657,6 +667,9 @@ function selectMatchMode(mode) {
 const modeCards = document.querySelectorAll(".mode-card");
 modeCards.forEach(card => {
   card.addEventListener("click", () => {
+    if (card.classList.contains("disabled") || card.getAttribute("aria-disabled") === "true") {
+      return; // 4v4 and 5v5 unclickable / unable for now
+    }
     const mode = card.getAttribute("data-mode");
     selectMatchMode(mode);
   });
@@ -1445,7 +1458,7 @@ function loop(currentTime) {
 
     // 1b. Ally & Enemy Bots update (Multi-Lane & Team Clash)
     for (let i = 0; i < bots.length; i++) {
-      bots[i].update(dt, selectedHero, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager, bots);
+      bots[i].update(dt, selectedHero, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager, bots, skillManager);
     }
 
     // 2. Minions update (targeting Player, Ally Bots, Enemy Bots, Minions, and Turrets)

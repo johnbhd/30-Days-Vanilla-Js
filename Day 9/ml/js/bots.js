@@ -340,6 +340,7 @@ class BotHero {
     this.isDead = false;
     this.hp = this.maxHp;
     this.shield = 0;
+    this.hasUsedRevive = false;
     this.x = this.spawnX;
     this.y = this.spawnY;
     this.targetX = this.team === "BLUE" ? (29 * 40) : (2 * 40);
@@ -399,9 +400,17 @@ class BotHero {
       // Immortality revive check
       if (this.hasRevive && !this.hasUsedRevive) {
         this.hasUsedRevive = true;
-        this.hp = Math.floor(this.maxHp * 0.35);
+        const reviveHp = Math.max(320, Math.round(this.maxHp * 0.18));
+        this.hp = reviveHp;
+        this.shield = 350;
+        if (particles) {
+          particles.spawnRing(this.x, this.y, 65, "#ffd700", 0.8);
+          particles.spawnBurst(this.x, this.y, "#ffd700", 25, 140);
+          particles.spawnBurst(this.x, this.y, "#ffffff", 12, 100);
+        }
+        if (sound && sound.playHeal) sound.playHeal();
         if (combatTexts) {
-          combatTexts.push({ x: this.x, y: this.y - 30, text: `[${this.team}] IMMORTALITY REVIVE!`, color: "#ffd700", life: 1.8, maxLife: 1.8 });
+          combatTexts.push({ x: this.x, y: this.y - 30, text: `[${this.team}] IMMORTALITY RESURRECT! +${reviveHp} HP`, color: "#ffd700", life: 1.8, maxLife: 1.8 });
         }
         return;
       }
@@ -506,15 +515,23 @@ class BotHero {
     }
   }
 
-  update(dt, player, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager, allBots) {
+  update(dt, player, minionManager, map, combatTexts, sound, particles, scoreboard, objectiveManager, allBots, skillManager) {
     // 1. Respawn timer (never freeze even if external heals hit dead bot)
     if (this.isDead || this.hp <= 0) {
       if (!this.isDead) {
         if (this.hasRevive && !this.hasUsedRevive) {
           this.hasUsedRevive = true;
-          this.hp = Math.floor(this.maxHp * 0.35);
+          const reviveHp = Math.max(320, Math.round(this.maxHp * 0.18));
+          this.hp = reviveHp;
+          this.shield = 350;
+          if (particles) {
+            particles.spawnRing(this.x, this.y, 65, "#ffd700", 0.8);
+            particles.spawnBurst(this.x, this.y, "#ffd700", 25, 140);
+            particles.spawnBurst(this.x, this.y, "#ffffff", 12, 100);
+          }
+          if (sound && sound.playHeal) sound.playHeal();
           if (combatTexts) {
-            combatTexts.push({ x: this.x, y: this.y - 30, text: `[${this.team}] IMMORTALITY REVIVE!`, color: "#ffd700", life: 1.8, maxLife: 1.8 });
+            combatTexts.push({ x: this.x, y: this.y - 30, text: `[${this.team}] IMMORTALITY RESURRECT! +${reviveHp} HP`, color: "#ffd700", life: 1.8, maxLife: 1.8 });
           }
           return;
         }
@@ -748,16 +765,16 @@ class BotHero {
 
       if (shouldEngageHero) {
         this.state = "COMBAT";
-        this.engageEnemyHero(closestOpp, distToClosestOpp, dt, combatTexts, sound, particles, scoreboard, map);
+        this.engageEnemyHero(closestOpp, distToClosestOpp, dt, combatTexts, sound, particles, scoreboard, map, skillManager);
       } else if (lordTarget) {
         this.state = "COMBAT";
-        this.engageLord(lordTarget, dt, combatTexts, sound, particles, scoreboard);
+        this.engageLord(lordTarget, dt, combatTexts, sound, particles, scoreboard, skillManager);
       } else if (this.shouldContestObjective(distToClosestOpp, objectiveManager)) {
         this.state = "OBJECTIVE";
-        this.engageObjective(objectiveManager, dt, combatTexts, sound, particles, scoreboard);
+        this.engageObjective(objectiveManager, dt, combatTexts, sound, particles, scoreboard, skillManager);
       } else {
         this.state = "LANING";
-        this.engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard, closestOpp, distToClosestOpp);
+        this.engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard, closestOpp, distToClosestOpp, skillManager);
       }
     }
 
@@ -765,9 +782,10 @@ class BotHero {
     this.stepMovement(dt, map);
   }
 
-  castBotSkills(targetHero, dist, combatTexts, sound, particles, scoreboard) {
+  castBotSkills(targetHero, dist, combatTexts, sound, particles, scoreboard, skillManager) {
     if (!this.skills || this.skillActionTimer > 0) return false;
     const hid = (this.id || (this.heroData && this.heroData.id) || "").toLowerCase();
+    const sm = skillManager || (typeof window !== "undefined" ? window.skillManager : null);
 
     // 1. Ultimate Decision (Smart execution / initiation / buff) - Available at Level 4+
     let shouldCastR = false;
@@ -790,10 +808,163 @@ class BotHero {
       this.skills.r.cd = this.skills.r.maxCd;
       this.skillActionTimer = 0.35;
       if (sound) sound.playSkill("r");
-      if (particles) {
-        particles.spawnRing(targetHero.x, targetHero.y, 65, this.color, 0.5);
-        particles.spawnBurst(targetHero.x, targetHero.y, this.color, 20, 160);
+
+      // Vivid Visual Effects for Ultimate (R)
+      if (hid === "layla") {
+        const angle = Math.atan2(targetHero.y - this.y, targetHero.x - this.x);
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "beam",
+            startX: this.x,
+            startY: this.y,
+            endX: this.x + Math.cos(angle) * 850,
+            endY: this.y + Math.sin(angle) * 850,
+            width: 24,
+            color: this.team === "BLUE" ? "#3498db" : "#ff4757",
+            life: 0.45,
+            maxLife: 0.45,
+            damage: 0
+          });
+        }
+        if (particles) {
+          particles.spawnBurst(this.x, this.y, "#3498db", 16, 160);
+          particles.spawnRing(targetHero.x, targetHero.y, 65, "#3498db", 0.5);
+        }
+      } else if (hid === "tigreal") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "circle",
+            x: this.x,
+            y: this.y,
+            radius: 95,
+            color: "rgba(243, 156, 18, 0.45)",
+            life: 0.6,
+            maxLife: 0.6,
+            damage: 0
+          });
+        }
+        if (particles) {
+          particles.spawnRing(this.x, this.y, 95, "#ffd700", 0.6);
+          particles.spawnBurst(this.x, this.y, "#ffd700", 22, 160);
+        }
+      } else if (hid === "nana") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "circle",
+            x: targetHero.x,
+            y: targetHero.y,
+            radius: 80,
+            color: "rgba(241, 196, 15, 0.5)",
+            life: 0.6,
+            maxLife: 0.6,
+            damage: 0
+          });
+        }
+        if (particles) {
+          particles.spawnRing(targetHero.x, targetHero.y, 80, "#f1c40f", 0.5);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#ff7675", 16, 130);
+        }
+      } else if (hid === "pharsa") {
+        if (sm && sm.activeAOEs) {
+          for (let k = 0; k < 3; k++) {
+            const ox = (Math.random() - 0.5) * 50;
+            const oy = (Math.random() - 0.5) * 50;
+            sm.activeAOEs.push({
+              type: "circle",
+              x: targetHero.x + ox,
+              y: targetHero.y + oy,
+              radius: 75,
+              color: "rgba(155, 89, 182, 0.5)",
+              life: 0.55 + k * 0.1,
+              maxLife: 0.55 + k * 0.1,
+              delay: k * 0.12,
+              damage: 0
+            });
+          }
+        }
+        if (particles) {
+          particles.spawnRing(targetHero.x, targetHero.y, 75, "#9b59b6", 0.6);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#9b59b6", 20, 150);
+        }
+      } else if (hid === "balmond") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "circle",
+            x: targetHero.x,
+            y: targetHero.y,
+            radius: 85,
+            color: "rgba(192, 57, 43, 0.55)",
+            life: 0.5,
+            maxLife: 0.5,
+            damage: 0
+          });
+        }
+        if (particles) {
+          particles.spawnRing(targetHero.x, targetHero.y, 85, "#c0392b", 0.6);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#ffd700", 20, 150);
+        }
+      } else if (hid === "alucard") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "beam",
+            startX: this.x,
+            startY: this.y,
+            endX: targetHero.x,
+            endY: targetHero.y,
+            width: 26,
+            color: "#e74c3c",
+            life: 0.45,
+            maxLife: 0.45,
+            damage: 0
+          });
+        }
+        if (particles) {
+          particles.spawnRing(this.x, this.y, 65, "#e74c3c", 0.5);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#e74c3c", 16, 130);
+        }
+      } else if (hid === "saber") {
+        if (particles) {
+          if (particles.spawnSlash) particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#3498db", 52);
+          particles.spawnRing(targetHero.x, targetHero.y, 65, "#3498db", 0.6);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#ffffff", 18, 140);
+        }
+      } else if (hid === "gusion") {
+        if (particles) {
+          particles.spawnBurst(this.x, this.y, "#9b59b6", 24, 200);
+          particles.spawnRing(this.x, this.y, 80, "#9b59b6", 0.5);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#9b59b6", 16, 140);
+        }
+      } else if (hid === "angela") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "beam",
+            startX: this.x,
+            startY: this.y,
+            endX: targetHero.x,
+            endY: targetHero.y,
+            width: 8,
+            color: "#ff7675",
+            life: 0.5,
+            maxLife: 0.5,
+            damage: 0
+          });
+        }
+        if (particles) {
+          particles.spawnRing(this.x, this.y, 55, "#ff7675", 0.6);
+          particles.spawnBurst(this.x, this.y, "#2ecc71", 16, 120);
+        }
+      } else if (hid === "miya") {
+        if (particles) {
+          particles.spawnRing(this.x, this.y, 65, "#2ecc71", 0.65);
+          particles.spawnBurst(this.x, this.y, "#2ecc71", 16, 130);
+        }
+      } else {
+        if (particles) {
+          particles.spawnRing(targetHero.x, targetHero.y, 65, this.color, 0.5);
+          particles.spawnBurst(targetHero.x, targetHero.y, this.color, 20, 160);
+        }
       }
+
       if (typeof targetHero.takeDamage === "function") {
         targetHero.takeDamage(this.skills.r.damage, this, combatTexts, particles, sound, scoreboard);
       } else {
@@ -824,10 +995,113 @@ class BotHero {
       this.skills.w.cd = this.skills.w.maxCd;
       this.skillActionTimer = 0.32;
       if (sound) sound.playSkill("w");
-      if (particles) {
-        particles.spawnRing(this.x, this.y, 45, "#e67e22", 0.35);
-        particles.spawnBurst(targetHero.x, targetHero.y, "#e67e22", 12, 120);
+
+      // Vivid Visual Effects for Skill 2 (W)
+      if (hid === "pharsa") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "beam",
+            startX: this.x,
+            startY: this.y,
+            endX: targetHero.x,
+            endY: targetHero.y,
+            width: 14,
+            color: "#9b59b6",
+            life: 0.35,
+            maxLife: 0.35,
+            damage: 0
+          });
+        }
+        if (particles) particles.spawnBurst(targetHero.x, targetHero.y, "#9b59b6", 14, 120);
+      } else if (hid === "miya") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "circle",
+            x: targetHero.x,
+            y: targetHero.y,
+            radius: 68,
+            color: "rgba(46, 204, 113, 0.4)",
+            life: 0.48,
+            maxLife: 0.48,
+            damage: 0
+          });
+        }
+        if (particles) particles.spawnBurst(targetHero.x, targetHero.y, "#2ecc71", 14, 120);
+      } else if (hid === "nana") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "circle",
+            x: targetHero.x,
+            y: targetHero.y,
+            radius: 55,
+            color: "rgba(230, 126, 34, 0.45)",
+            life: 0.45,
+            maxLife: 0.45,
+            damage: 0
+          });
+        }
+        if (particles) particles.spawnRing(targetHero.x, targetHero.y, 55, "#e67e22", 0.45);
+      } else if (hid === "layla") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "circle",
+            x: targetHero.x,
+            y: targetHero.y,
+            radius: 60,
+            color: "rgba(52, 152, 219, 0.45)",
+            life: 0.4,
+            maxLife: 0.4,
+            damage: 0
+          });
+        }
+        if (particles) particles.spawnBurst(targetHero.x, targetHero.y, "#3498db", 14, 120);
+      } else if (hid === "angela") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "beam",
+            startX: this.x,
+            startY: this.y,
+            endX: targetHero.x,
+            endY: targetHero.y,
+            width: 6,
+            color: "#ff7675",
+            life: 0.5,
+            maxLife: 0.5,
+            damage: 0
+          });
+        }
+        if (particles) particles.spawnRing(targetHero.x, targetHero.y, 45, "#ff7675", 0.4);
+      } else if (hid === "tigreal") {
+        if (particles && particles.spawnSlash) {
+          particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#f39c12", 48);
+        }
+        if (particles) particles.spawnBurst(targetHero.x, targetHero.y, "#f39c12", 14, 120);
+      } else if (hid === "balmond") {
+        if (particles) {
+          particles.spawnRing(this.x, this.y, 55, "#e67e22", 0.4);
+          particles.spawnBurst(this.x, this.y, "#e67e22", 12, 120);
+        }
+      } else if (hid === "alucard") {
+        if (particles) {
+          particles.spawnRing(this.x, this.y, 58, "#e74c3c", 0.4);
+          if (particles.spawnSlash) particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#e74c3c", 45);
+        }
+      } else if (hid === "gusion") {
+        if (particles) {
+          particles.spawnBurst(targetHero.x, targetHero.y, "#9b59b6", 15, 140);
+          if (particles.spawnSlash) particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#9b59b6", 42);
+        }
+      } else if (hid === "saber") {
+        if (particles && particles.spawnSlash) {
+          particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#3498db", 46);
+        }
+      } else {
+        if (particles) {
+          particles.spawnRing(this.x, this.y, 45, "#e67e22", 0.35);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#e67e22", 12, 120);
+        }
       }
+
       if (typeof targetHero.takeDamage === "function") {
         targetHero.takeDamage(this.skills.w.damage, this, combatTexts, particles, sound, scoreboard);
       } else {
@@ -855,9 +1129,92 @@ class BotHero {
       this.skills.q.cd = this.skills.q.maxCd;
       this.skillActionTimer = 0.3;
       if (sound) sound.playSkill("q");
-      if (particles) {
-        particles.spawnBurst(targetHero.x, targetHero.y, "#f39c12", 12, 110);
+
+      // Vivid Visual Effects for Skill 1 (Q)
+      if (hid === "layla") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "beam",
+            startX: this.x,
+            startY: this.y,
+            endX: targetHero.x,
+            endY: targetHero.y,
+            width: 12,
+            color: "#3498db",
+            life: 0.28,
+            maxLife: 0.28,
+            damage: 0
+          });
+        }
+        if (particles) particles.spawnBurst(targetHero.x, targetHero.y, "#3498db", 12, 110);
+      } else if (hid === "tigreal") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "beam",
+            startX: this.x,
+            startY: this.y,
+            endX: targetHero.x,
+            endY: targetHero.y,
+            width: 16,
+            color: "#e67e22",
+            life: 0.32,
+            maxLife: 0.32,
+            damage: 0
+          });
+        }
+        if (particles) particles.spawnBurst(targetHero.x, targetHero.y, "#f39c12", 12, 110);
+      } else if (hid === "alucard") {
+        if (sm && sm.activeAOEs) {
+          sm.activeAOEs.push({
+            type: "circle",
+            x: targetHero.x,
+            y: targetHero.y,
+            radius: 60,
+            color: "rgba(231, 76, 60, 0.45)",
+            life: 0.35,
+            maxLife: 0.35,
+            damage: 0
+          });
+        }
+        if (particles) particles.spawnBurst(targetHero.x, targetHero.y, "#e74c3c", 12, 110);
+      } else if (hid === "angela") {
+        if (particles) {
+          particles.spawnBurst(targetHero.x, targetHero.y, "#2ecc71", 12, 110);
+          particles.spawnRing(this.x, this.y, 45, "#ff7675", 0.4);
+        }
+      } else if (hid === "pharsa") {
+        if (particles) {
+          particles.spawnRing(targetHero.x, targetHero.y, 50, "#8e44ad", 0.4);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#9b59b6", 12, 110);
+        }
+      } else if (hid === "nana") {
+        if (particles) {
+          particles.spawnRing(targetHero.x, targetHero.y, 45, "#f1c40f", 0.4);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#f1c40f", 12, 110);
+        }
+      } else if (hid === "miya") {
+        if (particles) {
+          if (particles.spawnSlash) particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#2ecc71", 40);
+          particles.spawnBurst(targetHero.x, targetHero.y, "#2ecc71", 10, 110);
+        }
+      } else if (hid === "balmond") {
+        if (particles && particles.spawnSlash) {
+          particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#e67e22", 40);
+        }
+      } else if (hid === "gusion") {
+        if (particles && particles.spawnSlash) {
+          particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#9b59b6", 40);
+        }
+      } else if (hid === "saber") {
+        if (particles) {
+          particles.spawnRing(this.x, this.y, 50, "#3498db", 0.5);
+        }
+      } else {
+        if (particles) {
+          particles.spawnBurst(targetHero.x, targetHero.y, "#f39c12", 12, 110);
+        }
       }
+
       if (typeof targetHero.takeDamage === "function") {
         targetHero.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
       } else {
@@ -885,7 +1242,7 @@ class BotHero {
     return false;
   }
 
-  engageEnemyHero(targetHero, dist, dt, combatTexts, sound, particles, scoreboard, map) {
+  engageEnemyHero(targetHero, dist, dt, combatTexts, sound, particles, scoreboard, map, skillManager) {
     const chaseCutoff = this.getLaneFrontlineBoundary(map);
 
     // Stop deep tower-diving past cutoff unless enemy is low and within striking range
@@ -923,8 +1280,8 @@ class BotHero {
       }
     }
 
-    // High-IQ Bot Skill Combo Rotation
-    this.castBotSkills(targetHero, dist, combatTexts, sound, particles, scoreboard);
+    // High-IQ Bot Skill Combo Rotation with vivid visual effects
+    this.castBotSkills(targetHero, dist, combatTexts, sound, particles, scoreboard, skillManager);
 
     // Basic Attack
     if (this.attackTimer <= 0 && dist <= this.attackRange) {
@@ -961,7 +1318,7 @@ class BotHero {
     return false;
   }
 
-  engageObjective(objectiveManager, dt, combatTexts, sound, particles, scoreboard) {
+  engageObjective(objectiveManager, dt, combatTexts, sound, particles, scoreboard, skillManager = null) {
     if (!objectiveManager) return;
     let targetBoss = null;
     if (objectiveManager.turtle && objectiveManager.turtle.alive) {
@@ -993,11 +1350,30 @@ class BotHero {
 
     // Cast Q or W to DPS objective boss faster
     if (this.skills && this.skillActionTimer <= 0 && dist <= Math.max(this.attackRange + 40, (this.skills.q ? this.skills.q.range : 260))) {
+      const hid = (this.id || (this.heroData && this.heroData.id) || "").toLowerCase();
+      const sm = skillManager || (typeof window !== "undefined" ? window.skillManager : null);
       if (this.skills.q && this.skills.q.cd <= 0) {
         this.skills.q.cd = this.skills.q.maxCd;
         this.skillActionTimer = 0.3;
         if (sound) sound.playSkill("q");
-        if (particles) particles.spawnBurst(targetBoss.x, targetBoss.y, "#f39c12", 10, 100);
+        if (particles) {
+          particles.spawnBurst(targetBoss.x, targetBoss.y, "#f39c12", 12, 110);
+          particles.spawnRing(targetBoss.x, targetBoss.y, 45, "#f39c12", 0.4);
+        }
+        if (sm && sm.activeAOEs && (hid === "layla" || hid === "pharsa" || hid === "tigreal")) {
+          sm.activeAOEs.push({
+            type: "beam",
+            startX: this.x,
+            startY: this.y,
+            endX: targetBoss.x,
+            endY: targetBoss.y,
+            width: 10,
+            color: this.color || "#f39c12",
+            life: 0.25,
+            maxLife: 0.25,
+            damage: 0
+          });
+        }
         if (typeof targetBoss.takeDamage === "function") {
           targetBoss.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
         } else {
@@ -1008,7 +1384,22 @@ class BotHero {
         this.skills.w.cd = this.skills.w.maxCd;
         this.skillActionTimer = 0.3;
         if (sound) sound.playSkill("w");
-        if (particles) particles.spawnBurst(targetBoss.x, targetBoss.y, "#e67e22", 10, 100);
+        if (particles) {
+          particles.spawnBurst(targetBoss.x, targetBoss.y, "#e67e22", 12, 110);
+          particles.spawnRing(targetBoss.x, targetBoss.y, 45, "#e67e22", 0.4);
+        }
+        if (sm && sm.activeAOEs && (hid === "nana" || hid === "miya" || hid === "layla")) {
+          sm.activeAOEs.push({
+            type: "circle",
+            x: targetBoss.x,
+            y: targetBoss.y,
+            radius: 55,
+            color: "rgba(230, 126, 34, 0.4)",
+            life: 0.4,
+            maxLife: 0.4,
+            damage: 0
+          });
+        }
         if (typeof targetBoss.takeDamage === "function") {
           targetBoss.takeDamage(this.skills.w.damage, this, combatTexts, particles, sound, scoreboard);
         } else {
@@ -1038,7 +1429,7 @@ class BotHero {
     }
   }
 
-  engageLord(lord, dt, combatTexts, sound, particles, scoreboard) {
+  engageLord(lord, dt, combatTexts, sound, particles, scoreboard, skillManager = null) {
     const dist = Math.hypot(lord.x - this.x, lord.y - this.y);
     if (dist > this.attackRange * 0.85) {
       this.targetX = lord.x;
@@ -1050,11 +1441,30 @@ class BotHero {
 
     // Cast Q or W to burn summoned Lord faster
     if (this.skills && this.skillActionTimer <= 0 && dist <= Math.max(this.attackRange + 40, (this.skills.q ? this.skills.q.range : 260))) {
+      const hid = (this.id || (this.heroData && this.heroData.id) || "").toLowerCase();
+      const sm = skillManager || (typeof window !== "undefined" ? window.skillManager : null);
       if (this.skills.q && this.skills.q.cd <= 0) {
         this.skills.q.cd = this.skills.q.maxCd;
         this.skillActionTimer = 0.3;
         if (sound) sound.playSkill("q");
-        if (particles) particles.spawnBurst(lord.x, lord.y, "#f39c12", 10, 100);
+        if (particles) {
+          particles.spawnBurst(lord.x, lord.y, "#f39c12", 12, 110);
+          particles.spawnRing(lord.x, lord.y, 45, "#f39c12", 0.4);
+        }
+        if (sm && sm.activeAOEs && (hid === "layla" || hid === "pharsa" || hid === "tigreal")) {
+          sm.activeAOEs.push({
+            type: "beam",
+            startX: this.x,
+            startY: this.y,
+            endX: lord.x,
+            endY: lord.y,
+            width: 10,
+            color: this.color || "#f39c12",
+            life: 0.25,
+            maxLife: 0.25,
+            damage: 0
+          });
+        }
         if (typeof lord.takeDamage === "function") {
           lord.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
         }
@@ -1062,7 +1472,22 @@ class BotHero {
         this.skills.w.cd = this.skills.w.maxCd;
         this.skillActionTimer = 0.3;
         if (sound) sound.playSkill("w");
-        if (particles) particles.spawnBurst(lord.x, lord.y, "#e67e22", 10, 100);
+        if (particles) {
+          particles.spawnBurst(lord.x, lord.y, "#e67e22", 12, 110);
+          particles.spawnRing(lord.x, lord.y, 45, "#e67e22", 0.4);
+        }
+        if (sm && sm.activeAOEs && (hid === "nana" || hid === "miya" || hid === "layla")) {
+          sm.activeAOEs.push({
+            type: "circle",
+            x: lord.x,
+            y: lord.y,
+            radius: 55,
+            color: "rgba(230, 126, 34, 0.4)",
+            life: 0.4,
+            maxLife: 0.4,
+            damage: 0
+          });
+        }
         if (typeof lord.takeDamage === "function") {
           lord.takeDamage(this.skills.w.damage, this, combatTexts, particles, sound, scoreboard);
         }
@@ -1086,7 +1511,7 @@ class BotHero {
     }
   }
 
-  engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard, closestOpp = null, distToClosestOpp = Infinity) {
+  engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard, closestOpp = null, distToClosestOpp = Infinity, skillManager = null) {
     // 0. Poke opposing hero during laning if in skill range
     const maxSkillReach = Math.max(
       260,
@@ -1094,7 +1519,7 @@ class BotHero {
       (this.skills && this.skills.w) ? (this.skills.w.range || 260) : 260
     );
     if (closestOpp && distToClosestOpp <= maxSkillReach && this.skillActionTimer <= 0) {
-      this.castBotSkills(closestOpp, distToClosestOpp, combatTexts, sound, particles, scoreboard);
+      this.castBotSkills(closestOpp, distToClosestOpp, combatTexts, sound, particles, scoreboard, skillManager);
     }
 
     // 1. Search for nearest Opposing Minion in current lane
@@ -1117,17 +1542,51 @@ class BotHero {
 
     // Cast Q or W to fast-clear wave when clustered
     if (clusterCount >= 2 && nearestMinion && minDist <= 240 && this.skillActionTimer <= 0) {
+      const hid = (this.id || (this.heroData && this.heroData.id) || "").toLowerCase();
+      const sm = skillManager || (typeof window !== "undefined" ? window.skillManager : null);
       if (this.skills.q && this.skills.q.cd <= 0) {
         this.skills.q.cd = this.skills.q.maxCd;
         this.skillActionTimer = 0.3;
         if (sound) sound.playSkill("q");
-        if (particles) particles.spawnBurst(nearestMinion.x, nearestMinion.y, "#f39c12", 8, 90);
+        if (particles) {
+          particles.spawnBurst(nearestMinion.x, nearestMinion.y, "#f39c12", 10, 100);
+          particles.spawnRing(nearestMinion.x, nearestMinion.y, 40, "#f39c12", 0.35);
+        }
+        if (sm && sm.activeAOEs && (hid === "layla" || hid === "pharsa" || hid === "tigreal")) {
+          sm.activeAOEs.push({
+            type: "beam",
+            startX: this.x,
+            startY: this.y,
+            endX: nearestMinion.x,
+            endY: nearestMinion.y,
+            width: 10,
+            color: this.color || "#f39c12",
+            life: 0.25,
+            maxLife: 0.25,
+            damage: 0
+          });
+        }
         nearestMinion.hp -= this.skills.q.damage;
       } else if (this.skills.w && this.skills.w.cd <= 0) {
         this.skills.w.cd = this.skills.w.maxCd;
         this.skillActionTimer = 0.3;
         if (sound) sound.playSkill("w");
-        if (particles) particles.spawnBurst(nearestMinion.x, nearestMinion.y, "#e67e22", 8, 90);
+        if (particles) {
+          particles.spawnBurst(nearestMinion.x, nearestMinion.y, "#e67e22", 10, 100);
+          particles.spawnRing(nearestMinion.x, nearestMinion.y, 40, "#e67e22", 0.35);
+        }
+        if (sm && sm.activeAOEs && (hid === "nana" || hid === "miya" || hid === "layla")) {
+          sm.activeAOEs.push({
+            type: "circle",
+            x: nearestMinion.x,
+            y: nearestMinion.y,
+            radius: 50,
+            color: "rgba(230, 126, 34, 0.4)",
+            life: 0.35,
+            maxLife: 0.35,
+            damage: 0
+          });
+        }
         nearestMinion.hp -= this.skills.w.damage;
       }
     }
@@ -1178,7 +1637,27 @@ class BotHero {
         if (this.skills && this.skills.q && this.skills.q.cd <= 0 && this.skillActionTimer <= 0) {
           this.skills.q.cd = this.skills.q.maxCd;
           this.skillActionTimer = 0.3;
+          const hid = (this.id || (this.heroData && this.heroData.id) || "").toLowerCase();
+          const sm = skillManager || (typeof window !== "undefined" ? window.skillManager : null);
           if (sound) sound.playSkill("q");
+          if (particles) {
+            particles.spawnBurst(nearTurret.worldX, nearTurret.worldY, "#f39c12", 10, 90);
+            particles.spawnRing(nearTurret.worldX, nearTurret.worldY, 45, "#f39c12", 0.35);
+          }
+          if (sm && sm.activeAOEs && (hid === "layla" || hid === "pharsa" || hid === "tigreal")) {
+            sm.activeAOEs.push({
+              type: "beam",
+              startX: this.x,
+              startY: this.y,
+              endX: nearTurret.worldX,
+              endY: nearTurret.worldY,
+              width: 10,
+              color: this.color || "#f39c12",
+              life: 0.25,
+              maxLife: 0.25,
+              damage: 0
+            });
+          }
           if (typeof nearTurret.takeDamage === "function") {
             nearTurret.takeDamage(this.skills.q.damage, this, combatTexts, particles, sound, scoreboard);
           } else {

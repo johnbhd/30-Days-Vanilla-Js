@@ -329,7 +329,7 @@ class Hero {
       this.cancelRecall(combatTexts);
     }
 
-    this.hp = Math.max(0, this.hp - amount);
+    this.hp -= amount;
 
     if (particles) {
       particles.spawnBurst(this.x, this.y, "#ff4757", 6, 90);
@@ -348,10 +348,51 @@ class Hero {
       });
     }
 
-    if (this.hp <= 0 && source && source.team === "RED") {
-      if (scoreboard) {
-        scoreboard.recordKill("bot");
-        scoreboard.addGold("bot", 300);
+    // Lethal damage: check Immortality resurrect first before recording death!
+    if (this.hp <= 0) {
+      const canRevive = (this.hasRevive && !this.hasUsedRevive) ||
+                        (typeof itemShop !== "undefined" && itemShop && !itemShop.hasUsedRevive && itemShop.inventory && itemShop.inventory.some(i => i.id === "immortality" || (i.stats && i.stats.revive))) ||
+                        (typeof window !== "undefined" && window.itemShop && !window.itemShop.hasUsedRevive && window.itemShop.inventory && window.itemShop.inventory.some(i => i.id === "immortality" || (i.stats && i.stats.revive)));
+
+      if (canRevive) {
+        this.hasRevive = true;
+        this.hasUsedRevive = true;
+        if (typeof itemShop !== "undefined" && itemShop) itemShop.hasUsedRevive = true;
+        if (typeof window !== "undefined" && window.itemShop) window.itemShop.hasUsedRevive = true;
+
+        // Resurrect with small amount of health (~18% max HP) + temporary shield
+        const reviveHp = Math.max(320, Math.round(this.maxHp * 0.18));
+        this.hp = reviveHp;
+        this.shield = (this.shield || 0) + 350;
+
+        // Simple, clean visual resurrect effect: golden ring + sparkles + heal sound
+        if (particles) {
+          particles.spawnRing(this.x, this.y, 65, "#ffd700", 0.8);
+          particles.spawnBurst(this.x, this.y, "#ffd700", 25, 140);
+          particles.spawnBurst(this.x, this.y, "#ffffff", 12, 100);
+        }
+        if (sound && sound.playHeal) {
+          sound.playHeal();
+        }
+        if (combatTexts) {
+          combatTexts.push({
+            x: this.x,
+            y: this.y - 35,
+            text: `IMMORTALITY RESURRECT! +${reviveHp} HP`,
+            color: "#ffd700",
+            life: 2.0,
+            maxLife: 2.0
+          });
+        }
+        return;
+      }
+
+      this.hp = 0;
+      if (source && source.team === "RED") {
+        if (scoreboard) {
+          scoreboard.recordKill("bot");
+          scoreboard.addGold("bot", 300);
+        }
       }
     }
   }
@@ -383,11 +424,23 @@ class Hero {
     // Respawn handling & Immortality check
     if (this.isDead || this.hp <= 0) {
       if (!this.isDead) {
-        if (itemShop && !itemShop.hasUsedRevive && itemShop.inventory.some(i => i.stats && i.stats.revive)) {
-          itemShop.hasUsedRevive = true;
-          this.hp = Math.floor(this.maxHp * 0.35);
+        const canRevive = (this.hasRevive && !this.hasUsedRevive) ||
+                          (itemShop && !itemShop.hasUsedRevive && itemShop.inventory.some(i => i.id === "immortality" || (i.stats && i.stats.revive)));
+        if (canRevive) {
+          this.hasRevive = true;
+          this.hasUsedRevive = true;
+          if (itemShop) itemShop.hasUsedRevive = true;
+          const reviveHp = Math.max(320, Math.round(this.maxHp * 0.18));
+          this.hp = reviveHp;
+          this.shield = (this.shield || 0) + 350;
+          if (particles) {
+            particles.spawnRing(this.x, this.y, 65, "#ffd700", 0.8);
+            particles.spawnBurst(this.x, this.y, "#ffd700", 25, 140);
+            particles.spawnBurst(this.x, this.y, "#ffffff", 12, 100);
+          }
+          if (sound && sound.playHeal) sound.playHeal();
           if (combatTexts) {
-            combatTexts.push({ x: this.x, y: this.y - 30, text: "IMMORTALITY REVIVE!", color: "#ffd700", life: 1.8, maxLife: 1.8 });
+            combatTexts.push({ x: this.x, y: this.y - 35, text: `IMMORTALITY RESURRECT! +${reviveHp} HP`, color: "#ffd700", life: 2.0, maxLife: 2.0 });
           }
           return;
         }
@@ -481,6 +534,8 @@ class Hero {
         this.attackTarget = null;
 
         // Ensure shield and buffs are clean upon respawn
+        this.hasUsedRevive = false;
+        if (itemShop) itemShop.hasUsedRevive = false;
         if (skillManager && skillManager.activeBuffs) {
           skillManager.activeBuffs.shield = 0;
           skillManager.activeBuffs.speedBoost = 0;

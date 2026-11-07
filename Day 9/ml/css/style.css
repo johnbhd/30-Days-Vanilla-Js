@@ -1258,8 +1258,8 @@ canvas {
 }
 
 .mode-select-container {
-  max-width: 900px;
-  width: 95%;
+  max-width: 1150px;
+  width: 96%;
   text-align: center;
   margin: auto 0;
 }
@@ -1280,8 +1280,8 @@ canvas {
 
 .mode-cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
 }
 
 .mode-card {
@@ -1310,6 +1310,21 @@ canvas {
   background: radial-gradient(circle at top, rgba(255, 215, 0, 0.12) 0%, rgba(22, 33, 62, 0.95) 100%);
 }
 
+.mode-card.disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+  pointer-events: none; /* unable / not clickable */
+  filter: grayscale(0.5);
+  border-color: #242f44;
+  background: rgba(16, 24, 40, 0.7);
+}
+
+.mode-card.disabled:hover {
+  transform: none;
+  border-color: #242f44;
+  box-shadow: none;
+}
+
 .mode-badge {
   position: absolute;
   top: -10px;
@@ -1327,6 +1342,11 @@ canvas {
   color: #fff;
 }
 
+.mode-badge.locked-badge {
+  background: #4a5568;
+  color: #e2e8f0;
+}
+
 .mode-icon {
   font-size: 2.2rem;
   color: #4ecca3;
@@ -1335,6 +1355,10 @@ canvas {
 
 .mode-card.selected .mode-icon {
   color: #ffd700;
+}
+
+.mode-card.disabled .mode-icon {
+  color: #718096;
 }
 
 .mode-card h2 {
@@ -1352,6 +1376,10 @@ canvas {
 
 .mode-card.selected .mode-tagline {
   color: #ffd700;
+}
+
+.mode-card.disabled .mode-tagline {
+  color: #718096;
 }
 
 .mode-desc {
@@ -1382,6 +1410,46 @@ canvas {
 
 .mode-select-btn:hover {
   filter: brightness(1.15);
+}
+
+.mode-select-btn.disabled-btn {
+  background: #2d3748 !important;
+  color: #718096 !important;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.hero-grid-empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #a0aec0;
+  background: rgba(22, 33, 62, 0.4);
+  border: 1px dashed rgba(78, 204, 163, 0.3);
+  border-radius: 12px;
+  margin: 10px 0;
+}
+
+.hero-grid-empty-state .empty-state-icon {
+  font-size: 2.5rem;
+  color: #ffd700;
+  margin-bottom: 12px;
+}
+
+.hero-grid-empty-state h3 {
+  font-size: 1.25rem;
+  color: #fff;
+  margin: 0 0 6px 0;
+}
+
+.hero-grid-empty-state p {
+  font-size: 0.88rem;
+  color: #a0aec0;
+  margin: 0;
 }
 
 /* 2-Column Team Matchup Preview Header & Container */

@@ -50,7 +50,7 @@ const ITEM_CATALOG = [
     cost: 1400,
     icon: '<i class="fa-solid fa-crown" style="color: #f6e05e;"></i>',
     stats: { hp: 400, revive: true },
-    desc: "+400 Max HP, Resurrects once with 35% HP"
+    desc: "+400 Max HP, Resurrects upon fatal damage with small HP"
   }
 ];
 
@@ -139,6 +139,13 @@ class ItemShop {
     }
     hero.attackDamage = (hero.stats.atk || 100) + bonusAtk;
     hero.speed = (hero.stats.spd * 45) * (1 + bonusSpd);
+
+    const hasImmortality = this.inventory.some(item => item.id === "immortality" || (item.stats && item.stats.revive));
+    hero.hasRevive = hasImmortality;
+    if (!hasImmortality) {
+      this.hasUsedRevive = false;
+      hero.hasUsedRevive = false;
+    }
   }
 
   updateShopUI(gameStats) {
