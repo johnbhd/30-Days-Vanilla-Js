@@ -9,6 +9,7 @@ const ctx = canvas.getContext("2d");
 
 const camera = { x: 0, y: 0 };
 let map = new GameMap(GAME.MAP.WIDTH, GAME.MAP.HEIGHT, GAME.TILE_SIZE);
+if (typeof window !== "undefined") window.map = map;
 const renderer = new Renderer(canvas);
 let minionManager = new MinionManager();
 let skillManager = new SkillManager();
@@ -712,6 +713,7 @@ function resetGameForNewFormat() {
   disarmSkill(false);
   const mapType = (matchMode === "4v4" || matchMode === "5v5") ? "LAND_OF_DAWN" : "COMPACT";
   map = new GameMap(mapType);
+  if (typeof window !== "undefined") window.map = map;
   minionManager = new MinionManager(mapType);
   skillManager = new SkillManager();
   objectiveManager = new ObjectiveManager(mapType);
@@ -983,7 +985,7 @@ function startMatch() {
 
   // Blue Ally Bots
   teamRoster.blue.filter(m => !m.isPlayer).forEach((member, idx) => {
-    const allyBot = new BotHero(member.hero, member.lane, "BLUE");
+    const allyBot = new BotHero(member.hero, member.lane, "BLUE", isLod ? "LAND_OF_DAWN" : "COMPACT");
     if (prevBlueBotStates[idx] && prevBlueBotStates[idx].level > 1) {
       allyBot.setLevel(prevBlueBotStates[idx].level, prevBlueBotStates[idx].exp);
       allyBot.gold = prevBlueBotStates[idx].gold !== undefined ? prevBlueBotStates[idx].gold : allyBot.gold;
@@ -998,7 +1000,7 @@ function startMatch() {
 
   // Red Enemy Bots
   teamRoster.red.forEach((member, idx) => {
-    const enemyBotInstance = new BotHero(member.hero, member.lane, "RED");
+    const enemyBotInstance = new BotHero(member.hero, member.lane, "RED", isLod ? "LAND_OF_DAWN" : "COMPACT");
     if (prevRedBotStates[idx] && prevRedBotStates[idx].level > 1) {
       enemyBotInstance.setLevel(prevRedBotStates[idx].level, prevRedBotStates[idx].exp);
       enemyBotInstance.gold = prevRedBotStates[idx].gold !== undefined ? prevRedBotStates[idx].gold : enemyBotInstance.gold;
@@ -1719,7 +1721,7 @@ function loop(currentTime) {
     if (selectedHero) {
       if (Input.targetX !== null && Input.targetY !== null) {
         if (selectedHero.stunTimer <= 0) {
-          selectedHero.setTarget(Input.targetX, Input.targetY, map, minionManager.minions, objectiveManager, bots);
+          selectedHero.setTarget(Input.targetX, Input.targetY, map, minionManager.minions, objectiveManager, bots, Input.isDragging);
         }
         if (!Input.isDragging) {
           Input.targetX = null;

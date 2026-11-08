@@ -9,7 +9,7 @@ const MAP_TILES = {
   JUNGLE:    { id: 2, color: "#1b4332", walkable: true },
   RIVER:     { id: 3, color: "#2a6f97", walkable: true },
   BASE_BLUE: { id: 4, color: "#162a45", walkable: true },
-  TURRET:    { id: 5, color: "#ffd700", walkable: false },
+  TURRET:    { id: 5, color: "#ffd700", walkable: true },
   BUSH:      { id: 6, color: "#3d5a3d", walkable: true },
   BASE_RED:  { id: 7, color: "#3d1418", walkable: true },
   WALL:      { id: 8, color: "#1e272e", walkable: false },
@@ -534,8 +534,111 @@ class GameMap {
   isWalkable(tx, ty) {
     if (tx < 0 || tx >= this.width || ty < 0 || ty >= this.height) return false;
     const tileId = this.grid[ty][tx];
-    const tile = Object.values(MAP_TILES).find(t => t.id === tileId);
-    return tile ? tile.walkable : false;
+    return tileId !== MAP_TILES.WALL.id;
+  }
+
+  hasLineOfSight(x0, y0, x1, y1) {
+    const dist = Math.hypot(x1 - x0, y1 - y0);
+    if (dist < 20) return true;
+    const steps = Math.ceil(dist / 20);
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const px = x0 + (x1 - x0) * t;
+      const py = y0 + (y1 - y0) * t;
+      const tx = Math.floor(px / this.tileSize);
+      const ty = Math.floor(py / this.tileSize);
+      if (!this.isWalkable(tx, ty)) return false;
+    }
+    return true;
+  }
+
+  findPath(startX, startY, goalX, goalY) {
+    // If clear line of sight, return straight direct path
+    if (this.hasLineOfSight(startX, startY, goalX, goalY)) {
+      return [{ x: goalX, y: goalY }];
+    }
+
+    const W = this.width;
+    const H = this.height;
+    const sTx = Math.max(0, Math.min(W - 1, Math.floor(startX / this.tileSize)));
+    const sTy = Math.max(0, Math.min(H - 1, Math.floor(startY / this.tileSize)));
+    const gTx = Math.max(0, Math.min(W - 1, Math.floor(goalX / this.tileSize)));
+    const gTy = Math.max(0, Math.min(H - 1, Math.floor(goalY / this.tileSize)));
+
+    if (!this._pathParent || this._pathParent.length !== W * H) {
+      this._pathParent = new Int16Array(W * H);
+      this._pathQueue = new Int16Array(W * H);
+    }
+    const parent = this._pathParent;
+    const queue = this._pathQueue;
+    parent.fill(-1);
+
+    const startIdx = sTy * W + sTx;
+    const goalIdx = gTy * W + gTx;
+
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = startIdx;
+    parent[startIdx] = startIdx;
+
+    const dX = [1, -1, 0, 0, 1, -1, 1, -1];
+    const dY = [0, 0, 1, -1, 1, 1, -1, -1];
+
+    let found = false;
+    while (head < tail) {
+      const curr = queue[head++];
+      if (curr === goalIdx) {
+        found = true;
+        break;
+      }
+      const cx = curr % W;
+      const cy = Math.floor(curr / W);
+
+      for (let i = 0; i < 8; i++) {
+        const nx = cx + dX[i];
+        const ny = cy + dY[i];
+        if (nx >= 0 && nx < W && ny >= 0 && ny < H) {
+          const nIdx = ny * W + nx;
+          if (parent[nIdx] === -1 && this.isWalkable(nx, ny)) {
+            // Diagonal safety check to avoid corner clipping
+            if (i >= 4) {
+              if (!this.isWalkable(cx, ny) || !this.isWalkable(nx, cy)) continue;
+            }
+            parent[nIdx] = curr;
+            queue[tail++] = nIdx;
+          }
+        }
+      }
+    }
+
+    if (!found) {
+      return [{ x: goalX, y: goalY }];
+    }
+
+    const rawPath = [];
+    let curr = goalIdx;
+    while (curr !== startIdx) {
+      rawPath.push({
+        x: (curr % W) * this.tileSize + this.tileSize / 2,
+        y: Math.floor(curr / W) * this.tileSize + this.tileSize / 2
+      });
+      curr = parent[curr];
+    }
+    rawPath.reverse();
+    rawPath.push({ x: goalX, y: goalY });
+
+    // Path simplification (string pulling via line-of-sight checks)
+    const waypoints = [];
+    let lastWp = { x: startX, y: startY };
+    for (let i = 0; i < rawPath.length; i++) {
+      const nextWp = rawPath[i];
+      if (!this.hasLineOfSight(lastWp.x, lastWp.y, nextWp.x, nextWp.y)) {
+        if (i > 0) waypoints.push(rawPath[i - 1]);
+        lastWp = rawPath[i - 1] || lastWp;
+      }
+    }
+    waypoints.push({ x: goalX, y: goalY });
+    return waypoints;
   }
 
   getTileColor(tx, ty) {
@@ -897,42 +1000,14 @@ class GameMap {
       }
     }
 
-    // River Water Waves Visual (Horizontally centered in river: x = 660)
+    // River Water Waves Visual (Horizontally centered in river)
+    const riverX = (this.width * this.tileSize) / 2;
     ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
     for (let y = 0; y < this.height; y += 2) {
-      const sx = 660 - camera.x;
+      const sx = riverX - camera.x;
       const sy = y * this.tileSize - camera.y;
       ctx.fillRect(sx - 25, sy + 15, 50, 2);
     }
-
-    // River Boss Sanctuaries (Horizontally centered at x = 660, vertically centered between lanes)
-    const bossPits = [
-      { x: 660, y: 380, label: "TURTLE PIT" },
-      { x: 660, y: 620, label: "LORD PIT" }
-    ];
-    bossPits.forEach(pit => {
-      const sx = pit.x - camera.x;
-      const sy = pit.y - camera.y;
-      ctx.save();
-      // Outer stone crater ring
-      ctx.fillStyle = "rgba(10, 18, 28, 0.55)";
-      ctx.strokeStyle = "rgba(78, 204, 163, 0.45)";
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(sx, sy, 38, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // Inner rune ring
-      ctx.strokeStyle = "rgba(78, 204, 163, 0.25)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.arc(sx, sy, 28, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
-    });
 
     // Bases (Crystals)
     this.bases.forEach(base => {

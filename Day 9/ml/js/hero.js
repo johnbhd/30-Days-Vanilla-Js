@@ -217,7 +217,7 @@ class Hero {
     }
   }
 
-  setTarget(tx, ty, map, minions, objectives, enemyBot) {
+  setTarget(tx, ty, map, minions, objectives, enemyBot, isDragging = false) {
     if (this.stunTimer > 0) return; // Cannot move while stunned
     if (this.isRecalling) {
       const dist = Math.hypot(tx - this.x, ty - this.y);
@@ -225,6 +225,7 @@ class Hero {
         this.cancelRecall();
         this.targetX = tx;
         this.targetY = ty;
+        this.pathWaypoints = null;
       }
       return;
     }
@@ -324,12 +325,23 @@ class Hero {
       if (this.attackRange > 130 && distToEnemy <= this.attackRange) {
         this.targetX = this.x;
         this.targetY = this.y;
+        this.pathWaypoints = null;
         return;
       }
+      tx = enemyX;
+      ty = enemyY;
     }
 
     this.targetX = tx;
     this.targetY = ty;
+
+    if (isDragging) {
+      this.pathWaypoints = null;
+    } else if (map && typeof map.findPath === "function") {
+      this.pathWaypoints = map.findPath(this.x, this.y, tx, ty);
+    } else {
+      this.pathWaypoints = [{ x: tx, y: ty }];
+    }
   }
 
   takeDamage(amount, source, combatTexts, particles, sound, scoreboard) {
@@ -415,7 +427,8 @@ class Hero {
     if (map && map.turrets) {
       for (let i = 0; i < map.turrets.length; i++) {
         const t = map.turrets[i];
-        if (!t.destroyed && Math.hypot(x - t.worldX, y - t.worldY) < 36) {
+        // Only alive ENEMY turrets have physical collision; friendly turrets never block
+        if (!t.destroyed && t.team !== this.team && Math.hypot(x - t.worldX, y - t.worldY) < 14) {
           return false;
         }
       }
@@ -653,11 +666,29 @@ class Hero {
       currentSpeed *= 1.5;
     }
 
-    const dx = this.targetX - this.x;
-    const dy = this.targetY - this.y;
+    let curTargetX = this.targetX;
+    let curTargetY = this.targetY;
+
+    if (this.pathWaypoints && this.pathWaypoints.length > 0) {
+      const wp = this.pathWaypoints[0];
+      const distToWp = Math.hypot(wp.x - this.x, wp.y - this.y);
+      if (distToWp < 20) {
+        this.pathWaypoints.shift();
+        if (this.pathWaypoints.length > 0) {
+          curTargetX = this.pathWaypoints[0].x;
+          curTargetY = this.pathWaypoints[0].y;
+        }
+      } else {
+        curTargetX = wp.x;
+        curTargetY = wp.y;
+      }
+    }
+
+    const dx = curTargetX - this.x;
+    const dy = curTargetY - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (dist > 6) {
+    if (dist > 5) {
       const step = currentSpeed * dt;
       const stepX = (dx / dist) * Math.min(step, dist);
       const stepY = (dy / dist) * Math.min(step, dist);
@@ -665,28 +696,51 @@ class Hero {
       const nextX = this.x + stepX;
       const nextY = this.y + stepY;
 
-      if (this.checkWalkable(map, nextX, this.y)) {
-        this.x = nextX;
-      }
-      if (this.checkWalkable(map, this.x, nextY)) {
-        this.y = nextY;
+      const canMoveX = this.checkWalkable(map, nextX, this.y);
+      const canMoveY = this.checkWalkable(map, this.x, nextY);
+
+      if (canMoveX) this.x = nextX;
+      if (canMoveY) this.y = nextY;
+
+      // Smart tangent wall sliding if blocked diagonally
+      if (!canMoveX && !canMoveY) {
+        const moveAngle = Math.atan2(dy, dx);
+        const testAngles = [
+          moveAngle + Math.PI / 4,
+          moveAngle - Math.PI / 4,
+          moveAngle + Math.PI / 3,
+          moveAngle - Math.PI / 3,
+          moveAngle + Math.PI / 2,
+          moveAngle - Math.PI / 2
+        ];
+        for (let i = 0; i < testAngles.length; i++) {
+          const ta = testAngles[i];
+          const tx = this.x + Math.cos(ta) * step;
+          const ty = this.y + Math.sin(ta) * step;
+          if (this.checkWalkable(map, tx, ty)) {
+            this.x = tx;
+            this.y = ty;
+            break;
+          }
+        }
       }
     }
 
-    // Turret solid collision & unstuck separation
+    // Turret solid collision & unstuck separation (only alive enemy turrets)
     if (map && map.turrets) {
-      const minTurretDist = 38;
+      const minTurretDist = 16;
       for (let i = 0; i < map.turrets.length; i++) {
         const t = map.turrets[i];
-        if (t.destroyed) continue;
+        if (t.destroyed || t.team === this.team) continue;
         const td = Math.hypot(this.x - t.worldX, this.y - t.worldY);
         if (td < minTurretDist) {
           const pushAngle = td > 1 ? Math.atan2(this.y - t.worldY, this.x - t.worldX) : -Math.PI / 2;
           this.x = t.worldX + Math.cos(pushAngle) * minTurretDist;
           this.y = t.worldY + Math.sin(pushAngle) * minTurretDist;
-          if (Math.hypot(this.targetX - t.worldX, this.targetY - t.worldY) < 32) {
+          if (Math.hypot(this.targetX - t.worldX, this.targetY - t.worldY) < 20) {
             this.targetX = this.x;
             this.targetY = this.y;
+            this.pathWaypoints = null;
           }
         }
       }

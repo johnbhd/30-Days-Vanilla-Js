@@ -4,7 +4,7 @@
  */
 
 class BotHero {
-  constructor(heroData, lane = "MID", team = "RED") {
+  constructor(heroData, lane = "MID", team = "RED", mapType = null) {
     this.heroData = heroData;
     this.id = heroData.id;
     this.name = heroData.name;
@@ -13,7 +13,9 @@ class BotHero {
     this.assignedLane = this.lane;
 
     // Check if Land of Dawn map is active
-    const isLod = (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
+    const isLod = (mapType === "LAND_OF_DAWN") ||
+      (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN") ||
+      (typeof matchMode !== "undefined" && (matchMode === "4v4" || matchMode === "5v5"));
 
     // Map lane to Y pixel coordinate
     if (this.lane.includes("GOLD") || this.lane.includes("TOP")) {
@@ -384,7 +386,8 @@ class BotHero {
     if (map.turrets) {
       for (let i = 0; i < map.turrets.length; i++) {
         const t = map.turrets[i];
-        if (!t.destroyed && Math.hypot(x - t.worldX, y - t.worldY) < 36) {
+        // Only alive ENEMY turrets have physical collision; friendly turrets never block
+        if (!t.destroyed && t.team !== this.team && Math.hypot(x - t.worldX, y - t.worldY) < 14) {
           return false;
         }
       }
@@ -698,6 +701,24 @@ class BotHero {
         }
       }
       return;
+    }
+
+    const isLodMap = (map && map.mapType === "LAND_OF_DAWN") || (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
+    if (isLodMap && !this.lodInitialized) {
+      this.lodInitialized = true;
+      if (this.assignedLane === "GOLD") {
+        this.assignedLaneY = 200;
+        this.laneY = 200;
+      } else if (this.assignedLane === "EXP") {
+        this.assignedLaneY = 1080;
+        this.laneY = 1080;
+      } else if (this.assignedLane === "MID" || this.assignedLane === "ROAM") {
+        this.assignedLaneY = 640;
+        this.laneY = 640;
+      }
+      if (!this.laneDeployed && (!this.deploymentWaypoints || this.deploymentWaypoints.length === 0)) {
+        this.initDeploymentWaypoints(true);
+      }
     }
 
     // 2. Cooldown tickers (Blue Buff reduces cooldowns 15% faster)
@@ -2027,6 +2048,8 @@ class BotHero {
       if (!canMoveX && !canMoveY) {
         const moveAngle = Math.atan2(dy, dx);
         const testAngles = [
+          moveAngle + Math.PI / 4,
+          moveAngle - Math.PI / 4,
           moveAngle + Math.PI / 3,
           moveAngle - Math.PI / 3,
           moveAngle + Math.PI / 2,
@@ -2063,12 +2086,12 @@ class BotHero {
       }
     }
 
-    // Turret collision separation
+    // Turret collision separation (only alive enemy turrets)
     if (map && map.turrets) {
-      const minTurretDist = 38;
+      const minTurretDist = 16;
       for (let i = 0; i < map.turrets.length; i++) {
         const t = map.turrets[i];
-        if (t.destroyed) continue;
+        if (t.destroyed || t.team === this.team) continue;
         const td = Math.hypot(this.x - t.worldX, this.y - t.worldY);
         if (td < minTurretDist) {
           const pushAngle = td > 1 ? Math.atan2(this.y - t.worldY, this.x - t.worldX) : Math.PI / 2;
