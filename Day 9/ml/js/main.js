@@ -94,6 +94,22 @@ const shopGoldText = document.getElementById("shopGoldText");
 const scoreboardOverlay = document.getElementById("scoreboardOverlay");
 const openScoreboardBtn = document.getElementById("openScoreboardBtn");
 const closeScoreboardBtn = document.getElementById("closeScoreboardBtn");
+const inGameScoreBanner = document.getElementById("inGameScoreBanner");
+
+/**
+ * Control visibility of in-game top-center team scoring banner.
+ * Only shown during active match (gameState === "PLAYING"),
+ * never shown in landing page, match format select, or hero select.
+ */
+function setScoreBannerVisibility(visible) {
+  if (!inGameScoreBanner) return;
+  const isHidden = inGameScoreBanner.classList.contains("hidden");
+  if (visible && isHidden) {
+    inGameScoreBanner.classList.remove("hidden");
+  } else if (!visible && !isHidden) {
+    inGameScoreBanner.classList.add("hidden");
+  }
+}
 
 // Settings UI references
 const settingsOverlay = document.getElementById("settingsOverlay");
@@ -869,6 +885,8 @@ function selectMatchMode(mode) {
     selectOverlay.classList.remove("hidden");
     selectOverlay.scrollTop = 0;
   }
+  setScoreBannerVisibility(false);
+  gameState = "SELECT";
 }
 
 // Mode Selection Event Listeners
@@ -891,6 +909,7 @@ if (landingStartBtn) {
       modeSelectOverlay.classList.remove("hidden");
       modeSelectOverlay.scrollTop = 0;
     }
+    setScoreBannerVisibility(false);
     gameState = "MODE_SELECT";
   });
 }
@@ -900,6 +919,7 @@ if (backToLandingBtn) {
     if (sound && sound.playClick) sound.playClick();
     if (modeSelectOverlay) modeSelectOverlay.classList.add("hidden");
     if (landingPageOverlay) landingPageOverlay.classList.remove("hidden");
+    setScoreBannerVisibility(false);
     gameState = "LANDING";
   });
 }
@@ -911,6 +931,8 @@ if (backToModeBtn) {
       modeSelectOverlay.classList.remove("hidden");
       modeSelectOverlay.scrollTop = 0;
     }
+    setScoreBannerVisibility(false);
+    gameState = "MODE_SELECT";
   });
 }
 
@@ -1141,6 +1163,7 @@ function startMatch() {
   selectOverlay.classList.add("hidden");
   gameOverOverlay.classList.add("hidden");
   gameState = "PLAYING";
+  setScoreBannerVisibility(true);
 
   // Update abilities dock with hero's kit
   updateAbilitiesDock(chosenHeroData.id);
@@ -1341,20 +1364,23 @@ function triggerSkill(slot, customTargetX, customTargetY) {
 function resetGame() {
   isFormatReset = true;
   resetGameForNewFormat();
-  gameState = "PLAYING";
 
   gameOverOverlay.classList.add("hidden");
   if (chosenHeroData) {
+    gameState = "PLAYING";
+    setScoreBannerVisibility(true);
     startMatch();
   } else {
     if (modeSelectOverlay) modeSelectOverlay.classList.remove("hidden");
     selectOverlay.classList.add("hidden");
+    setScoreBannerVisibility(false);
     gameState = "MODE_SELECT";
   }
 }
 
 function showGameOver(isVictory) {
   gameState = "GAMEOVER";
+  setScoreBannerVisibility(false);
   if (gameOverTitle) {
     gameOverTitle.textContent = isVictory ? "VICTORY" : "DEFEAT";
     gameOverTitle.className = isVictory ? "victory-title" : "defeat-title";
@@ -1576,6 +1602,7 @@ if (gameOverMainMenuBtn) {
     if (landingPageOverlay) landingPageOverlay.classList.remove("hidden");
     if (modeSelectOverlay) modeSelectOverlay.classList.add("hidden");
     if (selectOverlay) selectOverlay.classList.add("hidden");
+    setScoreBannerVisibility(false);
   });
 }
 
@@ -1587,6 +1614,7 @@ if (changeHeroBtn) {
     if (modeSelectOverlay) modeSelectOverlay.classList.add("hidden");
     selectOverlay.classList.remove("hidden");
     if (selectOverlay) selectOverlay.scrollTop = 0;
+    setScoreBannerVisibility(false);
     activeSlot = { team: "blue", index: 0 };
     renderTeamLineupsUI();
     updateHeroGridSelection();
@@ -2014,6 +2042,7 @@ function loop(currentTime) {
   lastTime = currentTime;
 
   if (gameState === "PLAYING") {
+    setScoreBannerVisibility(true);
     matchTime += dt;
 
     // 0. Update Particles
@@ -2142,6 +2171,8 @@ function loop(currentTime) {
     } else if (blueBase && blueBase.crystalHp <= 0) {
       showGameOver(false);
     }
+  } else {
+    setScoreBannerVisibility(false);
   }
 
   // Render
@@ -2183,6 +2214,7 @@ buildShopCatalog();
 renderTeamLineupsUI();
 updateHeroGridSelection();
 updateActiveSlotPrompt();
+setScoreBannerVisibility(false);
 
 if (typeof window !== "undefined") {
   window.objectiveManager = objectiveManager;
@@ -2191,6 +2223,8 @@ if (typeof window !== "undefined") {
   window.getRandomHero = getRandomHero;
   window.hasManualHeroSelection = hasManualHeroSelection;
   window.getChosenHeroData = () => chosenHeroData;
+  window.setScoreBannerVisibility = setScoreBannerVisibility;
+  window.inGameScoreBanner = inGameScoreBanner;
 }
 
 requestAnimationFrame(loop);

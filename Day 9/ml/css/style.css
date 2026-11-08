@@ -2876,13 +2876,13 @@ canvas {
   transform: translateY(-2px);
 }
 
-/* Live In-Game Floating Team Kills Score Banner (Top-Center) */
+/* Live In-Game Floating Team Kills Score Banner (Top-Center - Active Match Only) */
 .in-game-score-banner {
-  position: fixed;
+  position: absolute;
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 15;
+  z-index: 25;
   background: rgba(10, 15, 30, 0.88);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -2893,6 +2893,12 @@ canvas {
   gap: 14px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
   pointer-events: auto;
+}
+
+.in-game-score-banner.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .in-game-team-side {
