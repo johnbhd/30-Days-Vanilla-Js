@@ -81,6 +81,9 @@ class BotHero {
     this.isClashing = false;
     this.clashDuration = 0;
 
+    // Deployment waypoints for Land of Dawn curved map
+    this.initDeploymentWaypoints(isLod);
+
     // Recall ability & retreat safety
     this.isRecalling = false;
     this.recallTimer = 0;
@@ -351,6 +354,55 @@ class BotHero {
     }
   }
 
+  initDeploymentWaypoints(isLod) {
+    this.deploymentWaypoints = [];
+    this.deploymentWaypointIndex = 0;
+    this.laneDeployed = !isLod; // On compact map, no curved waypoints needed
+
+    if (!isLod) return;
+
+    if (this.assignedLane === "GOLD") {
+      // Top lane curved ascent
+      this.deploymentWaypoints = this.team === "BLUE"
+        ? [{ x: 240, y: 480 }, { x: 240, y: 200 }]
+        : [{ x: 1480, y: 480 }, { x: 1480, y: 200 }];
+      this.laneDeployed = false;
+    } else if (this.assignedLane === "EXP") {
+      // Bot lane curved descent
+      this.deploymentWaypoints = this.team === "BLUE"
+        ? [{ x: 240, y: 800 }, { x: 240, y: 1080 }]
+        : [{ x: 1480, y: 800 }, { x: 1480, y: 1080 }];
+      this.laneDeployed = false;
+    } else {
+      // Mid, Jungle, Roam deploy directly
+      this.laneDeployed = true;
+    }
+  }
+
+  checkWalkable(map, x, y) {
+    if (!map) return true;
+    if (map.turrets) {
+      for (let i = 0; i < map.turrets.length; i++) {
+        const t = map.turrets[i];
+        if (!t.destroyed && Math.hypot(x - t.worldX, y - t.worldY) < 36) {
+          return false;
+        }
+      }
+    }
+    const r = this.radius * 0.7;
+    const points = [
+      { x: x - r, y: y - r },
+      { x: x + r, y: y - r },
+      { x: x - r, y: y + r },
+      { x: x + r, y: y + r }
+    ];
+    return points.every(p => {
+      const tx = Math.floor(p.x / map.tileSize);
+      const ty = Math.floor(p.y / map.tileSize);
+      return map.isWalkable(tx, ty);
+    });
+  }
+
   respawn() {
     this.isDead = false;
     this.hp = this.maxHp;
@@ -358,11 +410,13 @@ class BotHero {
     this.hasUsedRevive = false;
     this.x = this.spawnX;
     this.y = this.spawnY;
-    this.targetX = this.team === "BLUE" ? (29 * 40) : (2 * 40);
+    const isLod = (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
+    this.targetX = this.team === "BLUE" ? (isLod ? 1620 : (29 * 40)) : (isLod ? 140 : (2 * 40));
     this.targetY = this.assignedLaneY;
     this.laneY = this.assignedLaneY;
     this.isClashing = false;
     this.state = "LANING";
+    this.initDeploymentWaypoints(isLod);
   }
 
   takeDamage(amount, source, combatTexts, particles, sound, scoreboard) {
@@ -390,8 +444,19 @@ class BotHero {
     // If HP drops below 28%, retreat towards friendly base
     if (this.hp < this.maxHp * 0.28) {
       this.state = "RETREAT";
-      this.targetX = this.spawnX;
-      this.targetY = this.spawnY;
+      const isLod = (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
+      if (isLod && this.y < 360) {
+        // In Top lane: retreat towards lane corner before descending to base
+        this.targetX = this.team === "BLUE" ? 240 : 1480;
+        this.targetY = 200;
+      } else if (isLod && this.y > 900) {
+        // In Bot lane: retreat towards lane corner before ascending to base
+        this.targetX = this.team === "BLUE" ? 240 : 1480;
+        this.targetY = 1080;
+      } else {
+        this.targetX = this.spawnX;
+        this.targetY = this.spawnY;
+      }
     }
 
     if (particles) {
@@ -603,6 +668,8 @@ class BotHero {
         this.y = this.spawnY;
         this.targetX = this.spawnX;
         this.targetY = this.spawnY;
+        const isLod = (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
+        this.initDeploymentWaypoints(isLod);
 
         if (particles) {
           particles.spawnRing(this.x, this.y, 65, this.color, 0.6);
@@ -1371,6 +1438,27 @@ class BotHero {
       return;
     }
 
+    // Inter-lane navigation on Land of Dawn: if target is in another lane behind a wall, route through the nearest corridor
+    if (map && map.mapType === "LAND_OF_DAWN" && Math.abs(targetHero.y - this.y) > 260) {
+      const mapW = map.width * map.tileSize;
+      const isBlueSide = this.x < mapW / 2;
+      const corridorXs = isBlueSide ? [240, 600, 880] : [880, 1160, 1480];
+      let bestCorridorX = corridorXs[0];
+      let bestDist = Math.abs(this.x - bestCorridorX);
+      for (let i = 1; i < corridorXs.length; i++) {
+        const d = Math.abs(this.x - corridorXs[i]);
+        if (d < bestDist) {
+          bestDist = d;
+          bestCorridorX = corridorXs[i];
+        }
+      }
+      if (Math.abs(this.x - bestCorridorX) > 40) {
+        this.targetX = bestCorridorX;
+        this.targetY = this.y;
+        return;
+      }
+    }
+
     // Positioning: Ranged heroes kite and keep distance; Melee heroes close in
     const isRanged = this.attackRange > 130;
     if (isRanged) {
@@ -1789,13 +1877,30 @@ class BotHero {
           }
         }
       } else {
+        // Deployment waypoints check (Land of Dawn corner ascent/descent)
+        if (!this.laneDeployed && this.deploymentWaypoints && this.deploymentWaypoints.length > 0) {
+          const wp = this.deploymentWaypoints[this.deploymentWaypointIndex];
+          if (wp) {
+            this.targetX = wp.x;
+            this.targetY = wp.y;
+            if (Math.hypot(this.x - wp.x, this.y - wp.y) < 36) {
+              this.deploymentWaypointIndex++;
+              if (this.deploymentWaypointIndex >= this.deploymentWaypoints.length) {
+                this.laneDeployed = true;
+              }
+            }
+            return;
+          }
+        }
+
         // 3. March down lane towards frontline boundary / opposing base
         const chaseCutoff = this.getLaneFrontlineBoundary(map);
+        const mapMaxX = map ? (map.width * map.tileSize) : (32 * 40);
         if (this.team === "RED") {
           this.targetX = Math.max(chaseCutoff + 25, 120);
           this.targetY = this.laneY;
         } else {
-          this.targetX = Math.min(chaseCutoff - 25, 29 * 40);
+          this.targetX = Math.min(chaseCutoff - 25, mapMaxX - 120);
           this.targetY = this.laneY;
         }
       }
@@ -1807,13 +1912,39 @@ class BotHero {
     const dy = this.targetY - this.y;
     const dist = Math.hypot(dx, dy);
 
+    const mapMaxX = map ? (map.width * map.tileSize - 20) : (31 * 40);
+    const mapMaxY = map ? (map.height * map.tileSize - 20) : (23 * 40);
+
     if (dist > 3) {
       const step = Math.min(dist, this.speed * dt);
-      const nx = this.x + (dx / dist) * step;
-      const ny = this.y + (dy / dist) * step;
+      const stepX = (dx / dist) * step;
+      const stepY = (dy / dist) * step;
 
-      this.x = Math.max(40, Math.min(31 * 40, nx));
-      this.y = Math.max(40, Math.min(23 * 40, ny));
+      const nx = Math.max(20, Math.min(mapMaxX, this.x + stepX));
+      const ny = Math.max(20, Math.min(mapMaxY, this.y + stepY));
+
+      // Separate axis-aligned collision checks for smooth sliding along walls
+      if (this.checkWalkable(map, nx, this.y)) {
+        this.x = nx;
+      }
+      if (this.checkWalkable(map, this.x, ny)) {
+        this.y = ny;
+      }
+    }
+
+    // Wall soft separation: if bot somehow overlaps a wall, gently push away
+    if (map && !this.checkWalkable(map, this.x, this.y)) {
+      const dirs = [
+        { dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
+        { dx: 1, dy: 1 }, { dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }
+      ];
+      for (const d of dirs) {
+        if (this.checkWalkable(map, this.x + d.dx * 8, this.y + d.dy * 8)) {
+          this.x += d.dx * 8;
+          this.y += d.dy * 8;
+          break;
+        }
+      }
     }
 
     // Turret collision separation

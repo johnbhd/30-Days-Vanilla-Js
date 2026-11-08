@@ -673,6 +673,21 @@ class Hero {
       }
     }
 
+    // Wall soft separation: gently push hero out if overlapping a solid wall
+    if (map && !this.checkWalkable(map, this.x, this.y)) {
+      const dirs = [
+        { dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
+        { dx: 1, dy: 1 }, { dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }
+      ];
+      for (const d of dirs) {
+        if (this.checkWalkable(map, this.x + d.dx * 8, this.y + d.dy * 8)) {
+          this.x += d.dx * 8;
+          this.y += d.dy * 8;
+          break;
+        }
+      }
+    }
+
     // Base Fountain Continuous Healing (Friendly Blue Base)
     if (map && map.bases) {
       const friendlyBase = map.bases.find(b => b.team === this.team);

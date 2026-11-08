@@ -205,6 +205,38 @@ class SkillManager {
     return { x: destX, y: destY };
   }
 
+  resolveSafeDashPosition(destX, destY, map, origX, origY) {
+    let res = this.resolveTurretCollision(destX, destY, map, origX, origY);
+    if (!map || typeof map.isWalkable !== "function") return res;
+
+    // Check if landing spot collides with a solid wall tile
+    const tx = Math.floor(res.x / map.tileSize);
+    const ty = Math.floor(res.y / map.tileSize);
+    if (map.isWalkable(tx, ty)) {
+      return res;
+    }
+
+    // Destination is inside a solid rock wall: step backwards along dash ray to find nearest walkable position
+    const startX = (origX !== undefined) ? origX : res.x;
+    const startY = (origY !== undefined) ? origY : res.y;
+    const totalDist = Math.hypot(res.x - startX, res.y - startY);
+    if (totalDist > 1) {
+      const dirX = (res.x - startX) / totalDist;
+      const dirY = (res.y - startY) / totalDist;
+      for (let d = totalDist - 8; d >= 0; d -= 8) {
+        const testX = startX + dirX * d;
+        const testY = startY + dirY * d;
+        const ttx = Math.floor(testX / map.tileSize);
+        const tty = Math.floor(testY / map.tileSize);
+        if (map.isWalkable(ttx, tty)) {
+          return this.resolveTurretCollision(testX, testY, map, origX, origY);
+        }
+      }
+    }
+
+    return { x: startX, y: startY };
+  }
+
   castSkill(slot, hero, targetX, targetY, map, minions, objectives, combatTexts, gameStats, enemyBot, sound, particles) {
     if (!hero || hero.hp <= 0 || !this.canCast(slot, hero)) return false;
 
@@ -386,7 +418,7 @@ class SkillManager {
         let destX = clamp(hero.x + Math.cos(angle) * dashDist, 60, mapMaxX - 60);
         let destY = clamp(hero.y + Math.sin(angle) * dashDist, 60, mapMaxY - 60);
 
-        const safePos = this.resolveTurretCollision(destX, destY, map, origX, origY);
+        const safePos = this.resolveSafeDashPosition(destX, destY, map, origX, origY);
         destX = safePos.x;
         destY = safePos.y;
 
@@ -441,7 +473,7 @@ class SkillManager {
         let destX = clamp(hero.x + dirX * 130, 60, mapMaxX - 60);
         let destY = clamp(hero.y + dirY * 130, 60, mapMaxY - 60);
 
-        const safePos = this.resolveTurretCollision(destX, destY, map, origX, origY);
+        const safePos = this.resolveSafeDashPosition(destX, destY, map, origX, origY);
         hero.x = safePos.x;
         hero.y = safePos.y;
         hero.targetX = hero.x;
@@ -467,7 +499,7 @@ class SkillManager {
         let destX = clamp(hero.x + dirX * 180, 60, mapMaxX - 60);
         let destY = clamp(hero.y + dirY * 180, 60, mapMaxY - 60);
 
-        const safePos = this.resolveTurretCollision(destX, destY, map, origX, origY);
+        const safePos = this.resolveSafeDashPosition(destX, destY, map, origX, origY);
         hero.x = safePos.x;
         hero.y = safePos.y;
         hero.targetX = hero.x;
@@ -660,7 +692,7 @@ class SkillManager {
         let destX = clamp(hero.x + dirX * 100, 60, mapMaxX - 60);
         let destY = clamp(hero.y + dirY * 100, 60, mapMaxY - 60);
 
-        const safePos = this.resolveTurretCollision(destX, destY, map, origX, origY);
+        const safePos = this.resolveSafeDashPosition(destX, destY, map, origX, origY);
         hero.x = safePos.x;
         hero.y = safePos.y;
         hero.targetX = hero.x;
@@ -831,7 +863,7 @@ class SkillManager {
       const mapMaxY = map ? map.height * map.tileSize : 720;
       let destX = clamp(hero.x + dirX * 120, 60, mapMaxX - 60);
       let destY = clamp(hero.y + dirY * 120, 60, mapMaxY - 60);
-      const safePos = this.resolveTurretCollision(destX, destY, map, origX, origY);
+      const safePos = this.resolveSafeDashPosition(destX, destY, map, origX, origY);
       hero.x = safePos.x;
       hero.y = safePos.y;
       hero.targetX = hero.x;
@@ -895,7 +927,7 @@ class SkillManager {
             // Pull enemy directly into Tigreal's melee perimeter
             const pullX = hero.x + (Math.random() - 0.5) * 25;
             const pullY = hero.y + (Math.random() - 0.5) * 25;
-            const safePull = this.resolveTurretCollision(pullX, pullY, map, hero.x, hero.y);
+            const safePull = this.resolveSafeDashPosition(pullX, pullY, map, hero.x, hero.y);
             e.x = safePull.x;
             e.y = safePull.y;
             if (e.targetX !== undefined) {

@@ -12,6 +12,7 @@ const MAP_TILES = {
   TURRET:    { id: 5, color: "#ffd700", walkable: false },
   BUSH:      { id: 6, color: "#3d5a3d", walkable: true },
   BASE_RED:  { id: 7, color: "#3d1418", walkable: true },
+  WALL:      { id: 8, color: "#1e272e", walkable: false },
   BASE:      { id: 4, color: "#162a45", walkable: true }
 };
 
@@ -210,24 +211,76 @@ class GameMap {
     this.addJunglePatch(25, 7, 10, 7);  // Top-Right (Red Jungle North)
     this.addJunglePatch(25, 19, 10, 6); // Bottom-Right (Red Jungle South)
 
-    // 7. Bushes along river, lane arches, and buff camps
+    // 7. Solid Wall Blocks & Buff Coves (Land of Dawn obstacle terrain)
+    // Blue Top Jungle (North-West)
+    // Blue Buff C-shaped rock wall (opening faces East into jungle corridor)
+    this.addWall(9, 9, 2, 4);   // West wall (x: 9..10, y: 9..12)
+    this.addWall(11, 8, 2, 2);  // North wall (x: 11..12, y: 8..9)
+    this.addWall(11, 12, 2, 2); // South wall (x: 11..12, y: 12..13)
+    this.addWall(18, 11, 2, 3); // River Bluff Wall (x: 18..19, y: 11..13)
+
+    // Blue Bottom Jungle (South-West)
+    // Red Buff C-shaped rock wall (opening faces East into jungle corridor)
+    this.addWall(9, 20, 2, 4);  // West wall (x: 9..10, y: 20..23)
+    this.addWall(11, 19, 2, 2); // North wall (x: 11..12, y: 19..20)
+    this.addWall(11, 23, 2, 2); // South wall (x: 11..12, y: 23..24)
+    this.addWall(18, 19, 2, 3); // River Bluff Wall (x: 18..19, y: 19..21)
+
+    // Red Top Jungle (North-East, mirrored)
+    // Red Buff C-shaped rock wall (opening faces West into jungle corridor)
+    this.addWall(33, 9, 2, 4);  // East wall (x: 33..34, y: 9..12)
+    this.addWall(31, 8, 2, 2);  // North wall (x: 31..32, y: 8..9)
+    this.addWall(31, 12, 2, 2); // South wall (x: 31..32, y: 12..13)
+    this.addWall(24, 11, 2, 3); // River Bluff Wall (x: 24..25, y: 11..13)
+
+    // Red Bottom Jungle (South-East, mirrored)
+    // Blue Buff C-shaped rock wall (opening faces West into jungle corridor)
+    this.addWall(33, 20, 2, 4); // East wall (x: 33..34, y: 20..23)
+    this.addWall(31, 19, 2, 2); // North wall (x: 31..32, y: 19..20)
+    this.addWall(31, 23, 2, 2); // South wall (x: 31..32, y: 23..24)
+    this.addWall(24, 19, 2, 3); // River Bluff Wall (x: 24..25, y: 19..21)
+
+    // River Objective Pits (Turtle & Lord horseshoe walls)
+    this.addWall(20, 7, 5, 1);  // Turtle Pit Back Wall (x: 20..24, y: 7)
+    this.addWall(19, 7, 1, 2);  // Turtle Pit West Wing (x: 19, y: 7..8)
+    this.addWall(25, 7, 1, 2);  // Turtle Pit East Wing (x: 25, y: 7..8)
+
+    this.addWall(20, 25, 5, 1); // Lord Pit Back Wall (x: 20..24, y: 25)
+    this.addWall(19, 24, 1, 2); // Lord Pit West Wing (x: 19, y: 24..25)
+    this.addWall(25, 24, 1, 2); // Lord Pit East Wing (x: 25, y: 24..25)
+
+    // River Choke Outcrops (ambush pillars)
+    this.addWall(20, 13, 1, 1);
+    this.addWall(24, 18, 1, 1);
+
+    // 8. Bushes along river, lane arches, and buff camps
     this.addBush(20, 5, 2, 1);
     this.addBush(23, 5, 2, 1);
     this.addBush(20, 27, 2, 1);
     this.addBush(23, 27, 2, 1);
-    this.addBush(19, 14, 1, 3); // Mid left bush
-    this.addBush(24, 14, 1, 3); // Mid right bush
-    this.addBush(11, 8, 2, 1);  // Blue buff bush
-    this.addBush(11, 23, 2, 1); // Red buff bush
-    this.addBush(31, 8, 2, 1);
-    this.addBush(31, 23, 2, 1);
+    this.addBush(19, 15, 1, 2); // Mid river left bush
+    this.addBush(24, 15, 1, 2); // Mid river right bush
+    this.addBush(14, 9, 2, 1);  // Blue buff corridor bush
+    this.addBush(14, 23, 2, 1); // Red buff corridor bush
+    this.addBush(28, 9, 2, 1);  // Red side North buff bush
+    this.addBush(28, 23, 2, 1); // Red side South buff bush
 
-    // 8. Bases
+    // 9. Bases
     this.addBase(3, 16, 4, 6, "BLUE");
     this.addBase(40, 16, 4, 6, "RED");
 
-    // 9. Turrets along curved lanes
+    // 10. Turrets along curved lanes
     this.addTurretsLandOfDawn();
+  }
+
+  addWall(cx, cy, w, h) {
+    for (let y = cy; y < cy + h; y++) {
+      for (let x = cx; x < cx + w; x++) {
+        if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+          this.grid[y][x] = MAP_TILES.WALL.id;
+        }
+      }
+    }
   }
 
   addJunglePatch(cx, cy, w, h) {
@@ -398,6 +451,29 @@ class GameMap {
           offCtx.strokeStyle = "rgba(231, 76, 60, 0.18)";
           offCtx.lineWidth = 1;
           offCtx.strokeRect(sx, sy, this.tileSize, this.tileSize);
+        } else if (tileId === MAP_TILES.WALL.id) {
+          // 3D Slate Rock Wall Block (solid impassable terrain)
+          offCtx.fillStyle = "#1e272e"; // Dark slate base
+          offCtx.fillRect(sx, sy, this.tileSize, this.tileSize);
+
+          // Top/Left sunlight bevel
+          offCtx.fillStyle = "#485460";
+          offCtx.fillRect(sx, sy, this.tileSize, 3);
+          offCtx.fillRect(sx, sy, 3, this.tileSize);
+
+          // Bottom/Right deep shadow bevel
+          offCtx.fillStyle = "#0f1418";
+          offCtx.fillRect(sx, sy + this.tileSize - 3, this.tileSize, 3);
+          offCtx.fillRect(sx + this.tileSize - 3, sy, 3, this.tileSize);
+
+          // Subtle stone fissure / rock crack accent
+          offCtx.strokeStyle = "rgba(74, 85, 104, 0.4)";
+          offCtx.lineWidth = 1.2;
+          offCtx.beginPath();
+          offCtx.moveTo(sx + 8, sy + 11);
+          offCtx.lineTo(sx + 19, sy + 16);
+          offCtx.lineTo(sx + 31, sy + 29);
+          offCtx.stroke();
         } else {
           offCtx.fillStyle = color;
           offCtx.fillRect(sx, sy, this.tileSize, this.tileSize);
@@ -992,5 +1068,11 @@ class GameMap {
   }
 }
 
-if (typeof window !== "undefined") window.GameMap = GameMap;
-if (typeof global !== "undefined") global.GameMap = GameMap;
+if (typeof window !== "undefined") {
+  window.GameMap = GameMap;
+  window.MAP_TILES = MAP_TILES;
+}
+if (typeof global !== "undefined") {
+  global.GameMap = GameMap;
+  global.MAP_TILES = MAP_TILES;
+}
