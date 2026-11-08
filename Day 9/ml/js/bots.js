@@ -50,13 +50,21 @@ class BotHero {
 
     // Base Spawns & March Target
     if (this.team === "BLUE") {
-      this.spawnX = isLod ? 140 : (2 * 40);
-      this.spawnY = isLod ? 640 : (12 * 40);
-      this.targetX = isLod ? 1620 : (29 * 40);
+      this.spawnX = isLod ? 140 : 100;
+      this.spawnY = isLod ? 660 : 500;
+      this.targetX = isLod ? 1620 : 1180;
     } else {
-      this.spawnX = isLod ? 1620 : (29 * 40);
-      this.spawnY = isLod ? 640 : (12 * 40);
-      this.targetX = isLod ? 140 : (2 * 40);
+      this.spawnX = isLod ? 1620 : 1180;
+      this.spawnY = isLod ? 660 : 500;
+      this.targetX = isLod ? 140 : 100;
+    }
+
+    if (typeof window !== "undefined" && window.map && window.map.bases) {
+      const friendlyBase = window.map.bases.find(b => b.team === this.team);
+      if (friendlyBase) {
+        this.spawnX = friendlyBase.worldX;
+        this.spawnY = friendlyBase.worldY;
+      }
     }
     this.x = this.spawnX;
     this.y = this.spawnY;

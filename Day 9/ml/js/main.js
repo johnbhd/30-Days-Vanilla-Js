@@ -36,6 +36,13 @@ window.addEventListener("keydown", unlockAudio, { once: true });
 
 let selectedHero = null;
 let chosenHeroData = null;
+let hasManualHeroSelection = false;
+
+function getRandomHero() {
+  if (!Array.isArray(HEROES) || HEROES.length === 0) return null;
+  const idx = Math.floor(Math.random() * HEROES.length);
+  return HEROES[idx];
+}
 const cameraLerp = 0.1;
 let matchTime = 0;
 let passiveGoldTimer = 0;
@@ -216,6 +223,9 @@ function updateHeroGridSelection() {
 function assignHeroToActiveSlot(hero) {
   const activeMember = getActiveSlotMember();
   if (!activeMember) return;
+
+  hasManualHeroSelection = true;
+  if (typeof window !== "undefined") window.hasManualHeroSelection = true;
 
   if (activeMember.hero && activeMember.hero.id === hero.id) {
     return; // Already selected for this slot
@@ -425,7 +435,10 @@ function buildHeroGrid() {
 
 // 2-Column Team Matchup Generator & UI Preview
 function generateTeamRosters(playerHero = null) {
-  const chosen = playerHero || chosenHeroData || HEROES[0];
+  let chosen = playerHero || chosenHeroData;
+  if (!chosen) {
+    chosen = (!hasManualHeroSelection ? getRandomHero() : HEROES[0]) || HEROES[0];
+  }
   const allOtherHeroes = HEROES.filter(h => h.id !== chosen.id);
 
   // Determine Player preferred lane
@@ -762,7 +775,10 @@ function selectMatchMode(mode) {
   document.querySelectorAll(".mode-card").forEach(c => {
     c.classList.toggle("selected", c.getAttribute("data-mode") === mode);
   });
-  generateTeamRosters(chosenHeroData || HEROES[0]);
+  if (!hasManualHeroSelection || !chosenHeroData) {
+    chosenHeroData = getRandomHero() || HEROES[0];
+  }
+  generateTeamRosters(chosenHeroData);
   renderTeamLineupsUI();
   updateHeroGridSelection();
   updateActiveSlotPrompt();
@@ -900,6 +916,9 @@ function updateShopState() {
 function startMatch() {
   // Ensure team rosters exist
   if (!teamRoster || !teamRoster.blue || teamRoster.blue.length === 0) {
+    if (!hasManualHeroSelection && !chosenHeroData) {
+      chosenHeroData = getRandomHero() || HEROES[0];
+    }
     generateTeamRosters(chosenHeroData || HEROES[0]);
   }
 
@@ -907,7 +926,7 @@ function startMatch() {
   if (teamRoster.blue[0] && teamRoster.blue[0].hero) {
     chosenHeroData = teamRoster.blue[0].hero;
   } else if (!chosenHeroData) {
-    chosenHeroData = HEROES[0];
+    chosenHeroData = (!hasManualHeroSelection ? getRandomHero() : HEROES[0]) || HEROES[0];
   }
 
   // Preserve progression when changing hero mid-match (player, ally bots, enemy bots)
@@ -959,19 +978,17 @@ function startMatch() {
     selectedHero.hp = Math.round(selectedHero.maxHp * Math.max(0.25, prevHeroHpRatio));
   }
 
-  // Position hero at their designated lane from team roster
-  const playerSlot = teamRoster.blue.find(m => m.isPlayer) || { lane: chosenHeroData.lane || "MID" };
+  // Position hero at their team base crystal / fountain (always spawn in base)
   const isLod = (matchMode === "4v4" || matchMode === "5v5");
   let spawnX = isLod ? 140 : 100;
   let spawnY = isLod ? 640 : 480;
 
-  if (isLod) {
-    if (playerSlot.lane === "TOP" || (playerSlot.lane && playerSlot.lane.includes("Gold"))) spawnY = 200;
-    else if (playerSlot.lane === "BOT" || (playerSlot.lane && playerSlot.lane.includes("EXP"))) spawnY = 1080;
-    else if (playerSlot.lane === "JUNGLE") { spawnX = 260; spawnY = 440; }
-  } else {
-    if (playerSlot.lane === "TOP" || (playerSlot.lane && playerSlot.lane.includes("Gold"))) spawnY = 240;
-    else if (playerSlot.lane === "BOT" || (playerSlot.lane && playerSlot.lane.includes("EXP"))) spawnY = 720;
+  if (typeof map !== "undefined" && map && map.bases) {
+    const friendlyBase = map.bases.find(b => b.team === "BLUE");
+    if (friendlyBase) {
+      spawnX = friendlyBase.worldX;
+      spawnY = friendlyBase.worldY;
+    }
   }
 
   selectedHero.x = spawnX;
@@ -1839,7 +1856,10 @@ function loop(currentTime) {
 
 // Initialization
 initHeroRoleTabs();
-generateTeamRosters(HEROES[0]);
+if (!hasManualHeroSelection) {
+  chosenHeroData = getRandomHero() || HEROES[0];
+}
+generateTeamRosters(chosenHeroData);
 buildHeroGrid();
 buildShopCatalog();
 renderTeamLineupsUI();
@@ -1850,6 +1870,9 @@ if (typeof window !== "undefined") {
   window.objectiveManager = objectiveManager;
   window.gameStats = gameStats;
   window.player = selectedHero;
+  window.getRandomHero = getRandomHero;
+  window.hasManualHeroSelection = hasManualHeroSelection;
+  window.getChosenHeroData = () => chosenHeroData;
 }
 
 requestAnimationFrame(loop);

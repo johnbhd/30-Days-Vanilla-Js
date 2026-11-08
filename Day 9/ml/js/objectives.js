@@ -99,19 +99,19 @@ class ObjectiveManager {
 
     const campDefs = [
       // Quadrant 1 (Top-Left / Blue North Jungle)
-      { id: "blue_buff_blue", name: "Blue Buff", type: "blue_buff", x: 500,  y: 420,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#00d2d3" },
+      { id: "blue_buff_blue", name: "Blue Buff", type: "blue_buff", x: 480,  y: 440,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#00d2d3" },
       { id: "small_creep_1",  name: "Crammer",   type: "small_creep", x: 660, y: 340,  hp: 750,  maxHp: 750,  radius: 14, bounty: 45, exp: 60,  respawnInterval: 35, color: "#2ecc71" },
 
       // Quadrant 2 (Bottom-Left / Blue South Jungle)
-      { id: "red_buff_blue",  name: "Red Buff",  type: "red_buff",  x: 500,  y: 900,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#e74c3c" },
+      { id: "red_buff_blue",  name: "Red Buff",  type: "red_buff",  x: 480,  y: 880,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#e74c3c" },
       { id: "small_creep_2",  name: "Rockursa",  type: "small_creep", x: 660, y: 980,  hp: 750,  maxHp: 750,  radius: 14, bounty: 45, exp: 60,  respawnInterval: 35, color: "#a29bfe" },
 
       // Quadrant 3 (Top-Right / Red North Jungle)
-      { id: "red_buff_red",   name: "Red Buff",  type: "red_buff",  x: 1260, y: 420,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#e74c3c" },
+      { id: "red_buff_red",   name: "Red Buff",  type: "red_buff",  x: 1280, y: 440,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#e74c3c" },
       { id: "small_creep_3",  name: "Crammer",   type: "small_creep", x: 1100, y: 340, hp: 750,  maxHp: 750,  radius: 14, bounty: 45, exp: 60,  respawnInterval: 35, color: "#2ecc71" },
 
       // Quadrant 4 (Bottom-Right / Red South Jungle)
-      { id: "blue_buff_red",  name: "Blue Buff", type: "blue_buff", x: 1260, y: 900,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#00d2d3" },
+      { id: "blue_buff_red",  name: "Blue Buff", type: "blue_buff", x: 1280, y: 880,  hp: 1900, maxHp: 1900, radius: 20, bounty: 90, exp: 140, respawnInterval: 50, color: "#00d2d3" },
       { id: "small_creep_4",  name: "Rockursa",  type: "small_creep", x: 1100, y: 980, hp: 750,  maxHp: 750,  radius: 14, bounty: 45, exp: 60,  respawnInterval: 35, color: "#a29bfe" },
 
       // River Gold Crabs

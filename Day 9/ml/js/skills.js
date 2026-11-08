@@ -43,7 +43,7 @@ const HERO_SKILLS = {
   gusion: {
     q: { name: "Sword Spike", cd: 3.5, type: "dagger_teleport", range: 420, indicator: "line", desc: "Throws piercing dagger dealing 440 damage; recast dashes behind target" },
     w: { name: "Shadowblade", cd: 4.5, type: "dagger_fan", range: 380, indicator: "cone", desc: "Throws fan of 5 high-damage daggers dealing 280 each (1400+ burst) and return" },
-    e: { name: "Incandescence", cd: 9, type: "dash_reset", range: 140, indicator: "dash", desc: "Dashes forward and immediately resets Q and W cooldowns" },
+    e: { name: "Incandescence", cd: 4, type: "dash_reset", range: 140, indicator: "dash", desc: "Dashes forward and immediately resets Q and W cooldowns" },
     r: { name: "Blade Barrage", cd: 20, type: "ultimate_storm", desc: "Unleashes 12 hyper-velocity blades in all directions dealing 380 burst each" }
   },
   saber: {
