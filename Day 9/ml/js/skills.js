@@ -205,35 +205,65 @@ class SkillManager {
     return { x: destX, y: destY };
   }
 
+  isSafeDashLanding(x, y, map, radius = 14) {
+    if (!map || typeof map.isWalkable !== "function") return true;
+    const maxX = map.width * map.tileSize;
+    const maxY = map.height * map.tileSize;
+    if (x < radius || x >= maxX - radius || y < radius || y >= maxY - radius) return false;
+
+    // Check center
+    const cx = Math.floor(x / map.tileSize);
+    const cy = Math.floor(y / map.tileSize);
+    if (!map.isWalkable(cx, cy)) return false;
+
+    // Check 8 perimeter test points around hero body
+    const testPoints = [
+      { x: x + radius, y: y },
+      { x: x - radius, y: y },
+      { x: x, y: y + radius },
+      { x: x, y: y - radius },
+      { x: x + radius * 0.7, y: y + radius * 0.7 },
+      { x: x - radius * 0.7, y: y + radius * 0.7 },
+      { x: x + radius * 0.7, y: y - radius * 0.7 },
+      { x: x - radius * 0.7, y: y - radius * 0.7 }
+    ];
+
+    for (let i = 0; i < testPoints.length; i++) {
+      const p = testPoints[i];
+      const tx = Math.floor(p.x / map.tileSize);
+      const ty = Math.floor(p.y / map.tileSize);
+      if (!map.isWalkable(tx, ty)) return false;
+    }
+    return true;
+  }
+
   resolveSafeDashPosition(destX, destY, map, origX, origY) {
     let res = this.resolveTurretCollision(destX, destY, map, origX, origY);
     if (!map || typeof map.isWalkable !== "function") return res;
 
-    // Check if landing spot collides with a solid wall tile
-    const tx = Math.floor(res.x / map.tileSize);
-    const ty = Math.floor(res.y / map.tileSize);
-    if (map.isWalkable(tx, ty)) {
+    // If destination has full body clearance from walls and turrets, return it
+    if (this.isSafeDashLanding(res.x, res.y, map, 14)) {
       return res;
     }
 
-    // Destination is inside a solid rock wall: step backwards along dash ray to find nearest walkable position
+    // Destination overlaps or is inside a wall: step backwards along dash ray to find safe landing with body clearance
     const startX = (origX !== undefined) ? origX : res.x;
     const startY = (origY !== undefined) ? origY : res.y;
     const totalDist = Math.hypot(res.x - startX, res.y - startY);
     if (totalDist > 1) {
       const dirX = (res.x - startX) / totalDist;
       const dirY = (res.y - startY) / totalDist;
-      for (let d = totalDist - 8; d >= 0; d -= 8) {
+      // Step backwards towards origin in 6px increments
+      for (let d = totalDist - 6; d >= 0; d -= 6) {
         const testX = startX + dirX * d;
         const testY = startY + dirY * d;
-        const ttx = Math.floor(testX / map.tileSize);
-        const tty = Math.floor(testY / map.tileSize);
-        if (map.isWalkable(ttx, tty)) {
+        if (this.isSafeDashLanding(testX, testY, map, 14)) {
           return this.resolveTurretCollision(testX, testY, map, origX, origY);
         }
       }
     }
 
+    // Fallback: stay at origin if no clearance along dash ray
     return { x: startX, y: startY };
   }
 

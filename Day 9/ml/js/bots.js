@@ -389,7 +389,7 @@ class BotHero {
         }
       }
     }
-    const r = this.radius * 0.7;
+    const r = Math.min(10, this.radius * 0.55);
     const points = [
       { x: x - r, y: y - r },
       { x: x + r, y: y - r },
@@ -408,8 +408,18 @@ class BotHero {
     this.hp = this.maxHp;
     this.shield = 0;
     this.hasUsedRevive = false;
-    this.x = this.spawnX;
-    this.y = this.spawnY;
+
+    // Respawn precisely at team base fountain
+    let respawnX = this.spawnX, respawnY = this.spawnY;
+    if (typeof window !== "undefined" && window.map && window.map.bases) {
+      const friendlyBase = window.map.bases.find(b => b.team === this.team);
+      if (friendlyBase) {
+        respawnX = friendlyBase.worldX;
+        respawnY = friendlyBase.worldY;
+      }
+    }
+    this.x = respawnX;
+    this.y = respawnY;
     const isLod = (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
     this.targetX = this.team === "BLUE" ? (isLod ? 1620 : (29 * 40)) : (isLod ? 140 : (2 * 40));
     this.targetY = this.assignedLaneY;
@@ -872,16 +882,18 @@ class BotHero {
             });
           }
         }
-      } else if (this.roamTimer <= 0 && this.hp > this.maxHp * 0.65) {
-        // Switch lane temporarily to gank / clash
-        const candidateLanes = [240, 480, 720].filter(ly => ly !== this.assignedLaneY);
+      } else if (this.roamTimer <= 0 && this.hp > this.maxHp * 0.65 && this.level >= 4) {
+        // Switch lane temporarily to gank / clash (Only after unlocking Ultimate at Level 4+)
+        const isLod = (map && map.mapType === "LAND_OF_DAWN") || (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
+        const validLanes = isLod ? [200, 640, 1080] : [240, 480, 720];
+        const candidateLanes = validLanes.filter(ly => Math.abs(ly - this.assignedLaneY) > 80);
         if (candidateLanes.length > 0) {
           const targetClashY = candidateLanes[Math.floor(Math.random() * candidateLanes.length)];
           this.isClashing = true;
-          this.clashDuration = 14.0; // 14s roam duration
+          this.clashDuration = 16.0; // 16s roam duration
           this.laneY = targetClashY;
           this.targetY = targetClashY;
-          this.roamTimer = Math.random() * 30 + 35;
+          this.roamTimer = Math.random() * 35 + 40;
           if (combatTexts) {
             combatTexts.push({
               x: this.x,
@@ -892,6 +904,26 @@ class BotHero {
               maxLife: 1.2
             });
           }
+        }
+      }
+
+      // If moving between lanes on Land of Dawn, route through nearest corridor
+      const isLodMap = (map && map.mapType === "LAND_OF_DAWN") || (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
+      if (isLodMap && map && Math.abs(this.laneY - this.y) > 180 && !this.isDead) {
+        const mapW = map.width * map.tileSize;
+        const isBlueSide = this.x < mapW / 2;
+        const corridorXs = isBlueSide ? [240, 600, 880] : [880, 1160, 1480];
+        let bestCorridorX = corridorXs[0];
+        let bestDist = Math.abs(this.x - bestCorridorX);
+        for (let i = 1; i < corridorXs.length; i++) {
+          const d = Math.abs(this.x - corridorXs[i]);
+          if (d < bestDist) {
+            bestDist = d;
+            bestCorridorX = corridorXs[i];
+          }
+        }
+        if (Math.abs(this.x - bestCorridorX) > 36) {
+          this.targetX = bestCorridorX;
         }
       }
 
@@ -1373,8 +1405,19 @@ class BotHero {
         }
       } else if (hid === "balmond") {
         const angle = Math.atan2(targetHero.y - this.y, targetHero.x - this.x);
-        this.x += Math.cos(angle) * 70;
-        this.y += Math.sin(angle) * 70;
+        const sm = skillManager || (typeof window !== "undefined" ? window.skillManager : null);
+        const origX = this.x;
+        const origY = this.y;
+        const rawDestX = this.x + Math.cos(angle) * 70;
+        const rawDestY = this.y + Math.sin(angle) * 70;
+        if (sm && typeof sm.resolveSafeDashPosition === "function") {
+          const safePos = sm.resolveSafeDashPosition(rawDestX, rawDestY, map, origX, origY);
+          this.x = safePos.x;
+          this.y = safePos.y;
+        } else if (this.checkWalkable(map, rawDestX, rawDestY)) {
+          this.x = rawDestX;
+          this.y = rawDestY;
+        }
         if (particles) {
           if (particles.spawnSlash) particles.spawnSlash(this.x, this.y, targetHero.x, targetHero.y, "#c0392b", 50);
           particles.spawnRing(this.x, this.y, 65, "#c0392b", 0.4);
@@ -1733,6 +1776,45 @@ class BotHero {
   }
 
   engageLaning(minionManager, map, dt, combatTexts, sound, particles, scoreboard, closestOpp = null, distToClosestOpp = Infinity, skillManager = null) {
+    // 0. Jungle Bot Farming: if assigned to JUNGLE, clear nearby allied jungle camps first
+    const objMgr = (typeof window !== "undefined" && window.objectiveManager) ? window.objectiveManager : null;
+    if (this.assignedLane === "JUNGLE" && objMgr && Array.isArray(objMgr.jungleCamps)) {
+      const isBlue = this.team === "BLUE";
+      const mapHalfX = map ? (map.width * map.tileSize) / 2 : 880;
+      const myCamps = objMgr.jungleCamps.filter(c => c.alive && c.hp > 0 && (isBlue ? c.x < mapHalfX : c.x >= mapHalfX));
+      if (myCamps.length > 0) {
+        let closestCamp = null;
+        let minCampDist = Infinity;
+        myCamps.forEach(c => {
+          const d = Math.hypot(c.x - this.x, c.y - this.y);
+          if (d < minCampDist) {
+            minCampDist = d;
+            closestCamp = c;
+          }
+        });
+        if (closestCamp) {
+          if (minCampDist > this.attackRange * 0.8) {
+            this.targetX = closestCamp.x;
+            this.targetY = closestCamp.y;
+          } else {
+            this.targetX = this.x;
+            this.targetY = this.y;
+          }
+          if (this.attackTimer <= 0 && minCampDist <= this.attackRange + 30) {
+            this.attackTimer = this.attackCooldown;
+            if (sound) sound.playAttack();
+            if (particles && particles.spawnSlash) {
+              particles.spawnSlash(this.x, this.y, closestCamp.x, closestCamp.y, this.color, 36);
+            }
+            if (typeof closestCamp.takeDamage === "function") {
+              closestCamp.takeDamage(this.attackDamage, this, combatTexts, particles, sound, scoreboard);
+            }
+          }
+          return;
+        }
+      }
+    }
+
     // 0. Poke opposing hero during laning if in skill range
     const maxSkillReach = Math.max(
       260,
@@ -1836,10 +1918,21 @@ class BotHero {
         nearestMinion.hp -= this.attackDamage;
         if (nearestMinion.hp <= 0) {
           this.cs++;
-          this.gold += 45;
+          this.gold += 50;
           if (scoreboard) {
             const teamKey = this.team === "BLUE" ? "player" : "bot";
-            scoreboard.addGold(teamKey, 45);
+            scoreboard.addGold(teamKey, 50);
+          }
+          this.gainExp(60, combatTexts, particles, sound);
+          if (combatTexts) {
+            combatTexts.push({
+              x: this.x + (Math.random() - 0.5) * 12,
+              y: this.y - 25,
+              text: `+50g +60EXP`,
+              color: "#ffd700",
+              life: 1.0,
+              maxLife: 1.0
+            });
           }
         }
       }
@@ -1924,26 +2017,49 @@ class BotHero {
       const ny = Math.max(20, Math.min(mapMaxY, this.y + stepY));
 
       // Separate axis-aligned collision checks for smooth sliding along walls
-      if (this.checkWalkable(map, nx, this.y)) {
-        this.x = nx;
-      }
-      if (this.checkWalkable(map, this.x, ny)) {
-        this.y = ny;
+      const canMoveX = this.checkWalkable(map, nx, this.y);
+      const canMoveY = this.checkWalkable(map, this.x, ny);
+
+      if (canMoveX) this.x = nx;
+      if (canMoveY) this.y = ny;
+
+      // Smart tangent sliding if blocked straight into a wall or corner
+      if (!canMoveX && !canMoveY) {
+        const moveAngle = Math.atan2(dy, dx);
+        const testAngles = [
+          moveAngle + Math.PI / 3,
+          moveAngle - Math.PI / 3,
+          moveAngle + Math.PI / 2,
+          moveAngle - Math.PI / 2
+        ];
+        for (let i = 0; i < testAngles.length; i++) {
+          const ta = testAngles[i];
+          const tx = Math.max(20, Math.min(mapMaxX, this.x + Math.cos(ta) * step));
+          const ty = Math.max(20, Math.min(mapMaxY, this.y + Math.sin(ta) * step));
+          if (this.checkWalkable(map, tx, ty)) {
+            this.x = tx;
+            this.y = ty;
+            break;
+          }
+        }
       }
     }
 
-    // Wall soft separation: if bot somehow overlaps a wall, gently push away
+    // Multi-ring emergency unstuck: if bot ever ends up trapped inside/against a wall, immediately push out to safe ground
     if (map && !this.checkWalkable(map, this.x, this.y)) {
-      const dirs = [
-        { dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
-        { dx: 1, dy: 1 }, { dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }
-      ];
-      for (const d of dirs) {
-        if (this.checkWalkable(map, this.x + d.dx * 8, this.y + d.dy * 8)) {
-          this.x += d.dx * 8;
-          this.y += d.dy * 8;
-          break;
+      let freed = false;
+      for (let d = 6; d <= 72; d += 6) {
+        for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+          const testX = this.x + Math.cos(angle) * d;
+          const testY = this.y + Math.sin(angle) * d;
+          if (this.checkWalkable(map, testX, testY)) {
+            this.x = testX;
+            this.y = testY;
+            freed = true;
+            break;
+          }
         }
+        if (freed) break;
       }
     }
 

@@ -290,6 +290,17 @@ class Hero {
           clickedEnemy = objectives.summonedLord;
         }
       }
+      if (objectives.jungleCamps && Array.isArray(objectives.jungleCamps)) {
+        objectives.jungleCamps.forEach(c => {
+          if (c.alive && c.hp > 0) {
+            const cd = Math.hypot(c.x - tx, c.y - ty);
+            if (cd < minClickDist + 14) {
+              minClickDist = cd;
+              clickedEnemy = c;
+            }
+          }
+        });
+      }
     }
 
     if (map && map.bases) {
@@ -527,13 +538,21 @@ class Hero {
       this.respawnTimer -= dt;
 
       if (this.respawnTimer <= 0) {
-        // Respawn at Blue base
+        // Respawn at Friendly Base fountain
         this.isDead = false;
         this.hp = this.maxHp;
-        this.x = 100;
-        this.y = 480;
-        this.targetX = 100;
-        this.targetY = 480;
+        let respawnX = 100, respawnY = 480;
+        if (map && map.bases) {
+          const friendlyBase = map.bases.find(b => b.team === this.team) || map.bases[0];
+          if (friendlyBase) {
+            respawnX = friendlyBase.worldX;
+            respawnY = friendlyBase.worldY;
+          }
+        }
+        this.x = respawnX;
+        this.y = respawnY;
+        this.targetX = respawnX;
+        this.targetY = respawnY;
         this.attackTarget = null;
 
         // Ensure shield and buffs are clean upon respawn
@@ -673,18 +692,21 @@ class Hero {
       }
     }
 
-    // Wall soft separation: gently push hero out if overlapping a solid wall
+    // Multi-ring emergency unstuck: if hero is trapped inside/against a wall, search radially for nearest safe ground
     if (map && !this.checkWalkable(map, this.x, this.y)) {
-      const dirs = [
-        { dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
-        { dx: 1, dy: 1 }, { dx: -1, dy: -1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }
-      ];
-      for (const d of dirs) {
-        if (this.checkWalkable(map, this.x + d.dx * 8, this.y + d.dy * 8)) {
-          this.x += d.dx * 8;
-          this.y += d.dy * 8;
-          break;
+      let freed = false;
+      for (let dist = 6; dist <= 72; dist += 6) {
+        for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+          const testX = this.x + Math.cos(angle) * dist;
+          const testY = this.y + Math.sin(angle) * dist;
+          if (this.checkWalkable(map, testX, testY)) {
+            this.x = testX;
+            this.y = testY;
+            freed = true;
+            break;
+          }
         }
+        if (freed) break;
       }
     }
 
@@ -769,11 +791,12 @@ class Hero {
 
       // River Bosses (Turtle / Lord / Enemy Summoned Lord)
       if (objectives) {
-        if (objectives.turtle && objectives.turtle.alive) {
+        // Neutral Bosses (Turtle / Lord) only targeted if player attacked or clicked them, or boss is attacking player
+        if (objectives.turtle && objectives.turtle.alive && (this.attackTarget === objectives.turtle || objectives.turtle.target === this || objectives.turtle.lastAttacker === this)) {
           const d = getDistance(this.x, this.y, objectives.turtle.x, objectives.turtle.y);
           if (d <= this.attackRange) potentialTargets.push({ unit: objectives.turtle, dist: d, priority: 3 });
         }
-        if (objectives.lord && objectives.lord.alive) {
+        if (objectives.lord && objectives.lord.alive && (this.attackTarget === objectives.lord || objectives.lord.target === this || objectives.lord.lastAttacker === this)) {
           const d = getDistance(this.x, this.y, objectives.lord.x, objectives.lord.y);
           if (d <= this.attackRange) potentialTargets.push({ unit: objectives.lord, dist: d, priority: 3 });
         }
@@ -781,9 +804,10 @@ class Hero {
           const d = getDistance(this.x, this.y, objectives.summonedLord.x, objectives.summonedLord.y);
           if (d <= this.attackRange + 15) potentialTargets.push({ unit: objectives.summonedLord, dist: d, priority: 1.2 });
         }
+        // Neutral Jungle Camps: ONLY target if the camp is provoked / in combat or manually targeted! Never auto-attack when just moving past!
         if (objectives.jungleCamps && Array.isArray(objectives.jungleCamps)) {
           objectives.jungleCamps.forEach(c => {
-            if (c.alive && c.hp > 0) {
+            if (c.alive && c.hp > 0 && (this.attackTarget === c || c.target === this || c.lastAttacker === this)) {
               const d = getDistance(this.x, this.y, c.x, c.y);
               if (d <= this.attackRange + 25) {
                 potentialTargets.push({ unit: c, dist: d, priority: 3.5 });

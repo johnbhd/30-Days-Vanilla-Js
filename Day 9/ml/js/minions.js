@@ -56,7 +56,22 @@ class Minion {
 
   update(dt, map, hero, allMinions, combatTexts, gameStats, enemyBot, sound, particles, scoreboard, objectiveManager) {
     if (this.hp <= 0) {
-      this.isDead = true;
+      if (!this.isDead) {
+        this.isDead = true;
+        // Grant farming wave EXP to nearby heroes & bots of the opposing team within 360px
+        const opposingHeroes = [];
+        if (hero && !hero.isDead && hero.team !== this.team) opposingHeroes.push(hero);
+        const botList = Array.isArray(enemyBot) ? enemyBot : (enemyBot ? [enemyBot] : []);
+        botList.forEach(b => {
+          if (!b.isDead && b.team !== this.team) opposingHeroes.push(b);
+        });
+        opposingHeroes.forEach(unit => {
+          const distToUnit = Math.hypot(unit.x - this.x, unit.y - this.y);
+          if (distToUnit <= 360 && typeof unit.gainExp === "function") {
+            unit.gainExp(35, combatTexts, particles, sound);
+          }
+        });
+      }
       return;
     }
 
