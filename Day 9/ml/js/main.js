@@ -698,7 +698,10 @@ function renderTeamLineupsUI() {
   if (blueTeamCount) blueTeamCount.textContent = `${teamRoster.blue.length} Hero${teamRoster.blue.length > 1 ? 'es' : ''}`;
   if (redTeamCount) redTeamCount.textContent = `${teamRoster.red.length} Hero${teamRoster.red.length > 1 ? 'es' : ''}`;
   if (currentModeLabel) {
-    const modeName = matchMode === "1v1" ? "1v1 Solo Duel" : (matchMode === "2v2" ? "2v2 Skirmish" : "3v3 Classic MOBA");
+    const modeName = matchMode === "1v1" ? "1v1 Solo Duel" :
+      (matchMode === "2v2" ? "2v2 Skirmish" :
+      (matchMode === "4v4" ? "4v4 Squad War" :
+      (matchMode === "5v5" ? "5v5 Grand MOBA" : "3v3 Brawl Skirmish")));
     currentModeLabel.textContent = modeName;
   }
 
