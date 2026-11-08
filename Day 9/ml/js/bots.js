@@ -475,13 +475,46 @@ class BotHero {
     this.initDeploymentWaypoints(isLod);
   }
 
+  computeRetreatTarget(map) {
+    const isLod = (map && map.mapType === "LAND_OF_DAWN") ||
+      (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
+    let baseX = this.spawnX, baseY = this.spawnY;
+    const currentMap = map || (typeof window !== "undefined" ? window.map : null);
+    if (currentMap && currentMap.bases) {
+      const fb = currentMap.bases.find(b => b.team === this.team);
+      if (fb) {
+        baseX = fb.worldX;
+        baseY = fb.worldY;
+      }
+    }
+
+    if (isLod) {
+      if (this.y < 360) {
+        // Top lane: Blue moves west towards 240 then turns down to 640; Red moves east towards 1480 then turns down to 640
+        if (this.team === "BLUE") {
+          return this.x > 280 ? { x: 240, y: 200 } : { x: baseX, y: baseY };
+        } else {
+          return this.x < 1440 ? { x: 1480, y: 200 } : { x: baseX, y: baseY };
+        }
+      } else if (this.y > 900) {
+        // Bot lane: Blue moves west towards 240 then turns up to 640; Red moves east towards 1480 then turns up to 640
+        if (this.team === "BLUE") {
+          return this.x > 280 ? { x: 240, y: 1080 } : { x: baseX, y: baseY };
+        } else {
+          return this.x < 1440 ? { x: 1480, y: 1080 } : { x: baseX, y: baseY };
+        }
+      }
+    }
+    return { x: baseX, y: baseY };
+  }
+
   takeDamage(amount, source, combatTexts, particles, sound, scoreboard) {
     if (this.isDead || this.hp <= 0) return;
 
     if (this.isRecalling) {
       this.isRecalling = false;
       this.recallTimer = 0;
-      this.recallCooldown = 5.0;
+      this.recallCooldown = 1.0;
       if (combatTexts) {
         combatTexts.push({
           x: this.x,
@@ -494,25 +527,16 @@ class BotHero {
       }
     }
 
-    this.recentDamageTimer = 4.0;
+    this.recentDamageTimer = 1.2;
     this.hp -= amount;
 
-    // If HP drops below 28%, retreat towards friendly base
-    if (this.hp < this.maxHp * 0.28) {
+    // If HP drops below 35%, retreat towards friendly base
+    if (this.hp < this.maxHp * 0.35) {
       this.state = "RETREAT";
-      const isLod = (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
-      if (isLod && this.y < 360) {
-        // In Top lane: retreat towards lane corner before descending to base
-        this.targetX = this.team === "BLUE" ? 240 : 1480;
-        this.targetY = 200;
-      } else if (isLod && this.y > 900) {
-        // In Bot lane: retreat towards lane corner before ascending to base
-        this.targetX = this.team === "BLUE" ? 240 : 1480;
-        this.targetY = 1080;
-      } else {
-        this.targetX = this.spawnX;
-        this.targetY = this.spawnY;
-      }
+      this.isClashing = false;
+      const retTarget = this.computeRetreatTarget(typeof window !== "undefined" ? window.map : null);
+      this.targetX = retTarget.x;
+      this.targetY = retTarget.y;
     }
 
     if (particles) {
@@ -634,9 +658,9 @@ class BotHero {
     if (this.isRecalling) {
       this.isRecalling = false;
       this.recallTimer = 0;
-      this.recallCooldown = 5.0;
+      this.recallCooldown = 1.0;
     }
-    this.recentDamageTimer = 3.0;
+    this.recentDamageTimer = 1.2;
     this.targetX = this.x;
     this.targetY = this.y;
     if (combatTexts) {
@@ -719,12 +743,22 @@ class BotHero {
         this.isRecalling = false;
         this.recallTimer = 0;
 
-        // Teleport to Base
-        this.x = this.spawnX;
-        this.y = this.spawnY;
-        this.targetX = this.spawnX;
-        this.targetY = this.spawnY;
-        const isLod = (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
+        // Teleport to Base Center
+        let recallX = this.spawnX;
+        let recallY = this.spawnY;
+        const currentMap = map || (typeof window !== "undefined" ? window.map : null);
+        if (currentMap && currentMap.bases) {
+          const friendlyBase = currentMap.bases.find(b => b.team === this.team);
+          if (friendlyBase) {
+            recallX = friendlyBase.worldX;
+            recallY = friendlyBase.worldY;
+          }
+        }
+        this.x = recallX;
+        this.y = recallY;
+        this.targetX = recallX;
+        this.targetY = recallY;
+        const isLod = (currentMap && currentMap.mapType === "LAND_OF_DAWN") || (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
         this.initDeploymentWaypoints(isLod);
 
         if (particles) {
@@ -794,16 +828,28 @@ class BotHero {
     }
 
     // 3b. Friendly Base Continuous Healing
-    const distToBase = Math.hypot(this.x - this.spawnX, this.y - this.spawnY);
-    if (distToBase <= 120 && this.hp < this.maxHp) {
+    let friendlyBaseX = this.spawnX, friendlyBaseY = this.spawnY;
+    const currentMap = map || (typeof window !== "undefined" ? window.map : null);
+    if (currentMap && currentMap.bases) {
+      const fb = currentMap.bases.find(b => b.team === this.team);
+      if (fb) {
+        friendlyBaseX = fb.worldX;
+        friendlyBaseY = fb.worldY;
+      }
+    }
+    const distToBase = Math.hypot(this.x - friendlyBaseX, this.y - friendlyBaseY);
+    if (distToBase <= 140 && this.hp < this.maxHp) {
       this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.20 * dt);
       if (particles && Math.random() < 0.35) {
         particles.spawnTrail(this.x, this.y, "#2ecc71", 3);
       }
       if (this.hp >= this.maxHp * 0.95 && this.state === "RETREAT") {
         this.state = "LANING";
-        this.targetX = this.team === "BLUE" ? (29 * 40) : (2 * 40);
+        const isLod = (currentMap && currentMap.mapType === "LAND_OF_DAWN");
+        this.targetX = this.team === "BLUE" ? (isLod ? 1620 : (29 * 40)) : (isLod ? 140 : (2 * 40));
         this.targetY = this.assignedLaneY;
+        this.laneY = this.assignedLaneY;
+        this.initDeploymentWaypoints(isLod);
       }
     }
 
@@ -898,33 +944,58 @@ class BotHero {
       });
     }
 
-    // 4. Decision Tree: Low HP Retreat
-    if (this.hp < this.maxHp * 0.28) {
+    // 4. Decision Tree: Low HP Retreat & Safe Recall
+    if (this.hp < this.maxHp * 0.35) {
       this.state = "RETREAT";
+      this.isClashing = false;
+
+      // If already near base, walking directly into base fountain is faster and safer than channeling recall
+      if (distToBase <= 260) {
+        this.targetX = friendlyBaseX;
+        this.targetY = friendlyBaseY;
+        this.stepMovement(dt, map);
+        return;
+      }
+
+      // Far from base: Evaluate opposing threats for safe recall vs retreat running
       let distToClosestOpp = Infinity;
       opposingHeroes.forEach(e => {
         const d = Math.hypot(e.x - this.x, e.y - this.y);
         if (d < distToClosestOpp) distToClosestOpp = d;
       });
 
-      const isSafeToRecall = !this.isRecalling &&
-                            this.recallCooldown <= 0 &&
-                            this.recentDamageTimer <= 0 &&
-                            distToClosestOpp > 360 &&
-                            distToBase > 260;
+      // Threat evaluation: enemy hero too close, recent damage taken, or recall currently cooling down
+      const isUnderThreat = (distToClosestOpp < 320) || (this.recentDamageTimer > 0) || (this.recallCooldown > 0);
 
-      if (isSafeToRecall) {
-        this.isRecalling = true;
-        this.recallTimer = this.recallMax;
-        this.targetX = this.x;
-        this.targetY = this.y;
-        if (sound && sound.playRecall) sound.playRecall();
+      if (!isUnderThreat) {
+        // Safe from enemies and damage: channel recall to base center!
+        if (!this.isRecalling) {
+          this.isRecalling = true;
+          this.recallTimer = this.recallMax;
+          this.targetX = this.x;
+          this.targetY = this.y;
+          if (sound && sound.playRecall) sound.playRecall();
+          if (combatTexts) {
+            combatTexts.push({
+              x: this.x,
+              y: this.y - 30,
+              text: `[${this.team}] ${this.name}: RECALLING...`,
+              color: "#00ffff",
+              life: 1.2,
+              maxLife: 1.2
+            });
+          }
+        }
         return;
       }
 
-      // Retreat on foot towards friendly base
-      this.targetX = this.spawnX;
-      this.targetY = this.spawnY;
+      // Under threat or taking damage:
+      // "if they are attack or damage they should go away a little and recall / if still attack then just run then when safe recall"
+      const retreatTarget = this.computeRetreatTarget(map);
+      this.targetX = retreatTarget.x;
+      this.targetY = retreatTarget.y;
+      this.stepMovement(dt, map);
+      return;
     } else {
       // Roaming & Lane-Changing Team Clash Planning
       this.roamTimer -= dt;

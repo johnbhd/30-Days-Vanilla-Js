@@ -143,7 +143,15 @@ class Hero {
     if (this.isRecalling) return false;
 
     // If already inside friendly base fountain at full HP
-    const distToBase = Math.hypot(this.x - 100, this.y - 480);
+    let baseX = 100, baseY = 500;
+    if (typeof window !== "undefined" && window.map && window.map.bases) {
+      const friendlyBase = window.map.bases.find(b => b.team === (this.team || "BLUE")) || window.map.bases[0];
+      if (friendlyBase) {
+        baseX = friendlyBase.worldX;
+        baseY = friendlyBase.worldY;
+      }
+    }
+    const distToBase = Math.hypot(this.x - baseX, this.y - baseY);
     if (distToBase <= 100 && this.hp >= this.maxHp) {
       if (combatTexts) {
         combatTexts.push({
@@ -619,11 +627,20 @@ class Hero {
         this.isRecalling = false;
         this.recallTimer = 0;
 
-        // Teleport to Blue Base crystal
-        this.x = 100;
-        this.y = 480;
-        this.targetX = 100;
-        this.targetY = 480;
+        // Teleport to friendly base crystal center
+        let recallX = 100, recallY = 500;
+        const targetMap = map || (typeof window !== "undefined" ? window.map : null);
+        if (targetMap && targetMap.bases) {
+          const friendlyBase = targetMap.bases.find(b => b.team === (this.team || "BLUE")) || targetMap.bases[0];
+          if (friendlyBase) {
+            recallX = friendlyBase.worldX;
+            recallY = friendlyBase.worldY;
+          }
+        }
+        this.x = recallX;
+        this.y = recallY;
+        this.targetX = recallX;
+        this.targetY = recallY;
         this.attackTarget = null;
 
         if (particles) {
