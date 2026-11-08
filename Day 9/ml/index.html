@@ -14,9 +14,23 @@
   <div class="game-wrapper">
     <canvas id="gameCanvas" width="1280" height="720"></canvas>
 
+    <!-- Main Landing Page Screen (Shows only Start button with ML poster background) -->
+    <div id="landingPageOverlay" class="landing-page-overlay">
+      <div class="landing-page-content">
+        <div class="landing-brand">
+          <h1 class="landing-title">MOBILE LEGENDS</h1>
+          <p class="landing-subtitle">BANG BANG</p>
+        </div>
+        <button id="landingStartBtn" class="landing-start-btn" type="button">
+          <i class="fa-solid fa-play"></i> START
+        </button>
+      </div>
+    </div>
+
     <!-- Match Format Selection Overlay (1v1, 2v2, 3v3) -->
-    <div id="modeSelectOverlay" class="mode-select-overlay">
+    <div id="modeSelectOverlay" class="mode-select-overlay hidden">
       <div class="mode-select-container">
+        <button id="backToLandingBtn" class="back-landing-btn" type="button"><i class="fa-solid fa-arrow-left"></i> Title Screen</button>
         <h1><i class="fa-solid fa-trophy" style="color: #ffd700; margin-right: 8px;"></i> Select Match Format</h1>
         <p>Choose the battle scale for the Land of Dawn</p>
         <div class="mode-cards-grid">

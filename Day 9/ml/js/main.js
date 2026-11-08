@@ -46,7 +46,7 @@ function getRandomHero() {
 const cameraLerp = 0.1;
 let matchTime = 0;
 let passiveGoldTimer = 0;
-let gameState = "MODE_SELECT"; // "MODE_SELECT" | "SELECT" | "PLAYING" | "GAMEOVER"
+let gameState = "LANDING"; // "LANDING" | "MODE_SELECT" | "SELECT" | "PLAYING" | "GAMEOVER"
 const combatTexts = [];
 
 // Match statistics
@@ -57,6 +57,11 @@ const gameStats = {
   gold: 0,
   deaths: 0
 };
+
+// Landing Page UI references
+const landingPageOverlay = document.getElementById("landingPageOverlay");
+const landingStartBtn = document.getElementById("landingStartBtn");
+const backToLandingBtn = document.getElementById("backToLandingBtn");
 
 // Mode & Hero Select UI references
 const modeSelectOverlay = document.getElementById("modeSelectOverlay");
@@ -801,6 +806,27 @@ modeCards.forEach(card => {
     selectMatchMode(mode);
   });
 });
+
+if (landingStartBtn) {
+  landingStartBtn.addEventListener("click", () => {
+    if (sound && sound.playClick) sound.playClick();
+    if (landingPageOverlay) landingPageOverlay.classList.add("hidden");
+    if (modeSelectOverlay) {
+      modeSelectOverlay.classList.remove("hidden");
+      modeSelectOverlay.scrollTop = 0;
+    }
+    gameState = "MODE_SELECT";
+  });
+}
+
+if (backToLandingBtn) {
+  backToLandingBtn.addEventListener("click", () => {
+    if (sound && sound.playClick) sound.playClick();
+    if (modeSelectOverlay) modeSelectOverlay.classList.add("hidden");
+    if (landingPageOverlay) landingPageOverlay.classList.remove("hidden");
+    gameState = "LANDING";
+  });
+}
 
 if (backToModeBtn) {
   backToModeBtn.addEventListener("click", () => {

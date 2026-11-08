@@ -73,7 +73,7 @@ class BotHero {
     this.speed = (this.stats.spd || 3.8) * 44;
     this.attackRange = this.stats.range ? this.stats.range : 75;
     this.attackDamage = this.stats.atk || 110;
-    this.attackCooldown = 0.9;
+    this.attackCooldown = 1.2;
     this.attackTimer = 0;
 
     // Hero-specific signature burst and magical skills
@@ -132,57 +132,57 @@ class BotHero {
   initHeroSkills(heroData) {
     const heroId = (heroData && heroData.id) ? heroData.id.toLowerCase() : "default";
 
-    // Signature kit presets with custom burst and magical damages
+    // Signature kit presets tuned to fair Normal Difficulty damage
     const signatureKits = {
       gusion: {
-        q: { name: "Sword Spike", cd: 0, maxCd: 4, damage: 440, range: 380 },
-        w: { name: "Shadowblade", cd: 0, maxCd: 5, damage: 780, range: 340 },
-        r: { name: "Blade Barrage", cd: 0, maxCd: 18, damage: 1150, range: 380 }
+        q: { name: "Sword Spike", cd: 0, maxCd: 4, damage: 220, range: 380 },
+        w: { name: "Shadowblade", cd: 0, maxCd: 5, damage: 380, range: 340 },
+        r: { name: "Blade Barrage", cd: 0, maxCd: 18, damage: 520, range: 380 }
       },
       layla: {
-        q: { name: "Malefic Bomb", cd: 0, maxCd: 4, damage: 360, range: 480 },
-        w: { name: "Void Projectile", cd: 0, maxCd: 7, damage: 310, range: 420 },
-        r: { name: "Destruction Rush", cd: 0, maxCd: 22, damage: 880, range: 550 }
+        q: { name: "Malefic Bomb", cd: 0, maxCd: 4, damage: 220, range: 480 },
+        w: { name: "Void Projectile", cd: 0, maxCd: 7, damage: 200, range: 420 },
+        r: { name: "Destruction Rush", cd: 0, maxCd: 22, damage: 460, range: 550 }
       },
       miya: {
-        q: { name: "Moon Arrow", cd: 0, maxCd: 5, damage: 480, range: 420 },
-        w: { name: "Arrow of Eclipse", cd: 0, maxCd: 7, damage: 340, range: 380 },
-        r: { name: "Hidden Moonlight", cd: 0, maxCd: 24, damage: 420, range: 320 }
+        q: { name: "Moon Arrow", cd: 0, maxCd: 5, damage: 240, range: 420 },
+        w: { name: "Arrow of Eclipse", cd: 0, maxCd: 7, damage: 210, range: 380 },
+        r: { name: "Hidden Moonlight", cd: 0, maxCd: 24, damage: 260, range: 320 }
       },
       angela: {
-        q: { name: "Love Waves", cd: 0, maxCd: 5, damage: 290, range: 360 },
-        w: { name: "Puppet String", cd: 0, maxCd: 8, damage: 340, range: 320 },
-        r: { name: "Heartguard", cd: 0, maxCd: 25, damage: 460, range: 400 }
+        q: { name: "Love Waves", cd: 0, maxCd: 5, damage: 180, range: 360 },
+        w: { name: "Puppet String", cd: 0, maxCd: 8, damage: 200, range: 320 },
+        r: { name: "Heartguard", cd: 0, maxCd: 25, damage: 260, range: 400 }
       },
       pharsa: {
-        q: { name: "Curse of Crow", cd: 0, maxCd: 5, damage: 320, range: 440 },
-        w: { name: "Energy Impact", cd: 0, maxCd: 6, damage: 420, range: 480 },
-        r: { name: "Feathered Air Strike", cd: 0, maxCd: 24, damage: 1280, range: 520 }
+        q: { name: "Curse of Crow", cd: 0, maxCd: 5, damage: 200, range: 440 },
+        w: { name: "Energy Impact", cd: 0, maxCd: 6, damage: 260, range: 480 },
+        r: { name: "Feathered Air Strike", cd: 0, maxCd: 24, damage: 540, range: 520 }
       },
       nana: {
-        q: { name: "Magic Boomerang", cd: 0, maxCd: 5, damage: 320, range: 420 },
-        w: { name: "Molina Smooch", cd: 0, maxCd: 8, damage: 310, range: 340 },
-        r: { name: "Molina Blitz", cd: 0, maxCd: 22, damage: 1020, range: 400 }
+        q: { name: "Magic Boomerang", cd: 0, maxCd: 5, damage: 200, range: 420 },
+        w: { name: "Molina Smooch", cd: 0, maxCd: 8, damage: 190, range: 340 },
+        r: { name: "Molina Blitz", cd: 0, maxCd: 22, damage: 480, range: 400 }
       },
       tigreal: {
-        q: { name: "Attack Wave", cd: 0, maxCd: 5, damage: 220, range: 250 },
-        w: { name: "Sacred Hammer", cd: 0, maxCd: 8, damage: 260, range: 180 },
-        r: { name: "Implosion", cd: 0, maxCd: 25, damage: 420, range: 240 }
+        q: { name: "Attack Wave", cd: 0, maxCd: 5, damage: 160, range: 250 },
+        w: { name: "Sacred Hammer", cd: 0, maxCd: 8, damage: 180, range: 180 },
+        r: { name: "Implosion", cd: 0, maxCd: 25, damage: 280, range: 240 }
       },
       alucard: {
-        q: { name: "Groundsplitter", cd: 0, maxCd: 6, damage: 280, range: 240 },
-        w: { name: "Whirling Smash", cd: 0, maxCd: 5, damage: 260, range: 180 },
-        r: { name: "Fission Wave", cd: 0, maxCd: 22, damage: 480, range: 320 }
+        q: { name: "Groundsplitter", cd: 0, maxCd: 6, damage: 200, range: 240 },
+        w: { name: "Whirling Smash", cd: 0, maxCd: 5, damage: 180, range: 180 },
+        r: { name: "Fission Wave", cd: 0, maxCd: 22, damage: 340, range: 320 }
       },
       balmond: {
-        q: { name: "Soul Lock", cd: 0, maxCd: 6, damage: 340, range: 240 },
-        w: { name: "Cyclone Sweep", cd: 0, maxCd: 5, damage: 680, range: 180 },
-        r: { name: "Lethal Counter", cd: 0, maxCd: 20, damage: 620, range: 220 }
+        q: { name: "Soul Lock", cd: 0, maxCd: 6, damage: 200, range: 240 },
+        w: { name: "Cyclone Sweep", cd: 0, maxCd: 5, damage: 340, range: 180 },
+        r: { name: "Lethal Counter", cd: 0, maxCd: 20, damage: 360, range: 220 }
       },
       saber: {
-        q: { name: "Orbiting Swords", cd: 0, maxCd: 6, damage: 85, range: 260 },
-        w: { name: "Charge", cd: 0, maxCd: 6, damage: 240, range: 200 },
-        r: { name: "Triple Sweep", cd: 0, maxCd: 22, damage: 780, range: 260 }
+        q: { name: "Orbiting Swords", cd: 0, maxCd: 6, damage: 45, range: 260 },
+        w: { name: "Charge", cd: 0, maxCd: 6, damage: 180, range: 200 },
+        r: { name: "Triple Sweep", cd: 0, maxCd: 22, damage: 440, range: 260 }
       }
     };
 
@@ -779,8 +779,8 @@ class BotHero {
       this.saberSwords.damageTickTimer -= dt;
 
       if (this.saberSwords.damageTickTimer <= 0) {
-        this.saberSwords.damageTickTimer = 0.30;
-        const swordDmg = Math.round(85 * (this.attackDamage ? (this.attackDamage / 120) : 1));
+        this.saberSwords.damageTickTimer = 0.35;
+        const swordDmg = Math.round(42 * (this.attackDamage ? (this.attackDamage / 120) : 1));
         if (player && !player.isDead && player.team !== this.team && Math.hypot(player.x - this.x, player.y - this.y) <= 100) {
           player.takeDamage(swordDmg, this, combatTexts, particles, sound, scoreboard);
           if (particles && particles.spawnSlash) {
@@ -818,8 +818,8 @@ class BotHero {
       this.balmondCyclone.damageTickTimer -= dt;
 
       if (this.balmondCyclone.damageTickTimer <= 0) {
-        this.balmondCyclone.damageTickTimer = 0.22;
-        const spinDmg = Math.round(130 * (this.attackDamage ? (this.attackDamage / 120) : 1));
+        this.balmondCyclone.damageTickTimer = 0.25;
+        const spinDmg = Math.round(65 * (this.attackDamage ? (this.attackDamage / 120) : 1));
         if (player && !player.isDead && player.team !== this.team && Math.hypot(player.x - this.x, player.y - this.y) <= 60) {
           player.takeDamage(spinDmg, this, combatTexts, particles, sound, scoreboard);
           if (particles && particles.spawnSlash) {
@@ -1204,7 +1204,7 @@ class BotHero {
       let rDmg = this.skills.r.damage;
       if (hid === "balmond") {
         const missingHp = Math.max(0, (targetHero.maxHp || 1200) - targetHero.hp);
-        rDmg = Math.round(rDmg + missingHp * 0.28);
+        rDmg = Math.round(rDmg + missingHp * 0.14);
       }
 
       if (typeof targetHero.takeDamage === "function") {
@@ -1213,11 +1213,11 @@ class BotHero {
         targetHero.hp -= rDmg;
       }
       if ((hid === "tigreal" || hid === "nana" || hid === "saber") && typeof targetHero.applyStun === "function") {
-        targetHero.applyStun(1.4, combatTexts);
+        targetHero.applyStun(0.75, combatTexts);
       }
       if (hid === "angela") {
-        this.shield = (this.shield || 0) + 1100;
-        this.hp = Math.min(this.maxHp, this.hp + 300);
+        this.shield = (this.shield || 0) + 450;
+        this.hp = Math.min(this.maxHp, this.hp + 200);
       }
       if (combatTexts) {
         combatTexts.push({
@@ -1350,9 +1350,9 @@ class BotHero {
       } else {
         targetHero.hp -= this.skills.w.damage;
       }
-      // CC checks
+      // CC checks (Normal difficulty: fair duration)
       if ((hid === "angela" || hid === "nana" || hid === "tigreal") && typeof targetHero.applyStun === "function") {
-        targetHero.applyStun(1.0, combatTexts);
+        targetHero.applyStun(0.6, combatTexts);
       }
       if (combatTexts) {
         combatTexts.push({
@@ -1509,11 +1509,11 @@ class BotHero {
   engageEnemyHero(targetHero, dist, dt, combatTexts, sound, particles, scoreboard, map, skillManager) {
     const chaseCutoff = this.getLaneFrontlineBoundary(map);
 
-    // Stop deep tower-diving past cutoff unless enemy is low and within striking range
+    // Stop deep tower-diving past cutoff unless enemy is very low and bot is healthy (Normal difficulty)
     const isPastCutoff = this.team === "RED" ? targetHero.x < chaseCutoff : targetHero.x > chaseCutoff;
-    if (isPastCutoff && targetHero.hp > targetHero.maxHp * 0.25 && dist > 180) {
+    if (isPastCutoff && (targetHero.hp > targetHero.maxHp * 0.20 || this.hp < this.maxHp * 0.50)) {
       this.state = "LANING";
-      this.targetX = this.team === "RED" ? Math.max(this.x, chaseCutoff + 30) : Math.min(this.x, chaseCutoff - 30);
+      this.targetX = this.team === "RED" ? Math.max(this.x, chaseCutoff + 35) : Math.min(this.x, chaseCutoff - 35);
       this.targetY = this.laneY;
       return;
     }
