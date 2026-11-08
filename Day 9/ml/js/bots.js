@@ -952,6 +952,13 @@ class BotHero {
       let closestOpp = null;
       let distToClosestOpp = Infinity;
       opposingHeroes.forEach(e => {
+        // While deploying to lane, don't get distracted by distant heroes in other lanes
+        if (!this.laneDeployed && Math.abs(e.y - this.y) > 180) return;
+        if (isLodMap && !this.isClashing && (this.level || 1) < 4) {
+          if (this.assignedLane === "GOLD" && e.y > 440) return;
+          if (this.assignedLane === "EXP" && e.y < 840) return;
+          if (this.assignedLane === "MID" && (e.y < 440 || e.y > 840)) return;
+        }
         const d = Math.hypot(e.x - this.x, e.y - this.y);
         if (d < distToClosestOpp) {
           distToClosestOpp = d;
@@ -981,7 +988,8 @@ class BotHero {
       const combatThreatRange = Math.max(380, maxSkillReach + 50);
 
       // Bot engages if opposing hero is within reach, defending if enemy approaches
-      const shouldEngageHero = closestOpp && distToClosestOpp < combatThreatRange && (!isPastCutoff || distToClosestOpp < 240);
+      const effectiveThreatRange = this.laneDeployed ? combatThreatRange : 180;
+      const shouldEngageHero = closestOpp && distToClosestOpp < effectiveThreatRange && (!isPastCutoff || distToClosestOpp < 240);
 
       if (shouldEngageHero) {
         this.state = "COMBAT";
@@ -1851,9 +1859,16 @@ class BotHero {
     let minDist = Infinity;
     let clusterCount = 0;
 
+    const isLod = (map && map.mapType === "LAND_OF_DAWN");
     if (minionManager && minionManager.minions) {
       minionManager.minions.forEach(m => {
         if (m.team !== this.team && m.hp > 0) {
+          // Lane discipline on Land of Dawn: ensure minion belongs to the bot's lane
+          if (isLod && !this.isClashing) {
+            if (this.assignedLane === "GOLD" && m.lane !== "GOLD" && m.y > 440) return;
+            if (this.assignedLane === "EXP" && m.lane !== "EXP" && m.y < 840) return;
+            if (this.assignedLane === "MID" && m.lane !== "MID" && (m.y < 440 || m.y > 840)) return;
+          }
           const d = Math.hypot(m.x - this.x, m.y - this.y);
           if (d < 240) clusterCount++;
           if (d < minDist) {
@@ -1999,6 +2014,7 @@ class BotHero {
             this.targetY = wp.y;
             if (Math.hypot(this.x - wp.x, this.y - wp.y) < 36) {
               this.deploymentWaypointIndex++;
+              this.pathWaypoints = null;
               if (this.deploymentWaypointIndex >= this.deploymentWaypoints.length) {
                 this.laneDeployed = true;
               }
@@ -2022,8 +2038,39 @@ class BotHero {
   }
 
   stepMovement(dt, map) {
-    const dx = this.targetX - this.x;
-    const dy = this.targetY - this.y;
+    if (map && typeof map.findPath === "function") {
+      const hasLOS = map.hasLineOfSight(this.x, this.y, this.targetX, this.targetY);
+      if (hasLOS) {
+        this.pathWaypoints = null;
+      } else {
+        if (!this.pathWaypoints || this.pathWaypoints.length === 0 || !this._lastPathGoal ||
+            Math.hypot(this.targetX - this._lastPathGoal.x, this.targetY - this._lastPathGoal.y) > 60) {
+          this.pathWaypoints = map.findPath(this.x, this.y, this.targetX, this.targetY);
+          this._lastPathGoal = { x: this.targetX, y: this.targetY };
+        }
+      }
+    }
+
+    let curTargetX = this.targetX;
+    let curTargetY = this.targetY;
+
+    if (this.pathWaypoints && this.pathWaypoints.length > 0) {
+      const wp = this.pathWaypoints[0];
+      const distToWp = Math.hypot(wp.x - this.x, wp.y - this.y);
+      if (distToWp < 25) {
+        this.pathWaypoints.shift();
+        if (this.pathWaypoints.length > 0) {
+          curTargetX = this.pathWaypoints[0].x;
+          curTargetY = this.pathWaypoints[0].y;
+        }
+      } else {
+        curTargetX = wp.x;
+        curTargetY = wp.y;
+      }
+    }
+
+    const dx = curTargetX - this.x;
+    const dy = curTargetY - this.y;
     const dist = Math.hypot(dx, dy);
 
     const mapMaxX = map ? (map.width * map.tileSize - 20) : (31 * 40);
