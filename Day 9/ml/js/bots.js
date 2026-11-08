@@ -355,6 +355,41 @@ class BotHero {
     }
   }
 
+  getNormalizedLane(lane = null) {
+    const l = (lane || this.assignedLane || this.lane || "").toUpperCase();
+    if (l.includes("GOLD") || l.includes("TOP")) return "TOP";
+    if (l.includes("EXP") || l.includes("BOT")) return "BOT";
+    if (l.includes("JUNGLE")) return "JUNGLE";
+    if (l.includes("ROAM")) return "ROAM";
+    return "MID";
+  }
+
+  getLaneForCoord(y, isLod = false) {
+    if (isLod) {
+      if (y < 420) return "TOP";
+      if (y > 860) return "BOT";
+      return "MID";
+    } else {
+      if (y < 360) return "TOP";
+      if (y > 600) return "BOT";
+      return "MID";
+    }
+  }
+
+  isTargetInMyLane(targetY, isLod = false) {
+    if (this.isClashing) {
+      const clashLane = this.getLaneForCoord(this.laneY, isLod);
+      const targetLane = this.getLaneForCoord(targetY, isLod);
+      return clashLane === targetLane;
+    }
+    const myLane = this.getNormalizedLane();
+    if (myLane === "JUNGLE" || myLane === "ROAM") {
+      return true;
+    }
+    const targetLane = this.getLaneForCoord(targetY, isLod);
+    return myLane === targetLane;
+  }
+
   async loadSprite() {
     try {
       this.image = await loadImage(`${this.spritePath}idle.png`);
@@ -914,25 +949,69 @@ class BotHero {
       } else if (this.roamTimer <= 0 && this.hp > this.maxHp * 0.65 && this.level >= 4) {
         // Switch lane temporarily to gank / clash (Only after unlocking Ultimate at Level 4+)
         const isLod = (map && map.mapType === "LAND_OF_DAWN") || (typeof window !== "undefined" && window.map && window.map.mapType === "LAND_OF_DAWN");
-        const validLanes = isLod ? [200, 640, 1080] : [240, 480, 720];
-        const candidateLanes = validLanes.filter(ly => Math.abs(ly - this.assignedLaneY) > 80);
-        if (candidateLanes.length > 0) {
-          const targetClashY = candidateLanes[Math.floor(Math.random() * candidateLanes.length)];
-          this.isClashing = true;
-          this.clashDuration = 16.0; // 16s roam duration
-          this.laneY = targetClashY;
-          this.targetY = targetClashY;
-          this.roamTimer = Math.random() * 35 + 40;
-          if (combatTexts) {
-            combatTexts.push({
-              x: this.x,
-              y: this.y - 30,
-              text: `[${this.team}] ${this.name}: ROAMING FOR CLASH!`,
-              color: "#ffd700",
-              life: 1.2,
-              maxLife: 1.2
-            });
+        const myLane = this.getNormalizedLane();
+
+        // Rule 1: NO LANE LEFT EMPTY - A laner must not roam if they are the sole hero defending their lane
+        let alliesInMyLaneCount = 0;
+        if (player && !player.isDead && player.hp > 0 && player.team === this.team) {
+          if (this.getLaneForCoord(player.y, isLod) === myLane) alliesInMyLaneCount++;
+        }
+        if (allBots && Array.isArray(allBots)) {
+          allBots.forEach(b => {
+            if (b !== this && b.team === this.team && !b.isDead && b.hp > 0) {
+              const bLane = b.isClashing ? this.getLaneForCoord(b.laneY, isLod) : b.getNormalizedLane();
+              if (bLane === myLane) alliesInMyLaneCount++;
+            }
+          });
+        }
+
+        const canLeaveMyLane = (myLane === "JUNGLE" || myLane === "ROAM") || (alliesInMyLaneCount >= 1);
+
+        if (canLeaveMyLane) {
+          const validLanes = isLod ? [200, 640, 1080] : [240, 480, 720];
+          const candidateLanes = validLanes.filter(ly => {
+            const laneName = this.getLaneForCoord(ly, isLod);
+            if (laneName === myLane) return false;
+
+            // Rule 2: NEVER MORE THAN 2 HEROES IN A LANE (NEVER 3 BOTS IN ONE LANE)
+            let alliesInTargetLaneCount = 0;
+            if (player && !player.isDead && player.hp > 0 && player.team === this.team) {
+              if (this.getLaneForCoord(player.y, isLod) === laneName) alliesInTargetLaneCount++;
+            }
+            if (allBots && Array.isArray(allBots)) {
+              allBots.forEach(b => {
+                if (b.team === this.team && !b.isDead && b.hp > 0) {
+                  const bLane = b.isClashing ? this.getLaneForCoord(b.laneY, isLod) : b.getNormalizedLane();
+                  if (bLane === laneName) alliesInTargetLaneCount++;
+                }
+              });
+            }
+            const maxAllowedInLane = (typeof matchMode !== "undefined" && matchMode === "5v5" && this.level >= 8) ? 3 : 2;
+            return alliesInTargetLaneCount < maxAllowedInLane;
+          });
+
+          if (candidateLanes.length > 0) {
+            const targetClashY = candidateLanes[Math.floor(Math.random() * candidateLanes.length)];
+            this.isClashing = true;
+            this.clashDuration = 12.0; // 12s focused gank/clash duration
+            this.laneY = targetClashY;
+            this.targetY = targetClashY;
+            this.roamTimer = Math.random() * 35 + 40;
+            if (combatTexts) {
+              combatTexts.push({
+                x: this.x,
+                y: this.y - 30,
+                text: `[${this.team}] ${this.name}: ROAMING FOR CLASH!`,
+                color: "#ffd700",
+                life: 1.2,
+                maxLife: 1.2
+              });
+            }
+          } else {
+            this.roamTimer = 15;
           }
+        } else {
+          this.roamTimer = 15;
         }
       }
 
@@ -962,11 +1041,12 @@ class BotHero {
       opposingHeroes.forEach(e => {
         // While deploying to lane, don't get distracted by distant heroes in other lanes
         if (!this.laneDeployed && Math.abs(e.y - this.y) > 180) return;
-        if (isLodMap && !this.isClashing && (this.level || 1) < 4) {
-          if (this.assignedLane === "GOLD" && e.y > 440) return;
-          if (this.assignedLane === "EXP" && e.y < 840) return;
-          if (this.assignedLane === "MID" && (e.y < 440 || e.y > 840)) return;
+
+        // LANE DISCIPLINE: During normal laning (!this.isClashing), bots must NEVER engage or cross into other lanes!
+        if (!this.isClashing && !this.isTargetInMyLane(e.y, isLodMap)) {
+          return;
         }
+
         const d = Math.hypot(e.x - this.x, e.y - this.y);
         if (d < distToClosestOpp) {
           distToClosestOpp = d;
@@ -1539,17 +1619,29 @@ class BotHero {
       }
     }
 
+    // Ensure combat positioning stays within the bot's lane boundary during normal laning
+    const isLodMap = (map && map.mapType === "LAND_OF_DAWN");
+    const myLane = this.getNormalizedLane();
+    let clampedTargetY = targetHero.y;
+    if (!this.isClashing && (myLane === "TOP" || myLane === "BOT" || myLane === "MID")) {
+      const halfLaneHeight = isLodMap ? 140 : 100;
+      clampedTargetY = Math.max(this.assignedLaneY - halfLaneHeight, Math.min(this.assignedLaneY + halfLaneHeight, targetHero.y));
+    }
+
     // Positioning: Ranged heroes kite and keep distance; Melee heroes close in
     const isRanged = this.attackRange > 130;
     if (isRanged) {
       if (dist > this.attackRange * 0.9) {
         this.targetX = targetHero.x;
-        this.targetY = targetHero.y;
+        this.targetY = clampedTargetY;
       } else if (dist < this.attackRange * 0.45) {
         // Kite backwards smoothly
-        const angle = Math.atan2(this.y - targetHero.y, this.x - targetHero.x);
+        const angle = Math.atan2(this.y - clampedTargetY, this.x - targetHero.x);
         this.targetX = this.x + Math.cos(angle) * 80;
-        this.targetY = this.y + Math.sin(angle) * 80;
+        const kiteY = this.y + Math.sin(angle) * 80;
+        this.targetY = (!this.isClashing && (myLane === "TOP" || myLane === "BOT" || myLane === "MID"))
+          ? Math.max(this.assignedLaneY - (isLodMap ? 140 : 100), Math.min(this.assignedLaneY + (isLodMap ? 140 : 100), kiteY))
+          : kiteY;
       } else {
         this.targetX = this.x;
         this.targetY = this.y;
@@ -1558,7 +1650,7 @@ class BotHero {
       // Melee gap closing
       if (dist > this.attackRange * 0.85) {
         this.targetX = targetHero.x;
-        this.targetY = targetHero.y;
+        this.targetY = clampedTargetY;
       } else {
         this.targetX = this.x;
         this.targetY = this.y;
@@ -1614,9 +1706,21 @@ class BotHero {
     if (this.hp < this.maxHp * 0.65) return false;
     if (distToOpp < 240) return false;
 
-    if (objectiveManager.turtle && objectiveManager.turtle.alive) return true;
-    if (objectiveManager.lord && objectiveManager.lord.alive) return true;
-    return false;
+    let targetBoss = null;
+    if (objectiveManager.turtle && objectiveManager.turtle.alive) {
+      targetBoss = objectiveManager.turtle;
+    } else if (objectiveManager.lord && objectiveManager.lord.alive) {
+      targetBoss = objectiveManager.lord;
+    }
+    if (!targetBoss) return false;
+
+    const myLane = this.getNormalizedLane();
+    const distToBoss = Math.hypot(targetBoss.x - this.x, targetBoss.y - this.y);
+    // Jungler & Roamer contest from broader range; laners only contest if boss is in their quadrant/near lane
+    if (myLane === "JUNGLE" || myLane === "ROAM") {
+      return distToBoss < 600;
+    }
+    return distToBoss < 340;
   }
 
   engageObjective(objectiveManager, dt, combatTexts, sound, particles, scoreboard, skillManager = null) {
@@ -1871,11 +1975,9 @@ class BotHero {
     if (minionManager && minionManager.minions) {
       minionManager.minions.forEach(m => {
         if (m.team !== this.team && m.hp > 0) {
-          // Lane discipline on Land of Dawn: ensure minion belongs to the bot's lane
-          if (isLod && !this.isClashing) {
-            if (this.assignedLane === "GOLD" && m.lane !== "GOLD" && m.y > 440) return;
-            if (this.assignedLane === "EXP" && m.lane !== "EXP" && m.y < 840) return;
-            if (this.assignedLane === "MID" && m.lane !== "MID" && (m.y < 440 || m.y > 840)) return;
+          // Lane discipline: ensure minion belongs to the bot's own lane
+          if (!this.isClashing && !this.isTargetInMyLane(m.y, isLod)) {
+            return;
           }
           const d = Math.hypot(m.x - this.x, m.y - this.y);
           if (d < 240) clusterCount++;

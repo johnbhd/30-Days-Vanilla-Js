@@ -225,6 +225,73 @@ function updateHeroGridSelection() {
   });
 }
 
+function rebalanceRosterLanes() {
+  if (!teamRoster || !teamRoster.blue || teamRoster.blue.length === 0) return;
+
+  const playerMember = teamRoster.blue[0];
+  let playerPrefLane = "MID";
+  if (playerMember && playerMember.hero && playerMember.hero.lane) {
+    const l = playerMember.hero.lane;
+    if (l.includes("Gold")) playerPrefLane = "TOP";
+    else if (l.includes("EXP")) playerPrefLane = "BOT";
+    else if (l.includes("Jungle") && (matchMode === "4v4" || matchMode === "5v5")) playerPrefLane = "JUNGLE";
+    else if (l.includes("Roam") && matchMode === "5v5") playerPrefLane = "ROAM";
+    else playerPrefLane = "MID";
+  }
+
+  if (matchMode === "1v1") {
+    if (playerMember) playerMember.lane = "MID";
+    if (teamRoster.red && teamRoster.red[0]) teamRoster.red[0].lane = "MID";
+  } else if (matchMode === "2v2") {
+    let effPlayer = playerPrefLane === "BOT" ? "BOT" : "TOP";
+    let allyLane = effPlayer === "TOP" ? "BOT" : "TOP";
+    if (playerMember) playerMember.lane = effPlayer;
+    if (teamRoster.blue[1]) teamRoster.blue[1].lane = allyLane;
+    if (teamRoster.red && teamRoster.red[0]) teamRoster.red[0].lane = effPlayer;
+    if (teamRoster.red && teamRoster.red[1]) teamRoster.red[1].lane = allyLane;
+  } else if (matchMode === "4v4") {
+    const allRoles = ["TOP", "MID", "BOT", "JUNGLE"];
+    let effPlayer = allRoles.includes(playerPrefLane) ? playerPrefLane : "MID";
+    if (playerMember) playerMember.lane = effPlayer;
+    const remainingRoles = allRoles.filter(r => r !== effPlayer);
+    for (let i = 1; i < teamRoster.blue.length; i++) {
+      if (teamRoster.blue[i] && remainingRoles[i - 1]) {
+        teamRoster.blue[i].lane = remainingRoles[i - 1];
+      }
+    }
+    allRoles.forEach((role, idx) => {
+      if (teamRoster.red && teamRoster.red[idx]) teamRoster.red[idx].lane = role;
+    });
+  } else if (matchMode === "5v5") {
+    const allRoles = ["TOP", "MID", "BOT", "JUNGLE", "ROAM"];
+    let effPlayer = allRoles.includes(playerPrefLane) ? playerPrefLane : "MID";
+    if (playerMember) playerMember.lane = effPlayer;
+    const remainingRoles = allRoles.filter(r => r !== effPlayer);
+    for (let i = 1; i < teamRoster.blue.length; i++) {
+      if (teamRoster.blue[i] && remainingRoles[i - 1]) {
+        teamRoster.blue[i].lane = remainingRoles[i - 1];
+      }
+    }
+    allRoles.forEach((role, idx) => {
+      if (teamRoster.red && teamRoster.red[idx]) teamRoster.red[idx].lane = role;
+    });
+  } else {
+    // 3v3 Format: Exactly 1 TOP, 1 MID, 1 BOT
+    const lanes = ["TOP", "MID", "BOT"];
+    let effPlayer = lanes.includes(playerPrefLane) ? playerPrefLane : "MID";
+    if (playerMember) playerMember.lane = effPlayer;
+    const remainingLanes = lanes.filter(l => l !== effPlayer);
+    for (let i = 1; i < teamRoster.blue.length; i++) {
+      if (teamRoster.blue[i] && remainingLanes[i - 1]) {
+        teamRoster.blue[i].lane = remainingLanes[i - 1];
+      }
+    }
+    lanes.forEach((lane, idx) => {
+      if (teamRoster.red && teamRoster.red[idx]) teamRoster.red[idx].lane = lane;
+    });
+  }
+}
+
 function assignHeroToActiveSlot(hero) {
   const activeMember = getActiveSlotMember();
   if (!activeMember) return;
@@ -259,6 +326,9 @@ function assignHeroToActiveSlot(hero) {
     updateHeroUI(chosenHeroData);
     updateAbilitiesDock(chosenHeroData.id);
   }
+
+  // Ensure every active lane has an assigned hero
+  rebalanceRosterLanes();
 
   renderTeamLineupsUI();
   updateHeroGridSelection();
@@ -644,6 +714,9 @@ function generateTeamRosters(playerHero = null) {
     });
   }
 
+  // Guarantee balanced lane coverage across the generated roster
+  rebalanceRosterLanes();
+
   if (typeof window !== "undefined") window.teamRoster = teamRoster;
 
   // Ensure chosenHeroData matches player
@@ -957,6 +1030,9 @@ function startMatch() {
   } else if (!chosenHeroData) {
     chosenHeroData = (!hasManualHeroSelection ? getRandomHero() : HEROES[0]) || HEROES[0];
   }
+
+  // Ensure all active lanes are covered with a balanced hero distribution
+  rebalanceRosterLanes();
 
   // Preserve progression when changing hero mid-match (player, ally bots, enemy bots)
   // Only preserve progression if this is NOT a format reset
