@@ -110,6 +110,8 @@ class BotHero {
     this.assists = 0;
     this.gold = 300;
     this.cs = 0;
+    this.damageDealt = 0;
+    this.recentAttackers = new Map();
     this.items = [];
 
     // Visual
@@ -529,6 +531,12 @@ class BotHero {
 
     this.recentDamageTimer = 1.2;
     this.hp -= amount;
+    if (source && source !== this) {
+      this.lastAttacker = source;
+      if (!this.recentAttackers) this.recentAttackers = new Map();
+      this.recentAttackers.set(source, Date.now());
+      if (source.damageDealt !== undefined) source.damageDealt += amount;
+    }
 
     // If HP drops below 35%, retreat towards friendly base
     if (this.hp < this.maxHp * 0.35) {
@@ -590,6 +598,7 @@ class BotHero {
         if (source.isPlayer || (typeof player !== "undefined" && source === player) || (typeof window !== "undefined" && window.player && source === window.player)) {
           killerName = `${source.name || "Hero"} (YOU)`;
           killerTeam = "BLUE";
+          if (source.kills !== undefined) source.kills++;
           if (typeof gameStats !== "undefined" && gameStats) gameStats.kills++;
           else if (typeof window !== "undefined" && window.gameStats) window.gameStats.kills++;
         } else if (source.name) {
@@ -602,9 +611,25 @@ class BotHero {
           killerTeam = source.team;
           killerName = `${source.team === "BLUE" ? "Blue" : "Red"} Minion`;
         }
-        if (source.kills !== undefined) {
+        if (source.kills !== undefined && !source.isPlayer) {
           source.kills++;
         }
+      }
+
+      // Award assists to other teammates who damaged this victim in last 10s
+      if (this.recentAttackers) {
+        const now = Date.now();
+        this.recentAttackers.forEach((hitTime, att) => {
+          if (att && att !== source && att.team === killerTeam && (now - hitTime) < 10000) {
+            if (att.assists !== undefined) att.assists++;
+            if (att.gold !== undefined) att.gold += 120;
+            if (att.isPlayer || (typeof player !== "undefined" && att === player) || (typeof window !== "undefined" && window.player && att === window.player)) {
+              if (scoreboard && scoreboard.stats && scoreboard.stats.player) scoreboard.stats.player.assists++;
+              if (scoreboard) scoreboard.addGold("player", 120);
+            }
+          }
+        });
+        this.recentAttackers.clear();
       }
 
       const victimName = this.name;
@@ -642,9 +667,11 @@ class BotHero {
         if (scoreboard) {
           if (killerTeam === "BLUE") {
             scoreboard.recordKill("player");
+            if (typeof scoreboard.recordTeamKill === "function") scoreboard.recordTeamKill("BLUE");
             scoreboard.addGold("player", 250);
           } else {
             scoreboard.recordKill("bot");
+            if (typeof scoreboard.recordTeamKill === "function") scoreboard.recordTeamKill("RED");
             scoreboard.addGold("bot", 250);
           }
         }

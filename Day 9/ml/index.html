@@ -200,6 +200,19 @@
           <h2><i class="fa-solid fa-table-list" style="color: #4ecca3; margin-right: 6px;"></i> Match Scoreboard</h2>
           <button id="closeScoreboardBtn" class="close-btn">&times;</button>
         </div>
+        <div class="scoreboard-team-header-bar" id="scoreboardTeamHeaderBar">
+          <div class="sb-team-side blue">
+            <span class="sb-team-name"><i class="fa-solid fa-shield"></i> BLUE TEAM</span>
+            <span class="sb-team-kills" id="sbBlueKillsCount">0 KILLS</span>
+            <span class="sb-team-gold" id="sbBlueGoldCount"><i class="fa-solid fa-coins"></i> 0g</span>
+          </div>
+          <div class="sb-vs-badge">VS</div>
+          <div class="sb-team-side red">
+            <span class="sb-team-name"><i class="fa-solid fa-shield"></i> RED TEAM</span>
+            <span class="sb-team-kills" id="sbRedKillsCount">0 KILLS</span>
+            <span class="sb-team-gold" id="sbRedGoldCount"><i class="fa-solid fa-coins"></i> 0g</span>
+          </div>
+        </div>
         <table class="scoreboard-table">
           <thead>
             <tr>
@@ -299,18 +312,75 @@
       </div>
     </div>
 
-    <!-- Game Over Overlay -->
+    <!-- Game Over Overlay Modal -->
     <div id="gameOverOverlay" class="game-over-overlay hidden">
-      <div class="game-over-box">
-        <h1 id="gameOverTitle">VICTORY</h1>
-        <p id="gameOverDesc">Enemy Crystal Destroyed!</p>
-        <div id="gameStatsSummary" class="game-stats-summary"></div>
-        <button id="restartBtn" class="start-button">Play Again</button>
+      <div class="game-over-modal">
+        <!-- Banner Header -->
+        <div class="game-over-header">
+          <div class="game-over-status-badge" id="gameOverBadge"><i class="fa-solid fa-trophy"></i> MATCH ENDED</div>
+          <h1 id="gameOverTitle" class="victory-title">VICTORY</h1>
+          <p id="gameOverDesc">Enemy Crystal Destroyed! You have conquered the Land of Dawn!</p>
+        </div>
+
+        <!-- Team Scoring for Kills & Match Overview Bar -->
+        <div class="end-game-scoreboard-bar" id="endGameScoreboardBar">
+          <div class="end-team-chip blue-side">
+            <div class="end-team-gem blue-gem"><i class="fa-solid fa-shield"></i></div>
+            <div class="end-team-info">
+              <span class="end-team-name">BLUE TEAM</span>
+              <span class="end-team-kills" id="endBlueKills">0 KILLS</span>
+              <span class="end-team-gold" id="endBlueGold"><i class="fa-solid fa-coins"></i> 0g</span>
+            </div>
+          </div>
+          <div class="end-match-center">
+            <div class="end-match-time" id="endMatchTime"><i class="fa-regular fa-clock"></i> 00:00</div>
+            <div class="end-match-mode" id="endMatchMode">5v5 CLASSIC</div>
+          </div>
+          <div class="end-team-chip red-side">
+            <div class="end-team-info text-right">
+              <span class="end-team-name">RED TEAM</span>
+              <span class="end-team-kills" id="endRedKills">0 KILLS</span>
+              <span class="end-team-gold" id="endRedGold"><i class="fa-solid fa-coins"></i> 0g</span>
+            </div>
+            <div class="end-team-gem red-gem"><i class="fa-solid fa-shield"></i></div>
+          </div>
+        </div>
+
+        <!-- Dual MVP Showcase Section -->
+        <div class="mvp-showcase-container" id="mvpShowcaseContainer">
+          <!-- Dynamically populated with Blue MVP and Red MVP cards -->
+        </div>
+
+        <!-- Detailed Match Stats Tables Container (Both Teams) -->
+        <div class="end-game-stats-container" id="gameStatsSummary">
+          <!-- Dynamically populated with Blue & Red hero rosters -->
+        </div>
+
+        <!-- Modal Action Footer Buttons -->
+        <div class="game-over-actions">
+          <button id="restartBtn" class="game-over-btn play-again-btn"><i class="fa-solid fa-rotate-right"></i> Play Again</button>
+          <button id="gameOverMainMenuBtn" class="game-over-btn menu-btn"><i class="fa-solid fa-house"></i> Main Menu</button>
+        </div>
       </div>
     </div>
 
     <!-- In-Game UI Overlay -->
     <div class="ui-overlay">
+      <!-- In-Game Live Match Team Kills Score Banner -->
+      <div class="in-game-score-banner" id="inGameScoreBanner">
+        <div class="in-game-team-side blue-side">
+          <span class="in-game-team-tag">BLUE</span>
+          <span class="in-game-score-num" id="inGameBlueKills">0</span>
+        </div>
+        <div class="in-game-match-clock" id="inGameMatchClock">
+          <i class="fa-regular fa-clock"></i> 00:00
+        </div>
+        <div class="in-game-team-side red-side">
+          <span class="in-game-score-num" id="inGameRedKills">0</span>
+          <span class="in-game-team-tag">RED</span>
+        </div>
+      </div>
+
       <!-- Dedicated In-Game Kill & Turret Event Feed -->
       <div id="killFeed" class="kill-feed" aria-live="polite"></div>
 

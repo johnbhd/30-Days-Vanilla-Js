@@ -26,6 +26,14 @@ class Hero {
     this.loaded = false;
 
     // Combat
+    this.isPlayer = true;
+    this.kills = 0;
+    this.deaths = 0;
+    this.assists = 0;
+    this.cs = 0;
+    this.gold = 300;
+    this.damageDealt = 0;
+    this.recentAttackers = new Map();
     this.attackRange = this.stats.range ? this.stats.range : 75;
     this.attackDamage = this.stats.atk || 100;
     this.attackCooldown = 0.8;
@@ -357,6 +365,9 @@ class Hero {
 
     if (source) {
       this.lastAttacker = source;
+      if (!this.recentAttackers) this.recentAttackers = new Map();
+      this.recentAttackers.set(source, Date.now());
+      if (source.damageDealt !== undefined) source.damageDealt += amount;
     }
 
     if (this.isRecalling) {
@@ -482,6 +493,7 @@ class Hero {
 
         this.isDead = true;
         this.hp = 0;
+        this.deaths = (this.deaths || 0) + 1;
         this.respawnTimer = this.respawnMax;
         this.attackTarget = null;
         if (this.isRecalling) {
@@ -508,6 +520,18 @@ class Hero {
           }
         }
 
+        // Award assists to other Red bots that damaged player in last 10s
+        if (this.recentAttackers) {
+          const now = Date.now();
+          this.recentAttackers.forEach((hitTime, att) => {
+            if (att && att !== killer && att.team === "RED" && (now - hitTime) < 10000) {
+              if (att.assists !== undefined) att.assists++;
+              if (att.gold !== undefined) att.gold += 120;
+            }
+          });
+          this.recentAttackers.clear();
+        }
+
         const killText = `⚔️ ${killerName} has slain ${this.name} (YOU)!`;
         if (objectives && objectives.addAnnouncement) {
           objectives.addAnnouncement(killText, "#ff4757");
@@ -529,6 +553,7 @@ class Hero {
 
         if (scoreboard) {
           scoreboard.recordKill("bot");
+          if (typeof scoreboard.recordTeamKill === "function") scoreboard.recordTeamKill("RED");
           scoreboard.addGold("bot", 250);
         }
 
@@ -1003,6 +1028,8 @@ class Hero {
               gameStats.minionsKilled++;
               gameStats.gold += bounty;
             }
+            this.cs = (this.cs || 0) + 1;
+            this.gold = (this.gold || 0) + bounty;
             if (scoreboard) {
               scoreboard.addCS("player");
               scoreboard.addGold("player", bounty);

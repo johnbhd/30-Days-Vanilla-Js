@@ -1355,28 +1355,208 @@ function resetGame() {
 
 function showGameOver(isVictory) {
   gameState = "GAMEOVER";
-  gameOverTitle.textContent = isVictory ? "VICTORY" : "DEFEAT";
-  gameOverTitle.className = isVictory ? "victory-title" : "defeat-title";
-  gameOverDesc.textContent = isVictory
-    ? "Red Crystal Destroyed! You have conquered the Land of Dawn!"
-    : "Blue Crystal Destroyed! Your base has fallen.";
+  if (gameOverTitle) {
+    gameOverTitle.textContent = isVictory ? "VICTORY" : "DEFEAT";
+    gameOverTitle.className = isVictory ? "victory-title" : "defeat-title";
+  }
+  if (gameOverDesc) {
+    gameOverDesc.textContent = isVictory
+      ? "Red Crystal Destroyed! You have conquered the Land of Dawn!"
+      : "Blue Crystal Destroyed! Your base fountain has fallen.";
+  }
 
-  sound.playAnnouncer(isVictory ? "victory" : "defeat");
+  const gameOverBadge = document.getElementById("gameOverBadge");
+  if (gameOverBadge) {
+    gameOverBadge.innerHTML = isVictory ? '<i class="fa-solid fa-trophy"></i> VICTORY' : '<i class="fa-solid fa-skull"></i> DEFEAT';
+    gameOverBadge.className = `game-over-status-badge ${isVictory ? 'victory-badge' : 'defeat-badge'}`;
+  }
+
+  if (sound && sound.playAnnouncer) sound.playAnnouncer(isVictory ? "victory" : "defeat");
 
   const minutes = Math.floor(matchTime / 60);
   const seconds = Math.floor(matchTime % 60).toString().padStart(2, "0");
 
-  const statsEl = document.getElementById("gameStatsSummary");
-  if (statsEl) {
-    statsEl.innerHTML = `
-      <div class="stat-item"><span class="stat-label">Match Time</span><span class="stat-val">${minutes}:${seconds}</span></div>
-      <div class="stat-item"><span class="stat-label">K / D / A</span><span class="stat-val">${scoreboard.stats.player.kills} / ${scoreboard.stats.player.deaths} / ${scoreboard.stats.player.assists}</span></div>
-      <div class="stat-item"><span class="stat-label">Minions Slayed (CS)</span><span class="stat-val">${scoreboard.stats.player.cs || gameStats.minionsKilled}</span></div>
-      <div class="stat-item"><span class="stat-label">Turrets Destroyed</span><span class="stat-val">${gameStats.turretsDestroyed}</span></div>
-      <div class="stat-item"><span class="stat-label">Damage Dealt</span><span class="stat-val">${Math.round(gameStats.damageDealt)}</span></div>
-      <div class="stat-item"><span class="stat-label">Gold Earned</span><span class="stat-val">${gameStats.gold}g</span></div>
+  const blueKills = scoreboard ? scoreboard.getTeamKills("BLUE", selectedHero, bots) : 0;
+  const redKills = scoreboard ? scoreboard.getTeamKills("RED", selectedHero, bots) : 0;
+  const blueGold = scoreboard ? scoreboard.getTeamGold("BLUE", selectedHero, bots) : 0;
+  const redGold = scoreboard ? scoreboard.getTeamGold("RED", selectedHero, bots) : 0;
+
+  const endBlueKills = document.getElementById("endBlueKills");
+  const endBlueGold = document.getElementById("endBlueGold");
+  const endRedKills = document.getElementById("endRedKills");
+  const endRedGold = document.getElementById("endRedGold");
+  const endMatchTime = document.getElementById("endMatchTime");
+  const endMatchMode = document.getElementById("endMatchMode");
+
+  if (endBlueKills) endBlueKills.textContent = `${blueKills} KILLS`;
+  if (endBlueGold) endBlueGold.innerHTML = `<i class="fa-solid fa-coins"></i> ${blueGold}g`;
+  if (endRedKills) endRedKills.textContent = `${redKills} KILLS`;
+  if (endRedGold) endRedGold.innerHTML = `<i class="fa-solid fa-coins"></i> ${redGold}g`;
+  if (endMatchTime) endMatchTime.innerHTML = `<i class="fa-regular fa-clock"></i> ${minutes}:${seconds}`;
+  if (endMatchMode) endMatchMode.textContent = (typeof matchMode !== "undefined" ? matchMode : "5v5").toUpperCase() + " MATCH";
+
+  // Determine MVPs and stats for both teams
+  const mvpData = scoreboard ? scoreboard.determineTeamMVPs(selectedHero, bots, itemShop) : null;
+  const blueMVP = mvpData ? mvpData.blueMVP : null;
+  const redMVP = mvpData ? mvpData.redMVP : null;
+  const blueMembers = mvpData ? mvpData.blueMembers : [];
+  const redMembers = mvpData ? mvpData.redMembers : [];
+
+  // 1. Dual MVP Showcase Section
+  const mvpContainer = document.getElementById("mvpShowcaseContainer");
+  if (mvpContainer) {
+    const renderMvpCard = (mvp, isWinningTeam, teamLabel, teamColor) => {
+      if (!mvp) return "";
+      const sprite = mvp.sprite || (mvp.unit && mvp.unit.spritePath) || (mvp.id ? `assets/sprites/heroes/${mvp.id}/` : "");
+      const initial = mvp.name ? mvp.name[0] : "M";
+      const ribbonTitle = isWinningTeam ? "VICTORY MVP" : "DEFEAT MVP";
+      const ribbonIcon = isWinningTeam ? "fa-crown" : "fa-medal";
+      const cardClass = isWinningTeam ? "winner-mvp" : "loser-mvp";
+      const pillClass = teamLabel === "BLUE" ? "blue-pill" : "red-pill";
+
+      return `
+        <div class="mvp-card ${cardClass} ${teamLabel.toLowerCase()}-mvp-card">
+          <div class="mvp-ribbon ${teamLabel.toLowerCase()}-ribbon">
+            <i class="fa-solid ${ribbonIcon}"></i> ${teamLabel} TEAM • ${ribbonTitle}
+          </div>
+          <div class="mvp-hero-body">
+            <div class="mvp-avatar-wrap" style="border-color:${teamColor};">
+              ${sprite
+                ? `<img src="${sprite}idle.png" alt="${mvp.name}" class="mvp-avatar-img" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'font-weight:bold;color:${teamColor};font-size:22px;\\'>${initial}</span>';" />`
+                : `<span style="font-weight:bold;color:${teamColor};font-size:22px;">${initial}</span>`
+              }
+              <span class="mvp-rating-pill ${pillClass}">${mvp.rating ? mvp.rating.toFixed(1) : "10.0"}</span>
+            </div>
+            <div class="mvp-hero-meta">
+              <div class="mvp-hero-name">
+                <strong>${mvp.name}</strong> ${mvp.isPlayer ? '<span class="mvp-you-badge">(YOU)</span>' : ''}
+              </div>
+              <div class="mvp-hero-role">${mvp.role} • ${mvp.lane || "LANE"} Lane</div>
+              <div class="mvp-hero-kda">
+                <span class="kda-label">K/D/A:</span>
+                <span class="kda-val"><strong>${mvp.kills}</strong> / <strong>${mvp.deaths}</strong> / <strong>${mvp.assists}</strong></span>
+                <span class="mvp-gold-stat"><i class="fa-solid fa-coins"></i> ${Math.round(mvp.gold)}g</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    mvpContainer.innerHTML = `
+      ${renderMvpCard(blueMVP, isVictory, "BLUE", "#4ecca3")}
+      ${renderMvpCard(redMVP, !isVictory, "RED", "#e74c3c")}
     `;
   }
+
+  // 2. Full Match Stats Tables for Both Teams
+  const statsEl = document.getElementById("gameStatsSummary");
+  if (statsEl) {
+    const renderItemIcons = (items) => {
+      if (!items || items.length === 0) return '<span style="color:#64748b;">-</span>';
+      return items.map(it => {
+        if (typeof it === "object" && it.icon) return it.icon;
+        if (typeof it === "string" && typeof ITEM_CATALOG !== "undefined") {
+          const match = ITEM_CATALOG.find(i => i.id === it);
+          if (match && match.icon) return match.icon;
+        }
+        return `<span style="font-size:10px; color:#aaa;">[${it}]</span>`;
+      }).join(" ");
+    };
+
+    const renderRosterRows = (members, isBlueTeam) => {
+      return members.map(m => {
+        const sprite = m.sprite || (m.unit && m.unit.spritePath) || (m.id ? `assets/sprites/heroes/${m.id}/` : "");
+        const initial = m.name ? m.name[0] : "H";
+        const color = isBlueTeam ? "#4ecca3" : "#e74c3c";
+        const isMvp = m.isMvp;
+        const mvpBadgeHtml = isMvp
+          ? `<span class="mvp-tag ${isBlueTeam ? 'gold-tag' : 'red-tag'}"><i class="fa-solid ${isBlueTeam ? 'fa-crown' : 'fa-medal'}"></i> MVP ${m.rating ? m.rating.toFixed(1) : ''}</span>`
+          : `<span class="rating-tag">${m.rating ? m.rating.toFixed(1) : '3.0'}</span>`;
+
+        return `
+          <tr class="end-table-row ${isBlueTeam ? 'blue-side-row' : 'red-side-row'} ${isMvp ? 'mvp-row' : ''}">
+            <td class="hero-cell">
+              <div class="end-hero-avatar" style="border-color:${color};">
+                ${sprite
+                  ? `<img src="${sprite}idle.png" alt="${m.name}" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'font-weight:bold;color:${color};font-size:12px;\\'>${initial}</span>';" />`
+                  : `<span style="font-weight:bold;color:${color};font-size:12px;">${initial}</span>`
+                }
+              </div>
+              <div class="end-hero-name-wrap">
+                <span class="end-hero-name" style="color:${color};">${m.name} ${m.isPlayer ? '<strong style="color:#00ffff;">(YOU)</strong>' : ''}</span>
+                <small class="end-hero-sub">${m.role} • ${m.lane || "LANE"}</small>
+              </div>
+            </td>
+            <td class="kda-cell"><strong>${m.kills}</strong> / ${m.deaths} / <strong>${m.assists}</strong></td>
+            <td class="cs-cell">${m.cs}</td>
+            <td class="gold-cell">${Math.round(m.gold)}g</td>
+            <td class="items-cell">${renderItemIcons(m.items)}</td>
+            <td class="rating-cell">${mvpBadgeHtml}</td>
+          </tr>
+        `;
+      }).join("");
+    };
+
+    statsEl.innerHTML = `
+      <div class="end-team-section blue-team-section">
+        <div class="end-team-table-title blue-title">
+          <div class="team-title-left">
+            <i class="fa-solid fa-shield"></i> BLUE TEAM ROSTER
+          </div>
+          <div class="team-title-right">
+            <span><strong>${blueKills}</strong> KILLS</span> • <span><strong>${blueGold}</strong>g</span>
+          </div>
+        </div>
+        <div class="end-table-responsive">
+          <table class="end-stats-table">
+            <thead>
+              <tr>
+                <th>Hero / Player</th>
+                <th>K / D / A</th>
+                <th>CS</th>
+                <th>Net Worth</th>
+                <th>Builds</th>
+                <th>Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${renderRosterRows(blueMembers, true)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="end-team-section red-team-section">
+        <div class="end-team-table-title red-title">
+          <div class="team-title-left">
+            <i class="fa-solid fa-shield"></i> RED TEAM ROSTER
+          </div>
+          <div class="team-title-right">
+            <span><strong>${redKills}</strong> KILLS</span> • <span><strong>${redGold}</strong>g</span>
+          </div>
+        </div>
+        <div class="end-table-responsive">
+          <table class="end-stats-table">
+            <thead>
+              <tr>
+                <th>Hero / Opponent</th>
+                <th>K / D / A</th>
+                <th>CS</th>
+                <th>Net Worth</th>
+                <th>Builds</th>
+                <th>Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${renderRosterRows(redMembers, false)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
   gameOverOverlay.classList.remove("hidden");
 }
 
@@ -1385,6 +1565,18 @@ startBtn.addEventListener("click", startMatch);
 
 if (restartBtn) {
   restartBtn.addEventListener("click", () => resetGame());
+}
+
+const gameOverMainMenuBtn = document.getElementById("gameOverMainMenuBtn");
+if (gameOverMainMenuBtn) {
+  gameOverMainMenuBtn.addEventListener("click", () => {
+    disarmSkill(false);
+    gameState = "LANDING";
+    gameOverOverlay.classList.add("hidden");
+    if (landingPageOverlay) landingPageOverlay.classList.remove("hidden");
+    if (modeSelectOverlay) modeSelectOverlay.classList.add("hidden");
+    if (selectOverlay) selectOverlay.classList.add("hidden");
+  });
 }
 
 if (changeHeroBtn) {
@@ -1906,10 +2098,31 @@ function loop(currentTime) {
 
     // 7. Update Gold and Shop HUD
     itemShop.updateShopUI(gameStats);
+    if (selectedHero) {
+      selectedHero.gold = gameStats.gold || (scoreboard.stats.player.gold) || 0;
+      selectedHero.cs = scoreboard.stats.player.cs || gameStats.minionsKilled || 0;
+      selectedHero.kills = scoreboard.stats.player.kills || (gameStats.kills) || 0;
+      selectedHero.deaths = scoreboard.stats.player.deaths || (gameStats.deaths) || 0;
+      selectedHero.assists = scoreboard.stats.player.assists || 0;
+    }
 
     // 7b. Update Scoreboard if visible
     if (scoreboard.visible) {
       scoreboard.updateUI(selectedHero, bots, itemShop);
+    }
+
+    // 7c. Update In-Game Live Match Team Score Banner
+    const inGameBlueKills = document.getElementById("inGameBlueKills");
+    const inGameRedKills = document.getElementById("inGameRedKills");
+    const inGameMatchClock = document.getElementById("inGameMatchClock");
+    if (inGameBlueKills && inGameRedKills) {
+      inGameBlueKills.textContent = scoreboard ? scoreboard.getTeamKills("BLUE", selectedHero, bots) : 0;
+      inGameRedKills.textContent = scoreboard ? scoreboard.getTeamKills("RED", selectedHero, bots) : 0;
+    }
+    if (inGameMatchClock) {
+      const mins = Math.floor(matchTime / 60);
+      const secs = Math.floor(matchTime % 60).toString().padStart(2, "0");
+      inGameMatchClock.innerHTML = `<i class="fa-regular fa-clock"></i> ${mins}:${secs}`;
     }
 
     // 8. Combat floating texts update
