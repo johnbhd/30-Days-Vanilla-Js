@@ -673,13 +673,76 @@ body.celebration-started .intro-step-3 {
   }
 }
 
+.msg-blessing-wrap {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
 .msg-blessing {
-  display: inline-block;
-  background: linear-gradient(90deg, #ffd166, #ff9ebb, #4cc9f0);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 28px 10px;
+  border-radius: 999px;
+  font-family: 'Pacifico', cursive;
+  font-size: clamp(1.35rem, 4vw, 2.1rem);
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  background:
+    linear-gradient(90deg, #fff6cc 0%, #ffd166 25%, #ff8fab 50%, #4cc9f0 75%, #fff6cc 100%)
+    0% 50% / 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  font-style: italic;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 3px 10px rgba(255, 209, 102, 0.45));
+  animation: blessingTextShimmer 3.5s linear infinite, blessingFloat 2.4s ease-in-out infinite alternate;
+}
+
+.msg-blessing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.18), rgba(255, 77, 141, 0.22), rgba(76, 201, 240, 0.16));
+  border: 1.5px solid rgba(255, 209, 102, 0.72);
+  box-shadow: 0 8px 26px rgba(255, 77, 141, 0.32),
+              0 0 18px rgba(255, 209, 102, 0.35),
+              inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
+.msg-blessing::after {
+  content: '✦';
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  color: #ffd166;
+  -webkit-text-fill-color: #ffd166;
+  text-shadow: 0 0 10px #ffd166;
+}
+
+@keyframes blessingTextShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes blessingFloat {
+  0% {
+    transform: translateY(0px) scale(0.99);
+  }
+  100% {
+    transform: translateY(-3px) scale(1.03);
+  }
 }
 
 /* Friends Roster Pills */
