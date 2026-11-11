@@ -1024,10 +1024,108 @@
     }, 1900);
   }
 
+  function playCandleBlowSound() {
+    if (isSoundMuted) return;
+    try {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      // Soft Breath Whoosh Noise
+      const len = Math.floor(ctx.sampleRate * 0.28);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        const env = Math.sin((i / len) * Math.PI);
+        data[i] = (Math.random() * 2 - 1) * env * 0.55;
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(620, now);
+      filter.frequency.exponentialRampToValueAtTime(240, now + 0.26);
+      filter.Q.setValueAtTime(1.4, now);
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.5, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.27);
+
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      src.start(now);
+    } catch (_) {}
+  }
+
+  function playCandleRelightSound() {
+    if (isSoundMuted) return;
+    try {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const notes = [587.33, 880.00, 1174.66]; // D5 -> A5 -> D6 magic spark
+      notes.forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const st = now + idx * 0.045;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, st);
+        gain.gain.setValueAtTime(0.14, st);
+        gain.gain.exponentialRampToValueAtTime(0.001, st + 0.16);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(st);
+        osc.stop(st + 0.17);
+      });
+    } catch (_) {}
+  }
+
+  const candleTimers = new WeakMap();
+
+  function blowOutCandle(candleEl) {
+    if (!candleEl) return;
+    candleEl.classList.remove('is-relighting');
+    candleEl.classList.add('is-blown-out');
+
+    const prevTimer = candleTimers.get(candleEl);
+    if (prevTimer) clearTimeout(prevTimer);
+
+    // Auto-show fire again 3 seconds (3000ms) after blow!
+    const timerId = setTimeout(() => {
+      candleEl.classList.remove('is-blown-out');
+      candleEl.classList.add('is-relighting');
+      playCandleRelightSound();
+      setTimeout(() => {
+        candleEl.classList.remove('is-relighting');
+      }, 480);
+    }, 3000);
+
+    candleTimers.set(candleEl, timerId);
+  }
+
+  const candleGroups = Array.from(document.querySelectorAll('.choco-candle-group'));
+  candleGroups.forEach((candleEl) => {
+    candleEl.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      startBirthdayGameBGM();
+      playCandleBlowSound();
+      blowOutCandle(candleEl);
+      const rect = candleEl.getBoundingClientRect();
+      const popX = e.clientX || (rect.left + rect.width / 2);
+      const popY = e.clientY || (rect.top + rect.height / 3);
+      createBoomExplosion(popX, popY, '#ffd166');
+    });
+  });
+
   const steadyChocoCake = document.getElementById('steady-choco-cake');
   if (steadyChocoCake) {
     steadyChocoCake.addEventListener('pointerdown', (e) => {
       e.stopPropagation();
+      startBirthdayGameBGM();
+      playCandleBlowSound();
+      candleGroups.forEach((c) => blowOutCandle(c));
       const rect = steadyChocoCake.getBoundingClientRect();
       const popX = e.clientX || (rect.left + rect.width / 2);
       const popY = e.clientY || (rect.top + rect.height / 2);

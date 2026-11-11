@@ -1453,3 +1453,72 @@ body.celebration-started .intro-step-3 {
     transform: translateY(calc(-50% - 5px)) scale(1.05);
   }
 }
+
+
+/* ==================== CANDLE BLOW OUT & 3-SEC AUTO-RELIGHT ANIMATION ==================== */
+.choco-candle-group {
+  cursor: pointer;
+}
+
+.candle-fire-wrap {
+  transform-origin: 0px 6px;
+  transition: opacity 0.24s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.choco-candle-group.is-blown-out .candle-fire-wrap {
+  opacity: 0;
+  transform: translate(18px, -8px) scale(0.08) rotate(38deg);
+  pointer-events: none;
+}
+
+.choco-candle-group.is-relighting .candle-fire-wrap {
+  animation: candleRelightPop 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.candle-wick-smoke {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choco-candle-group.is-blown-out .wick-puff {
+  fill: rgba(255, 245, 238, 0.65);
+  animation: wickSmokeRise 1.4s ease-out infinite;
+}
+
+.choco-candle-group.is-blown-out .candle-wick-smoke {
+  opacity: 1;
+}
+
+.choco-candle-group.is-blown-out .wick-puff.p2 {
+  animation-delay: 0.25s;
+}
+
+.choco-candle-group.is-blown-out .wick-puff.p3 {
+  animation-delay: 0.5s;
+}
+
+@keyframes wickSmokeRise {
+  0% {
+    opacity: 0.85;
+    transform: translate(0px, 4px) scale(0.45);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(10px, -28px) scale(1.85);
+  }
+}
+
+@keyframes candleRelightPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.28);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

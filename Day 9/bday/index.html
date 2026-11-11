@@ -315,40 +315,64 @@
                     <rect x="224" y="185" width="9" height="3.8" rx="2" transform="rotate(14 224 185)" fill="#4cc9f0" />
                   </g>
 
-                  <!-- ==================== 3 LIT BIRTHDAY CANDLES WITH MOVING FLAMES ==================== -->
+                  <!-- ==================== 3 LIT BIRTHDAY CANDLES (CLICK TO BLOW OUT, AUTO-RELIGHTS IN 3S) ==================== -->
                   <!-- Left Candle -->
-                  <g transform="translate(134, 68)">
+                  <g class="choco-candle-group" data-candle="0" transform="translate(134, 68)">
+                    <rect class="candle-hit-area" x="-18" y="-34" width="36" height="96" fill="transparent" />
                     <rect x="-6" y="12" width="12" height="46" rx="4" fill="#fff5f8" />
                     <path d="M-6 22 L6 16 M-6 34 L6 28 M-6 46 L6 40" stroke="#ff4d8d" stroke-width="3.5" />
                     <line x1="0" y1="6" x2="0" y2="12" stroke="#2b1005" stroke-width="2" />
-                    <circle class="flame-halo" cx="0" cy="-4" r="22" fill="url(#flameHalo)" />
-                    <g class="candle-flame-anim f-left">
-                      <path d="M0 -24 C9 -12 9 2 0 7 C-9 2 -9 -12 0 -24 Z" fill="url(#candleFlameOuter)" />
-                      <path d="M0 -13 C4 -6 4 1 0 4 C-4 1 -4 -6 0 -13 Z" fill="#ffffff" />
+                    <g class="candle-wick-smoke">
+                      <circle class="wick-puff p1" cx="0" cy="2" r="4" />
+                      <circle class="wick-puff p2" cx="-4" cy="-8" r="5.5" />
+                      <circle class="wick-puff p3" cx="4" cy="-18" r="7" />
+                    </g>
+                    <g class="candle-fire-wrap">
+                      <circle class="flame-halo" cx="0" cy="-4" r="22" fill="url(#flameHalo)" />
+                      <g class="candle-flame-anim f-left">
+                        <path d="M0 -24 C9 -12 9 2 0 7 C-9 2 -9 -12 0 -24 Z" fill="url(#candleFlameOuter)" />
+                        <path d="M0 -13 C4 -6 4 1 0 4 C-4 1 -4 -6 0 -13 Z" fill="#ffffff" />
+                      </g>
                     </g>
                   </g>
 
                   <!-- Center Tall Candle -->
-                  <g transform="translate(180, 56)">
+                  <g class="choco-candle-group" data-candle="1" transform="translate(180, 56)">
+                    <rect class="candle-hit-area" x="-20" y="-38" width="40" height="108" fill="transparent" />
                     <rect x="-7" y="12" width="14" height="56" rx="4" fill="#fffef2" />
                     <path d="M-7 22 L7 15 M-7 36 L7 29 M-7 50 L7 43" stroke="#ffb703" stroke-width="4" />
                     <line x1="0" y1="5" x2="0" y2="12" stroke="#2b1005" stroke-width="2.2" />
-                    <circle class="flame-halo" cx="0" cy="-6" r="26" fill="url(#flameHalo)" />
-                    <g class="candle-flame-anim f-center">
-                      <path d="M0 -28 C11 -14 11 2 0 8 C-11 2 -11 -14 0 -28 Z" fill="url(#candleFlameOuter)" />
-                      <path d="M0 -15 C5 -7 5 1 0 5 C-5 1 -5 -7 0 -15 Z" fill="#ffffff" />
+                    <g class="candle-wick-smoke">
+                      <circle class="wick-puff p1" cx="0" cy="1" r="4.5" />
+                      <circle class="wick-puff p2" cx="4" cy="-10" r="6" />
+                      <circle class="wick-puff p3" cx="-3" cy="-22" r="7.5" />
+                    </g>
+                    <g class="candle-fire-wrap">
+                      <circle class="flame-halo" cx="0" cy="-6" r="26" fill="url(#flameHalo)" />
+                      <g class="candle-flame-anim f-center">
+                        <path d="M0 -28 C11 -14 11 2 0 8 C-11 2 -11 -14 0 -28 Z" fill="url(#candleFlameOuter)" />
+                        <path d="M0 -15 C5 -7 5 1 0 5 C-5 1 -5 -7 0 -15 Z" fill="#ffffff" />
+                      </g>
                     </g>
                   </g>
 
                   <!-- Right Candle -->
-                  <g transform="translate(226, 68)">
+                  <g class="choco-candle-group" data-candle="2" transform="translate(226, 68)">
+                    <rect class="candle-hit-area" x="-18" y="-34" width="36" height="96" fill="transparent" />
                     <rect x="-6" y="12" width="12" height="46" rx="4" fill="#f0fbff" />
                     <path d="M-6 22 L6 16 M-6 34 L6 28 M-6 46 L6 40" stroke="#4cc9f0" stroke-width="3.5" />
                     <line x1="0" y1="6" x2="0" y2="12" stroke="#2b1005" stroke-width="2" />
-                    <circle class="flame-halo" cx="0" cy="-4" r="22" fill="url(#flameHalo)" />
-                    <g class="candle-flame-anim f-right">
-                      <path d="M0 -24 C9 -12 9 2 0 7 C-9 2 -9 -12 0 -24 Z" fill="url(#candleFlameOuter)" />
-                      <path d="M0 -13 C4 -6 4 1 0 4 C-4 1 -4 -6 0 -13 Z" fill="#ffffff" />
+                    <g class="candle-wick-smoke">
+                      <circle class="wick-puff p1" cx="0" cy="2" r="4" />
+                      <circle class="wick-puff p2" cx="3" cy="-8" r="5.5" />
+                      <circle class="wick-puff p3" cx="-4" cy="-18" r="7" />
+                    </g>
+                    <g class="candle-fire-wrap">
+                      <circle class="flame-halo" cx="0" cy="-4" r="22" fill="url(#flameHalo)" />
+                      <g class="candle-flame-anim f-right">
+                        <path d="M0 -24 C9 -12 9 2 0 7 C-9 2 -9 -12 0 -24 Z" fill="url(#candleFlameOuter)" />
+                        <path d="M0 -13 C4 -6 4 1 0 4 C-4 1 -4 -6 0 -13 Z" fill="#ffffff" />
+                      </g>
                     </g>
                   </g>
                 </g>
