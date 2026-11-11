@@ -898,12 +898,14 @@
     CURSOR_IMAGES.forEach(preloadImage);
 
     let cursorIdx = 0;
-    let cursorX = window.innerWidth * 0.5;
-    let cursorY = window.innerHeight * 0.5;
+    let cursorX = -200;
+    let cursorY = -200;
+    let isCursorPresent = false;
     let lastSmokeTime = 0;
     let smokeColorCursor = 0;
 
     function spawnSmokePuff(x, y, sizeBoost = 1) {
+      if (!isCursorPresent) return;
       smokeColorCursor = (smokeColorCursor + 1) % SMOKE_COLORS.length;
       const palette = SMOKE_COLORS[smokeColorCursor];
       const puff = document.createElement('span');
@@ -930,6 +932,7 @@
     }
 
     function spawnSmokeBurst(x, y, count = 7) {
+      if (!isCursorPresent) return;
       for (let i = 0; i < count; i++) {
         spawnSmokePuff(
           x + (Math.random() - 0.5) * 28,
@@ -939,9 +942,16 @@
       }
     }
 
+    function hideCursor() {
+      isCursorPresent = false;
+      customCursor.classList.remove('is-active', 'is-clicking');
+    }
+
     function moveCursorTo(x, y) {
       cursorX = x;
       cursorY = y;
+      isCursorPresent = true;
+      customCursor.classList.add('is-active');
       customCursor.style.left = `${x}px`;
       customCursor.style.top = `${y}px`;
 
@@ -969,21 +979,42 @@
       setTimeout(() => customCursor.classList.remove('is-clicking'), 180);
     }, { passive: true });
 
-    // Gentle idle colorful smoke around cursor even when mouse is still
+    window.addEventListener('pointerup', (e) => {
+      if (e.pointerType === 'touch') {
+        hideCursor();
+      }
+    }, { passive: true });
+
+    window.addEventListener('pointercancel', hideCursor, { passive: true });
+    window.addEventListener('touchend', hideCursor, { passive: true });
+    window.addEventListener('touchcancel', hideCursor, { passive: true });
+    document.addEventListener('mouseleave', hideCursor);
+    window.addEventListener('blur', hideCursor);
+    window.addEventListener('mouseout', (e) => {
+      if (!e.relatedTarget && !e.toElement) {
+        hideCursor();
+      }
+    });
+
+    // Gentle idle colorful smoke around cursor only while cursor is on screen
     setInterval(() => {
-      if (document.hidden) return;
+      if (document.hidden || !isCursorPresent) return;
       spawnSmokePuff(cursorX, cursorY, 0.9);
     }, 220);
 
-    // Change cursor image every 5 seconds (5000ms) with colorful smoke burst!
+    // Change cursor image every 5 seconds (5000ms)
     setInterval(() => {
       cursorIdx = (cursorIdx + 1) % CURSOR_IMAGES.length;
-      customCursorImg.classList.add('is-swapping');
-      spawnSmokeBurst(cursorX, cursorY, 8);
-      setTimeout(() => {
+      if (isCursorPresent) {
+        customCursorImg.classList.add('is-swapping');
+        spawnSmokeBurst(cursorX, cursorY, 8);
+        setTimeout(() => {
+          customCursorImg.src = CURSOR_IMAGES[cursorIdx];
+          customCursorImg.classList.remove('is-swapping');
+        }, 180);
+      } else {
         customCursorImg.src = CURSOR_IMAGES[cursorIdx];
-        customCursorImg.classList.remove('is-swapping');
-      }, 180);
+      }
     }, 5000);
   }
 

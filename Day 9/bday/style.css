@@ -1284,8 +1284,8 @@ body.celebration-started .intro-step-3 {
 
 .custom-img-cursor {
   position: fixed;
-  left: 50vw;
-  top: 50vh;
+  left: -200px;
+  top: -200px;
   width: 68px;
   height: 68px;
   z-index: 9999;
@@ -1294,7 +1294,15 @@ body.celebration-started .intro-step-3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  will-change: left, top, transform;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  will-change: left, top, transform, opacity;
+}
+
+.custom-img-cursor.is-active {
+  opacity: 1;
+  visibility: visible;
 }
 
 .cursor-color-aura {
@@ -1386,5 +1394,62 @@ body.celebration-started .intro-step-3 {
   100% {
     opacity: 0;
     transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -36px))) scale(2.35);
+  }
+}
+
+
+/* ==================== CHOCOLATE CAKE CARD NAME TAGS (JB, Kurt, Mai) ==================== */
+.choco-name-tag {
+  position: absolute;
+  z-index: 6;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #fffef5;
+  background: linear-gradient(135deg, rgba(92, 42, 20, 0.88), rgba(43, 17, 7, 0.92));
+  border: 1.5px solid rgba(255, 209, 102, 0.65);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55),
+              0 0 14px rgba(255, 209, 102, 0.32);
+  pointer-events: none;
+  animation: chocoNameFloat 2.2s ease-in-out infinite alternate;
+}
+
+.choco-name-tag.pos-top-left {
+  top: 14px;
+  left: 14px;
+}
+
+.choco-name-tag.pos-mid-right {
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  animation-name: chocoNameFloatMid;
+  animation-delay: 0.35s;
+}
+
+.choco-name-tag.pos-bottom-left {
+  bottom: 14px;
+  left: 14px;
+  animation-delay: 0.7s;
+}
+
+@keyframes chocoNameFloat {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  100% {
+    transform: translateY(-5px) scale(1.05);
+  }
+}
+
+@keyframes chocoNameFloatMid {
+  0% {
+    transform: translateY(-50%) scale(1);
+  }
+  100% {
+    transform: translateY(calc(-50% - 5px)) scale(1.05);
   }
 }
