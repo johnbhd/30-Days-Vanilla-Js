@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Pacifico&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="intro-active">
+<body class="celebration-started">
   <!-- Three.js 3D WebGL Birthday Scene (3D Glossy Balloons + 3D Confetti) -->
   <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
@@ -21,53 +21,14 @@
   <div class="ambient-glow glow-2" aria-hidden="true"></div>
   <div class="ambient-glow glow-3" aria-hidden="true"></div>
 
-  <!-- ==================== CINEMATIC BIRTHDAY INTRO OVERLAY ==================== -->
-  <div id="intro-overlay" class="intro-overlay" role="dialog" aria-label="Birthday Celebration Intro">
-    <div class="intro-sparkles" id="intro-sparkles" aria-hidden="true"></div>
-    <div class="intro-card" id="intro-card">
-      <div class="intro-balloons-cluster" aria-hidden="true">
-        <span class="intro-float-balloon b-left">🎈</span>
-        <span class="intro-gift-icon" id="intro-gift-icon">🎂</span>
-        <span class="intro-float-balloon b-right">🎈</span>
-      </div>
-      <p class="intro-tag">✨ A Special Birthday &amp; Friendship Tribute ✨</p>
-      <h2 class="intro-title">To The Best Friends Ever</h2>
-      <p class="intro-subtitle">
-        Jadrien • Mark • Kurt • Mai • Francis • Jamma • Earl • Jerzel
-      </p>
-      <button id="open-celebration-btn" class="open-celebration-btn" type="button">
-        <span>🎉 Open Celebration</span>
-        <span class="intro-countdown" id="intro-countdown">(Auto-starts in 3s)</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Top Mini Floating Action Bar -->
-  <header class="top-bar intro-step intro-step-0">
-    <div class="top-badge">
-      <span class="pulse-dot"></span>
-      <span>Birthday &amp; Friendship Loop</span>
-    </div>
-    <div class="top-actions">
-      <button id="replay-intro-btn" class="chip-btn" type="button" title="Replay Intro Animation">
-        ✨ Replay Intro
-      </button>
-      <button id="burst-btn" class="chip-btn" type="button" title="Launch Balloon &amp; Confetti Wave">
-        🎈 Release Balloons
-      </button>
-      <label for="folder-input" class="chip-btn file-label" title="Add or load more photos from a folder">
-        📂 +Photos
-        <input id="folder-input" type="file" accept="image/*" multiple hidden />
-      </label>
-    </div>
-  </header>
-
   <!-- ==================== MAIN CELEBRATION STAGE ==================== -->
   <main class="bday-stage">
     <!-- 1. Animated Message Loop Card -->
     <section class="message-card glass-panel intro-step intro-step-1" aria-live="polite">
-      <div class="crown-ribbon">
-        <span>🎊 HAPPY BIRTHDAY &amp; FRIENDSHIP MEMORIES 🎊</span>
+      <div class="crown-ribbon-wrap">
+        <button id="burst-btn" class="crown-ribbon release-balloon-btn" type="button" title="Launch Balloon &amp; Confetti Wave">
+          🎈 Release Balloons
+        </button>
       </div>
 
       <h1 class="gratitude-message">
@@ -78,18 +39,6 @@
         <span class="msg-body">for the friendship we had,</span>
         <span class="msg-blessing">God bless you all</span>
       </h1>
-
-      <!-- Friend Progress Pills (Synced with 1-second loop) -->
-      <div class="friends-roster" id="friends-roster" aria-label="Friends list">
-        <span class="roster-pill active" data-friend="0">Jadrien</span>
-        <span class="roster-pill" data-friend="1">Mark</span>
-        <span class="roster-pill" data-friend="2">Kurt</span>
-        <span class="roster-pill" data-friend="3">Mai</span>
-        <span class="roster-pill" data-friend="4">Francis</span>
-        <span class="roster-pill" data-friend="5">Jamma</span>
-        <span class="roster-pill" data-friend="6">Earl</span>
-        <span class="roster-pill" data-friend="7">Jerzel</span>
-      </div>
 
       <!-- 2. Two Birthday Emojis Below Message -->
       <div class="birthday-emojis-row intro-step intro-step-2" aria-label="Two birthday emojis">
@@ -121,10 +70,6 @@
           </div>
 
           <footer class="flashcard-caption-bar">
-            <div class="caption-left">
-              <span class="caption-heart">💛</span>
-              <span id="flashcard-label" class="caption-title">Friendship Memory #1</span>
-            </div>
             <div class="caption-right">
               <span id="flashcard-counter" class="photo-counter">1 / 12</span>
             </div>

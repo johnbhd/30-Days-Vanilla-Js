@@ -1,10 +1,10 @@
 /**
  * Three.js Birthday & Friendship Celebration
- * - Cinematic Birthday Intro Sequence (with balloon wave & 3D confetti burst)
+ * - Immediate Celebration Start (No Intro Blocker)
  * - 1-Second Friend Name Loop: Jadrien, Mark, Kurt, Mai, Francis, Jamma, Earl, Jerzel
  * - 2 Animated Birthday Emojis below the message
- * - In-and-Out 3D Flashcard Photo Loop for all images in the folder
- * - Three.js 3D Glossy Balloons + Moving SVG Balloon Graphics
+ * - In-and-Out 3D Flashcard Photo Loop for all 12 images in the folder
+ * - Clickable / Poppable Three.js 3D Balloons & Moving SVG Balloons (Pop Boom Explosion + Sound!)
  */
 
 (() => {
@@ -22,7 +22,7 @@
     'Jerzel'
   ];
 
-  const NAME_INTERVAL_MS = 1000; // 1-second change word loop as requested
+  const NAME_INTERVAL_MS = 1000; // 1-second change word loop
 
   // Flashcard timing (ms): Enter (580ms) + Hold (1700ms) + Exit (520ms) = ~2.8s per card loop
   const CARD_ENTER_MS = 580;
@@ -38,6 +38,8 @@
     { main: '#ff9f1c', dark: '#c46d00', light: '#ffd294' },
     { main: '#f72585', dark: '#a30b52', light: '#ff99c8' }
   ];
+
+  const BOOM_WORDS = ['Pogi si JB', 'Cute si JB'];
 
   // Default fallback list from images-manifest.js (all 12 JPEGs in Day 9/bday)
   const DEFAULT_IMAGES = Array.isArray(window.FOLDER_IMAGES) && window.FOLDER_IMAGES.length > 0
@@ -58,22 +60,13 @@
       ];
 
   // ==================== 2. DOM ELEMENTS ====================
-  const introOverlay = document.getElementById('intro-overlay');
-  const openCelebrationBtn = document.getElementById('open-celebration-btn');
-  const introCountdownEl = document.getElementById('intro-countdown');
-  const replayIntroBtn = document.getElementById('replay-intro-btn');
   const burstBtn = document.getElementById('burst-btn');
-  const folderInput = document.getElementById('folder-input');
-
   const friendNameEl = document.getElementById('friend-name');
-  const rosterPills = Array.from(document.querySelectorAll('.roster-pill'));
-
   const balloonOverlay = document.getElementById('balloon-overlay');
 
   const activeFlashcard = document.getElementById('active-flashcard');
   const flashcardImg = document.getElementById('flashcard-img');
   const flashcardBlurBg = document.getElementById('flashcard-blur-bg');
-  const flashcardLabel = document.getElementById('flashcard-label');
   const flashcardCounter = document.getElementById('flashcard-counter');
   const cardDotsContainer = document.getElementById('card-dots');
   const prevCardBtn = document.getElementById('prev-card-btn');
@@ -91,19 +84,124 @@
   let cardStageTimeout1 = null;
   let cardStageTimeout2 = null;
 
-  let introOpened = false;
-  let introCountdownTimer = null;
   let triggerThreeBurst = null; // Assigned by Three.js setup
+  let audioCtx = null;
 
-  // ==================== 4. 1-SECOND FRIEND NAME LOOP ====================
+  // ==================== 4. BALLOON POP / BOOM SOUND & VISUAL EXPLOSION ====================
+  function playBalloonPopBoomSound() {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      if (!audioCtx) {
+        audioCtx = new AudioContextClass();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+
+      // 1. Sharp Balloon Snap / Burst Noise
+      const bufferSize = Math.floor(audioCtx.sampleRate * 0.14);
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.24));
+      }
+
+      const whiteNoise = audioCtx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+
+      const bandpass = audioCtx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.setValueAtTime(950, now);
+      bandpass.Q.setValueAtTime(0.9, now);
+
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.65, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.13);
+
+      whiteNoise.connect(bandpass);
+      bandpass.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+      whiteNoise.start(now);
+
+      // 2. Deep Punchy "Boom" Oscillator Thump
+      const osc = audioCtx.createOscillator();
+      const oscGain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(38, now + 0.18);
+
+      oscGain.gain.setValueAtTime(0.75, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.008, now + 0.19);
+
+      osc.connect(oscGain);
+      oscGain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } catch (_) {
+      // Ignore if audio is blocked
+    }
+  }
+
+  function createBoomExplosion(clientX, clientY, primaryColor = '#ff4d8d') {
+    playBalloonPopBoomSound();
+
+    const boom = document.createElement('div');
+    boom.className = 'balloon-boom';
+    boom.style.left = `${clientX}px`;
+    boom.style.top = `${clientY}px`;
+    boom.style.setProperty('--boom-color', primaryColor);
+
+    // Core Flash + Shockwave Ring
+    const flash = document.createElement('div');
+    flash.className = 'boom-flash';
+    boom.appendChild(flash);
+
+    const ring = document.createElement('div');
+    ring.className = 'boom-ring';
+    boom.appendChild(ring);
+
+    // Flying Rubber & Confetti Shards
+    const shardCount = 18;
+    for (let i = 0; i < shardCount; i++) {
+      const shard = document.createElement('span');
+      shard.className = 'boom-shard';
+      const angle = (i / shardCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
+      const dist = 48 + Math.random() * 88;
+      const tx = Math.cos(angle) * dist;
+      const ty = Math.sin(angle) * dist;
+      const rot = -280 + Math.random() * 560;
+      const color = i % 2 === 0
+        ? primaryColor
+        : BALLOON_PALETTE[i % BALLOON_PALETTE.length].main;
+
+      shard.style.setProperty('--tx', `${tx.toFixed(1)}px`);
+      shard.style.setProperty('--ty', `${ty.toFixed(1)}px`);
+      shard.style.setProperty('--rot', `${rot.toFixed(0)}deg`);
+      shard.style.setProperty('--shard-color', color);
+      shard.style.setProperty('--shard-w', `${Math.round(7 + Math.random() * 9)}px`);
+      shard.style.setProperty('--shard-h', `${Math.round(5 + Math.random() * 6)}px`);
+      boom.appendChild(shard);
+    }
+
+    // Comic "💥 BOOM!" / "🎉 POP!" Floating Text
+    const label = document.createElement('div');
+    label.className = 'boom-text';
+    label.textContent = BOOM_WORDS[Math.floor(Math.random() * BOOM_WORDS.length)];
+    boom.appendChild(label);
+
+    document.body.appendChild(boom);
+    setTimeout(() => {
+      if (boom.parentNode) boom.parentNode.removeChild(boom);
+    }, 750);
+  }
+
+  // ==================== 5. 1-SECOND FRIEND NAME LOOP ====================
   function updateFriendDisplay(nextIndex) {
     friendIndex = ((nextIndex % FRIENDS.length) + FRIENDS.length) % FRIENDS.length;
     const nextName = FRIENDS[friendIndex];
-
-    // Update roster highlight immediately
-    rosterPills.forEach((pill, idx) => {
-      pill.classList.toggle('active', idx === friendIndex);
-    });
 
     // Animate old name out, then pop new name in within the 1-second window
     friendNameEl.classList.remove('name-enter');
@@ -124,7 +222,7 @@
     }, NAME_INTERVAL_MS);
   }
 
-  // ==================== 5. MOVING BALLOON SVG GRAPHICS ====================
+  // ==================== 6. MOVING & POPPABLE BALLOON SVG GRAPHICS ====================
   function createBalloonSVG(palette, uid) {
     return `
       <svg viewBox="0 0 100 165" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -154,8 +252,8 @@
     if (!balloonOverlay) return;
     balloonUidCounter += 1;
     const palette = BALLOON_PALETTE[Math.floor(Math.random() * BALLOON_PALETTE.length)];
-    const size = options.size || Math.floor(54 + Math.random() * 44);
-    const leftPct = options.left !== undefined ? options.left : Math.random() * 94;
+    const size = options.size || Math.floor(56 + Math.random() * 44);
+    const leftPct = options.left !== undefined ? options.left : Math.random() * 92;
     const duration = options.duration || (8.5 + Math.random() * 6.5);
     const swayDuration = 2.2 + Math.random() * 1.8;
     const delay = options.delay || 0;
@@ -167,6 +265,7 @@
     item.style.left = `${leftPct}%`;
     item.style.animationDuration = `${duration}s`;
     item.style.animationDelay = `${delay}s`;
+    item.title = 'Click to Pop! 💥';
 
     const swayWrap = document.createElement('span');
     swayWrap.className = 'floating-balloon-sway';
@@ -176,6 +275,19 @@
     swayWrap.innerHTML = createBalloonSVG(palette, balloonUidCounter);
 
     item.appendChild(swayWrap);
+
+    // Click / Tap on this SVG balloon -> POP BOOM EXPLODE!
+    item.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      const rect = item.getBoundingClientRect();
+      const popX = e.clientX || (rect.left + rect.width / 2);
+      const popY = e.clientY || (rect.top + rect.height * 0.4);
+      createBoomExplosion(popX, popY, palette.main);
+      if (item.parentNode) item.parentNode.removeChild(item);
+      // Spawn a replacement balloon from bottom so the party keeps going
+      setTimeout(() => spawnFloatingBalloon(), 300);
+    });
+
     balloonOverlay.appendChild(item);
 
     const totalMs = (duration + delay + 0.5) * 1000;
@@ -195,18 +307,17 @@
     }
   }
 
-  // Keep steady stream of moving background balloons
   function startContinuousBalloons() {
-    for (let i = 0; i < 6; i++) {
-      spawnFloatingBalloon({ delay: i * 0.9 });
+    for (let i = 0; i < 7; i++) {
+      spawnFloatingBalloon({ delay: i * 0.7 });
     }
     setInterval(() => {
       if (document.hidden) return;
       spawnFloatingBalloon();
-    }, 1800);
+    }, 1600);
   }
 
-  // ==================== 6. FLASHCARD IMAGE IN-AND-OUT LOOP ====================
+  // ==================== 7. FLASHCARD IMAGE IN-AND-OUT LOOP ====================
   function preloadImage(src) {
     return new Promise((resolve) => {
       const img = new Image();
@@ -234,12 +345,12 @@
   function updateCardDOM(index) {
     currentPhotoIndex = ((index % photos.length) + photos.length) % photos.length;
     const src = photos[currentPhotoIndex];
-    const friendDedicated = FRIENDS[currentPhotoIndex % FRIENDS.length];
 
     flashcardImg.src = src;
     flashcardBlurBg.style.backgroundImage = `url("${encodeURI(src)}")`;
-    flashcardLabel.textContent = `Friendship Memory #${currentPhotoIndex + 1} • ✨ ${friendDedicated}`;
-    flashcardCounter.textContent = `${currentPhotoIndex + 1} / ${photos.length}`;
+    if (flashcardCounter) {
+      flashcardCounter.textContent = `${currentPhotoIndex + 1} / ${photos.length}`;
+    }
 
     const dots = cardDotsContainer.querySelectorAll('.card-dot');
     dots.forEach((dot, i) => {
@@ -263,10 +374,10 @@
 
     // Phase 1: Animate IN
     activeFlashcard.classList.remove('is-holding', 'is-exiting');
-    void activeFlashcard.offsetWidth; // Force reflow so animation restarts cleanly
+    void activeFlashcard.offsetWidth; // Force reflow
     activeFlashcard.classList.add('is-entering');
 
-    // Phase 2: Switch to gentle 3D HOLD after entrance finishes
+    // Phase 2: Gentle 3D HOLD
     cardStageTimeout1 = setTimeout(() => {
       activeFlashcard.classList.remove('is-entering');
       activeFlashcard.classList.add('is-holding');
@@ -274,13 +385,13 @@
 
     if (!isFlashcardPlaying) return;
 
-    // Phase 3: Animate OUT after hold duration
+    // Phase 3: Animate OUT
     cardStageTimeout2 = setTimeout(() => {
       activeFlashcard.classList.remove('is-entering', 'is-holding');
       activeFlashcard.classList.add('is-exiting');
     }, CARD_ENTER_MS + CARD_HOLD_MS);
 
-    // Phase 4: Loop to next image after exit completes
+    // Phase 4: Loop to next image
     cardLoopTimer = setTimeout(() => {
       runFlashcardCycle(currentPhotoIndex + 1);
     }, CARD_ENTER_MS + CARD_HOLD_MS + CARD_EXIT_MS);
@@ -295,7 +406,6 @@
     }, 240);
   }
 
-  // Optional auto-discovery of extra images if served via local HTTP directory listing
   async function tryDiscoverExtraServerImages() {
     if (window.location.protocol === 'file:') return;
     try {
@@ -321,19 +431,6 @@
     }
   }
 
-  // Handle user adding extra photos via the "+Photos" picker
-  if (folderInput) {
-    folderInput.addEventListener('change', (e) => {
-      const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'));
-      if (!files.length) return;
-      const blobUrls = files.map((file) => URL.createObjectURL(file));
-      photos = [...blobUrls, ...photos];
-      renderCardDots();
-      jumpToCard(0);
-      launchBalloonWave(8);
-    });
-  }
-
   if (prevCardBtn) {
     prevCardBtn.addEventListener('click', () => jumpToCard(currentPhotoIndex - 1));
   }
@@ -354,7 +451,7 @@
     });
   }
 
-  // ==================== 7. THREE.JS 3D BALLOONS & CONFETTI SCENE ====================
+  // ==================== 8. THREE.JS 3D BALLOONS (CLICK TO POP!) & CONFETTI ====================
   function initThreeBirthdayScene() {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas || typeof THREE === 'undefined') return;
@@ -394,10 +491,11 @@
 
     // 3D Balloons Group
     const balloonColors = [0xff4d8d, 0xffd166, 0x4cc9f0, 0x06d6a0, 0x9b5de5, 0xff9f1c, 0xf72585];
+    const balloonCssColors = ['#ff4d8d', '#ffd166', '#4cc9f0', '#06d6a0', '#9b5de5', '#ff9f1c', '#f72585'];
     const balloons3D = [];
+    const clickableMeshes = [];
 
-    const sphereGeo = new THREE.SphereGeometry(1.1, 28, 28);
-    // Stretch vertically slightly for realistic teardrop balloon silhouette
+    const sphereGeo = new THREE.SphereGeometry(1.15, 28, 28);
     sphereGeo.scale(1, 1.22, 1);
 
     const knotGeo = new THREE.ConeGeometry(0.22, 0.28, 12);
@@ -407,7 +505,6 @@
       opacity: 0.45
     });
 
-    // Wavy string geometry
     const curve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(0, -1.35, 0),
       new THREE.Vector3(-0.15, -2.2, 0.08),
@@ -416,10 +513,12 @@
     ]);
     const stringGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(16));
 
-    const TOTAL_3D_BALLOONS = 20;
+    const TOTAL_3D_BALLOONS = 22;
     for (let i = 0; i < TOTAL_3D_BALLOONS; i++) {
       const group = new THREE.Group();
-      const colorHex = balloonColors[i % balloonColors.length];
+      const colorIdx = i % balloonColors.length;
+      const colorHex = balloonColors[colorIdx];
+      const cssColor = balloonCssColors[colorIdx];
 
       const mat = new THREE.MeshPhysicalMaterial({
         color: colorHex,
@@ -441,24 +540,29 @@
       const stringLine = new THREE.Line(stringGeo, stringMaterial);
       group.add(stringLine);
 
-      // Distribute across 3D space (mostly around edges & depth so center card stays readable)
       const spreadX = (Math.random() - 0.5) * 34;
       const spreadY = (Math.random() - 0.5) * 32;
       const spreadZ = -12 + Math.random() * 18;
       group.position.set(spreadX, spreadY, spreadZ);
 
-      const scale = 0.68 + Math.random() * 0.55;
-      group.scale.setScalar(scale);
+      const baseScale = 0.72 + Math.random() * 0.55;
+      group.scale.setScalar(baseScale);
 
       scene.add(group);
-      balloons3D.push({
+      const balloonRecord = {
         group,
+        bodyMesh,
+        cssColor,
+        baseScale,
         speedY: 0.024 + Math.random() * 0.032,
         swaySpeed: 0.8 + Math.random() * 1.4,
         swayAmp: 0.012 + Math.random() * 0.02,
         phase: Math.random() * Math.PI * 2,
         boostY: 0
-      });
+      };
+      bodyMesh.userData.balloonRecord = balloonRecord;
+      balloons3D.push(balloonRecord);
+      clickableMeshes.push(bodyMesh);
     }
 
     // 3D Confetti Particles
@@ -495,25 +599,58 @@
       });
     }
 
-    // Explosive burst function triggered on Intro Open or "Release Balloons" button
+    // Burst 3D confetti at a specific 3D position when a 3D balloon is popped!
+    let burstCursor = 0;
+    function spawn3DConfettiAt(pos3D) {
+      for (let i = 0; i < 36; i++) {
+        const c = confettiPieces[(burstCursor + i) % confettiPieces.length];
+        c.mesh.position.copy(pos3D);
+        const theta = Math.random() * Math.PI * 2;
+        const phi = (Math.random() - 0.5) * Math.PI;
+        const speed = 0.14 + Math.random() * 0.28;
+        c.velX = Math.cos(theta) * Math.cos(phi) * speed;
+        c.velY = Math.sin(phi) * speed + 0.08;
+        c.velZ = Math.sin(theta) * Math.cos(phi) * speed;
+      }
+      burstCursor = (burstCursor + 36) % confettiPieces.length;
+    }
+
+    // Raycaster so clicking any 3D balloon in the background pops & explodes it!
+    const raycaster = new THREE.Raycaster();
+    const pointerNDC = new THREE.Vector2();
+
+    window.addEventListener('pointerdown', (e) => {
+      // Ignore if clicking a control button
+      if (e.target && e.target.closest('button')) return;
+
+      pointerNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointerNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(pointerNDC, camera);
+      const intersects = raycaster.intersectObjects(clickableMeshes, false);
+
+      if (intersects.length > 0) {
+        const hitMesh = intersects[0].object;
+        const record = hitMesh.userData.balloonRecord;
+        if (record) {
+          // 1. Trigger 3D confetti explosion at balloon's 3D world position
+          spawn3DConfettiAt(record.group.position);
+          // 2. Trigger screen-space BOOM visual + POP sound
+          createBoomExplosion(e.clientX, e.clientY, record.cssColor);
+          // 3. Respawn the popped 3D balloon at the bottom of the scene
+          record.group.position.y = -20 - Math.random() * 5;
+          record.group.position.x = (Math.random() - 0.5) * 34;
+          record.boostY = 0.06;
+        }
+      }
+    });
+
+    // Global burst function for "Release Balloons" button
     triggerThreeBurst = () => {
       balloons3D.forEach((b) => {
         b.boostY = 0.11 + Math.random() * 0.08;
       });
-      confettiPieces.forEach((c, idx) => {
-        if (idx < 110) {
-          c.mesh.position.set(
-            (Math.random() - 0.5) * 4,
-            (Math.random() - 0.5) * 3,
-            2 + Math.random() * 6
-          );
-          const angle = Math.random() * Math.PI * 2;
-          const speed = 0.08 + Math.random() * 0.22;
-          c.velX = Math.cos(angle) * speed;
-          c.velY = Math.sin(angle) * speed + 0.08;
-          c.velZ = (Math.random() - 0.5) * 0.15;
-        }
-      });
+      spawn3DConfettiAt(new THREE.Vector3(0, 2, 4));
     };
 
     // Subtle mouse / touch parallax
@@ -546,7 +683,7 @@
       for (let i = 0; i < balloons3D.length; i++) {
         const b = balloons3D[i];
         b.group.position.y += b.speedY + b.boostY;
-        b.boostY *= 0.96; // Decay intro boost smoothly
+        b.boostY *= 0.96;
         b.group.position.x += Math.sin(elapsed * b.swaySpeed + b.phase) * b.swayAmp;
         b.group.rotation.z = Math.sin(elapsed * b.swaySpeed + b.phase) * 0.12;
         b.group.rotation.y = Math.cos(elapsed * 0.5 + b.phase) * 0.25;
@@ -564,7 +701,6 @@
         c.mesh.position.y += c.velY;
         c.mesh.position.z += c.velZ;
 
-        // Gravity pull back to gentle fall after burst
         c.velX *= 0.985;
         c.velZ *= 0.985;
         if (c.velY > -0.03) {
@@ -588,70 +724,6 @@
     animate();
   }
 
-  // ==================== 8. CINEMATIC INTRO SEQUENCE ====================
-  function openCelebration() {
-    if (introOpened) return;
-    introOpened = true;
-    if (introCountdownTimer) clearInterval(introCountdownTimer);
-
-    if (introOverlay) {
-      introOverlay.classList.add('is-hidden');
-    }
-    document.body.classList.remove('intro-active');
-    document.body.classList.add('celebration-started');
-
-    // Launch moving balloon wave + 3D confetti & balloon burst
-    launchBalloonWave(14);
-    if (typeof triggerThreeBurst === 'function') {
-      triggerThreeBurst();
-    }
-
-    // Start the 1-second friend name loop and flashcard loop
-    startFriendNameLoop();
-    runFlashcardCycle(0);
-  }
-
-  function startIntroSequence() {
-    introOpened = false;
-    document.body.classList.remove('celebration-started');
-    document.body.classList.add('intro-active');
-    if (introOverlay) {
-      introOverlay.classList.remove('is-hidden');
-    }
-
-    let secondsLeft = 3;
-    if (introCountdownEl) {
-      introCountdownEl.textContent = `(Auto-starts in ${secondsLeft}s)`;
-    }
-
-    if (introCountdownTimer) clearInterval(introCountdownTimer);
-    introCountdownTimer = setInterval(() => {
-      secondsLeft -= 1;
-      if (secondsLeft > 0) {
-        if (introCountdownEl) {
-          introCountdownEl.textContent = `(Auto-starts in ${secondsLeft}s)`;
-        }
-      } else {
-        clearInterval(introCountdownTimer);
-        openCelebration();
-      }
-    }, 950);
-  }
-
-  if (openCelebrationBtn) {
-    openCelebrationBtn.addEventListener('click', openCelebration);
-  }
-  if (introOverlay) {
-    introOverlay.addEventListener('click', (e) => {
-      if (e.target === introOverlay) openCelebration();
-    });
-  }
-  if (replayIntroBtn) {
-    replayIntroBtn.addEventListener('click', () => {
-      clearCardTimers();
-      startIntroSequence();
-    });
-  }
   if (burstBtn) {
     burstBtn.addEventListener('click', () => {
       launchBalloonWave(12);
@@ -661,9 +733,9 @@
     });
   }
 
-  // ==================== 9. INITIALIZE EVERYTHING ====================
+  // ==================== 9. INITIALIZE IMMEDIATELY ====================
   function init() {
-    // Preload first few images right away
+    document.body.classList.add('celebration-started');
     photos.slice(0, 4).forEach(preloadImage);
     renderCardDots();
     updateCardDOM(0);
@@ -671,7 +743,9 @@
 
     initThreeBirthdayScene();
     startContinuousBalloons();
-    startIntroSequence();
+    launchBalloonWave(10);
+    startFriendNameLoop();
+    runFlashcardCycle(0);
   }
 
   if (document.readyState === 'loading') {

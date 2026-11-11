@@ -52,7 +52,7 @@ body {
   inset: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 2;
+  z-index: 15;
   pointer-events: none;
   overflow: hidden;
 }
@@ -63,6 +63,126 @@ body {
   will-change: transform, opacity;
   filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45));
   animation: balloonRise linear forwards;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.floating-balloon-item:hover .floating-balloon-sway {
+  filter: brightness(1.18) drop-shadow(0 0 14px rgba(255, 209, 102, 0.65));
+}
+
+/* ==================== BALLOON POP / BOOM EXPLOSION ==================== */
+.balloon-boom {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.boom-flash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0.2);
+  background: radial-gradient(circle, #ffffff 0%, #ffd166 45%, transparent 75%);
+  animation: boomFlashAnim 0.42s ease-out forwards;
+}
+
+.boom-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3.5px solid var(--boom-color, #ffd166);
+  box-shadow: 0 0 20px var(--boom-color, #ffd166);
+  transform: translate(-50%, -50%) scale(0.2);
+  animation: boomRingAnim 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.boom-shard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--shard-w, 10px);
+  height: var(--shard-h, 6px);
+  border-radius: 4px;
+  background: var(--shard-color, #ff4d8d);
+  box-shadow: 0 0 8px var(--shard-color, #ff4d8d);
+  transform: translate(-50%, -50%);
+  animation: boomShardAnim 0.62s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.boom-text {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.4);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.25rem;
+  white-space: nowrap;
+  color: #ffd166;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.75), 0 0 16px rgba(255, 77, 141, 0.8);
+  animation: boomTextAnim 0.68s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes boomFlashAnim {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(5.2);
+  }
+}
+
+@keyframes boomRingAnim {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.3);
+    border-width: 5px;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(5.8);
+    border-width: 1px;
+  }
+}
+
+@keyframes boomShardAnim {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--tx, 60px)), calc(-50% + var(--ty, -60px)))
+               scale(0.25)
+               rotate(var(--rot, 240deg));
+  }
+}
+
+@keyframes boomTextAnim {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3) rotate(-10deg);
+  }
+  35% {
+    opacity: 1;
+    transform: translate(-50%, -75%) scale(1.18) rotate(4deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -135%) scale(0.9) rotate(0deg);
+  }
 }
 
 .floating-balloon-sway {
@@ -438,17 +558,33 @@ body.celebration-started .intro-step-3 {
   background: linear-gradient(90deg, transparent, var(--gold), var(--pink), var(--cyan), transparent);
 }
 
+.crown-ribbon-wrap {
+  margin-bottom: 12px;
+}
+
 .crown-ribbon {
-  display: inline-block;
-  padding: 4px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 18px;
   border-radius: 999px;
-  background: rgba(255, 209, 102, 0.14);
-  border: 1px solid rgba(255, 209, 102, 0.35);
+  background: rgba(255, 209, 102, 0.16);
+  border: 1px solid rgba(255, 209, 102, 0.42);
   color: var(--gold);
-  font-size: 0.72rem;
+  font-family: inherit;
+  font-size: 0.8rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  margin-bottom: 10px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.crown-ribbon:hover,
+.crown-ribbon:focus-visible {
+  background: rgba(255, 209, 102, 0.28);
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 18px rgba(255, 209, 102, 0.35);
 }
 
 .gratitude-message {
@@ -736,17 +872,9 @@ body.celebration-started .intro-step-3 {
 .flashcard-caption-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 9px 6px 2px;
+  justify-content: center;
+  padding: 8px 6px 2px;
   font-size: 0.85rem;
-}
-
-.caption-left {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-  color: #fff;
 }
 
 .photo-counter {
