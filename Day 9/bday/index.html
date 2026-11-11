@@ -13,8 +13,22 @@
   <!-- Three.js 3D WebGL Birthday Scene (3D Glossy Balloons + 3D Confetti) -->
   <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
-  <!-- Crisp Floating SVG Balloon Graphics Layer (Moving Upward & Swaying) -->
+  <!-- Crisp Floating SVG Balloon Graphics Layer (Behind Image) -->
   <div id="balloon-overlay" class="balloon-overlay" aria-hidden="true"></div>
+  <!-- Front Burst Layer for "Release Cake & Balloons" Button (In Front of All) -->
+  <div id="front-burst-overlay" class="balloon-overlay front-burst-overlay" aria-hidden="true"></div>
+
+  <!-- Colorful Smoke Trail & Custom 5-Second Changing Image Mouse Cursor -->
+  <div id="cursor-smoke-layer" class="cursor-smoke-layer" aria-hidden="true"></div>
+  <div id="custom-img-cursor" class="custom-img-cursor" aria-hidden="true">
+    <div class="cursor-color-aura"></div>
+    <img
+      id="custom-cursor-img"
+      class="custom-cursor-img"
+      src="cursor/IMG_20261111_132133_012437-removebg-preview.png"
+      alt=""
+    />
+  </div>
 
   <!-- Ambient Glow Orbs -->
   <div class="ambient-glow glow-1" aria-hidden="true"></div>
@@ -47,48 +61,292 @@
       </div>
     </section>
 
-    <!-- 3. Flashcard of Images Loop (In-and-Out Animation Below Emojis) -->
-    <section class="flashcard-section intro-step intro-step-3" aria-label="Friendship Photo Flashcards">
-      <div class="flashcard-deck-wrapper" id="flashcard-deck-wrapper">
-        <!-- Decorative Stacked Cards Behind Active Flashcard -->
-        <div class="deck-ghost deck-ghost-2" aria-hidden="true"></div>
-        <div class="deck-ghost deck-ghost-1" aria-hidden="true"></div>
+    <!-- 3. Flashcard of Images Loop + Steady Moving Chocolate Cake on Right (Stacks Down on Mobile) -->
+    <section class="flashcard-section intro-step intro-step-3" aria-label="Friendship Photo Flashcards and Chocolate Birthday Cake">
+      <div class="media-showcase-row">
+        <!-- Left Column: Flashcard Image Loop + Controls -->
+        <div class="flashcard-col">
+          <div class="flashcard-deck-wrapper" id="flashcard-deck-wrapper">
+            <!-- Decorative Stacked Cards Behind Active Flashcard -->
+            <div class="deck-ghost deck-ghost-2" aria-hidden="true"></div>
+            <div class="deck-ghost deck-ghost-1" aria-hidden="true"></div>
 
-        <!-- Active Animated Flashcard (In & Out Loop) -->
-        <article class="flashcard is-entering" id="active-flashcard">
-          <div class="flashcard-pin" aria-hidden="true">🎈</div>
-          <div class="flashcard-photo-viewport">
-            <!-- Blurred ambient fill so portrait & landscape photos both fill the frame without cropping faces -->
-            <div class="flashcard-blur-bg" id="flashcard-blur-bg"></div>
-            <img
-              id="flashcard-img"
-              class="flashcard-img"
-              src="Messenger_creation_1068577195033636_010226.jpeg"
-              alt="Friendship memory photo"
-            />
-            <div class="flashcard-shimmer" aria-hidden="true"></div>
+            <!-- Active Animated Flashcard (In & Out Loop) -->
+            <article class="flashcard is-entering" id="active-flashcard">
+              <div class="flashcard-pin" aria-hidden="true">🎈</div>
+              <div class="flashcard-photo-viewport">
+                <!-- Blurred ambient fill so portrait & landscape photos both fill the frame without cropping faces -->
+                <div class="flashcard-blur-bg" id="flashcard-blur-bg"></div>
+                <img
+                  id="flashcard-img"
+                  class="flashcard-img"
+                  src="Messenger_creation_1068577195033636_010226.jpeg"
+                  alt="Friendship memory photo"
+                />
+                <div class="flashcard-shimmer" aria-hidden="true"></div>
+              </div>
+
+              <footer class="flashcard-caption-bar">
+                <div class="caption-right">
+                  <span id="flashcard-counter" class="photo-counter">1 / 12</span>
+                </div>
+              </footer>
+            </article>
           </div>
 
-          <footer class="flashcard-caption-bar">
-            <div class="caption-right">
-              <span id="flashcard-counter" class="photo-counter">1 / 12</span>
-            </div>
-          </footer>
-        </article>
-      </div>
+          <!-- Flashcard Controls & Thumbnail Progress Dots -->
+          <div class="flashcard-controls">
+            <button id="prev-card-btn" class="ctrl-btn" type="button" aria-label="Previous photo" title="Previous Photo">
+              ◀
+            </button>
+            <div class="card-dots" id="card-dots" role="tablist" aria-label="Photo indicators"></div>
+            <button id="toggle-play-btn" class="ctrl-btn play-pause" type="button" aria-label="Pause or resume slideshow" title="Pause / Resume Flashcard Loop">
+              ⏸
+            </button>
+            <button id="next-card-btn" class="ctrl-btn" type="button" aria-label="Next photo" title="Next Photo">
+              ▶
+            </button>
+          </div>
+        </div>
 
-      <!-- Flashcard Controls & Thumbnail Progress Dots -->
-      <div class="flashcard-controls">
-        <button id="prev-card-btn" class="ctrl-btn" type="button" aria-label="Previous photo" title="Previous Photo">
-          ◀
-        </button>
-        <div class="card-dots" id="card-dots" role="tablist" aria-label="Photo indicators"></div>
-        <button id="toggle-play-btn" class="ctrl-btn play-pause" type="button" aria-label="Pause or resume slideshow" title="Pause / Resume Flashcard Loop">
-          ⏸
-        </button>
-        <button id="next-card-btn" class="ctrl-btn" type="button" aria-label="Next photo" title="Next Photo">
-          ▶
-        </button>
+        <!-- Right Column (Goes Down on Mobile): Steady Animated Chocolate Cake (Same Size as Img) -->
+        <div class="choco-cake-col">
+          <div class="choco-cake-card" id="steady-choco-cake" title="Click the Chocolate Cake! 🍫🎂">
+            <div class="choco-cake-viewport">
+              <div class="choco-ambient-glow" aria-hidden="true"></div>
+              <svg class="choco-cake-gif-svg" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated Chocolate Birthday Cake">
+                <defs>
+                  <!-- Rich Dark Chocolate Gradients -->
+                  <linearGradient id="chocoSpongeDark" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#3b190b" />
+                    <stop offset="35%" stop-color="#562814" />
+                    <stop offset="70%" stop-color="#3b190b" />
+                    <stop offset="100%" stop-color="#240e05" />
+                  </linearGradient>
+                  <linearGradient id="chocoSpongeMilk" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#522512" />
+                    <stop offset="40%" stop-color="#70361d" />
+                    <stop offset="75%" stop-color="#4d2210" />
+                    <stop offset="100%" stop-color="#311307" />
+                  </linearGradient>
+                  <linearGradient id="chocoGanache" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#2c1106" />
+                    <stop offset="55%" stop-color="#1b0903" />
+                    <stop offset="100%" stop-color="#120501" />
+                  </linearGradient>
+                  <linearGradient id="chocoCream" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#c68b59" />
+                    <stop offset="50%" stop-color="#9c6234" />
+                    <stop offset="100%" stop-color="#6f411c" />
+                  </linearGradient>
+                  <linearGradient id="goldStand" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#e09f3e" />
+                    <stop offset="50%" stop-color="#ffd166" />
+                    <stop offset="100%" stop-color="#b57614" />
+                  </linearGradient>
+                  <radialGradient id="candleFlameOuter" cx="50%" cy="62%" r="55%">
+                    <stop offset="0%" stop-color="#fffef2" />
+                    <stop offset="38%" stop-color="#ffd166" />
+                    <stop offset="75%" stop-color="#ff7b00" />
+                    <stop offset="100%" stop-color="rgba(255, 60, 0, 0)" />
+                  </radialGradient>
+                  <radialGradient id="flameHalo" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="rgba(255, 209, 102, 0.65)" />
+                    <stop offset="100%" stop-color="rgba(255, 209, 102, 0)" />
+                  </radialGradient>
+                </defs>
+
+                <!-- Floating Animated Sparkles Around the Chocolate Cake -->
+                <g class="choco-sparkles">
+                  <circle class="c-spark s1" cx="62" cy="95" r="4" fill="#ffd166" />
+                  <circle class="c-spark s2" cx="298" cy="105" r="3.5" fill="#ffb703" />
+                  <circle class="c-spark s3" cx="48" cy="195" r="3" fill="#ff9ebb" />
+                  <circle class="c-spark s4" cx="312" cy="190" r="4.5" fill="#ffd166" />
+                  <circle class="c-spark s5" cx="95" cy="52" r="3" fill="#4cc9f0" />
+                  <circle class="c-spark s6" cx="268" cy="56" r="3.5" fill="#06d6a0" />
+                </g>
+
+                <!-- Main Animated Cake Group (GIF-style continuous lively motion) -->
+                <g class="choco-cake-body-anim">
+                  <!-- Drop Shadow Under Cake Stand -->
+                  <ellipse cx="180" cy="326" rx="134" ry="14" fill="rgba(0,0,0,0.55)" />
+
+                  <!-- Golden Pedestal & Cake Stand Plate -->
+                  <path d="M136 306 L224 306 L242 324 L118 324 Z" fill="url(#goldStand)" />
+                  <ellipse cx="180" cy="304" rx="138" ry="15" fill="url(#goldStand)" stroke="#fff3c4" stroke-width="2" />
+                  <ellipse cx="180" cy="301" rx="126" ry="10" fill="#3a190b" opacity="0.45" />
+
+                  <!-- ==================== BOTTOM TIER (DARK CHOCOLATE FUDGE) ==================== -->
+                  <rect x="64" y="210" width="232" height="92" rx="16" fill="url(#chocoSpongeDark)" />
+                  <!-- Fudge Filling Middle Band -->
+                  <rect x="64" y="252" width="232" height="10" fill="#1e0a03" />
+                  <rect x="64" y="255" width="232" height="3" fill="#8c5332" opacity="0.6" />
+
+                  <!-- Bottom Base Chocolate Cream Piping Pearls -->
+                  <g fill="url(#chocoCream)">
+                    <circle cx="76" cy="298" r="8" />
+                    <circle cx="96" cy="300" r="8" />
+                    <circle cx="116" cy="301" r="8" />
+                    <circle cx="136" cy="302" r="8" />
+                    <circle cx="156" cy="303" r="8" />
+                    <circle cx="176" cy="303" r="8" />
+                    <circle cx="196" cy="303" r="8" />
+                    <circle cx="216" cy="302" r="8" />
+                    <circle cx="236" cy="301" r="8" />
+                    <circle cx="256" cy="300" r="8" />
+                    <circle cx="276" cy="298" r="8" />
+                    <circle cx="290" cy="296" r="7" />
+                  </g>
+
+                  <!-- Animated Melted Dark Chocolate Ganache Drips (Bottom Tier) -->
+                  <g class="ganache-drip-anim-1">
+                    <path d="M64 218
+                             Q64 206 82 206
+                             L278 206
+                             Q296 206 296 218
+                             L296 232
+                             Q286 254 276 232
+                             Q266 218 256 244
+                             Q246 268 236 236
+                             Q226 218 214 252
+                             Q202 276 190 236
+                             Q180 218 168 260
+                             Q156 284 144 238
+                             Q134 220 122 250
+                             Q110 272 98 234
+                             Q86 218 76 242
+                             Q68 254 64 230 Z"
+                          fill="url(#chocoGanache)" />
+                    <!-- Glossy Chocolate Shine Highlights -->
+                    <path d="M84 214 L155 214" stroke="rgba(255,255,255,0.28)" stroke-width="4" stroke-linecap="round" />
+                    <path d="M185 214 L265 214" stroke="rgba(255,255,255,0.22)" stroke-width="3.5" stroke-linecap="round" />
+                  </g>
+
+                  <!-- ==================== TOP TIER (MILK & DARK CHOCOLATE TRUFFLE) ==================== -->
+                  <rect x="96" y="132" width="168" height="80" rx="14" fill="url(#chocoSpongeMilk)" />
+                  <!-- Truffle Filling Band -->
+                  <rect x="96" y="168" width="168" height="8" fill="#210b04" />
+                  <rect x="96" y="171" width="168" height="2.5" fill="#b0754b" opacity="0.65" />
+
+                  <!-- Tier Divider Chocolate Rosettes -->
+                  <g fill="url(#chocoCream)">
+                    <ellipse cx="106" cy="210" rx="11" ry="7" />
+                    <ellipse cx="130" cy="211" rx="11" ry="7" />
+                    <ellipse cx="154" cy="212" rx="11" ry="7" />
+                    <ellipse cx="178" cy="212" rx="11" ry="7" />
+                    <ellipse cx="202" cy="212" rx="11" ry="7" />
+                    <ellipse cx="226" cy="211" rx="11" ry="7" />
+                    <ellipse cx="250" cy="210" rx="11" ry="7" />
+                  </g>
+
+                  <!-- Animated Melted Dark Chocolate Ganache Drips (Top Tier) -->
+                  <g class="ganache-drip-anim-2">
+                    <path d="M96 142
+                             Q96 128 112 128
+                             L248 128
+                             Q264 128 264 142
+                             L264 152
+                             Q254 176 244 152
+                             Q234 138 222 168
+                             Q210 190 198 152
+                             Q188 138 176 174
+                             Q164 196 152 154
+                             Q142 138 130 166
+                             Q118 186 108 152
+                             Q100 164 96 150 Z"
+                          fill="url(#chocoGanache)" />
+                    <!-- Top Ganache Glossy Crown -->
+                    <ellipse cx="180" cy="132" rx="82" ry="9" fill="#2b1005" />
+                    <path d="M114 133 Q180 140 246 133" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="3.5" stroke-linecap="round" />
+                  </g>
+
+                  <!-- Whipped Chocolate Swirls & Bouncing Red Cherries on Top -->
+                  <g class="top-cherries-anim">
+                    <!-- Swirl 1 -->
+                    <ellipse cx="118" cy="128" rx="13" ry="8" fill="url(#chocoCream)" />
+                    <circle cx="118" cy="120" r="7.5" fill="#e63946" />
+                    <circle cx="116" cy="118" r="2.2" fill="#ffb3c1" />
+                    <path d="M118 113 Q123 102 130 100" fill="none" stroke="#a31621" stroke-width="2" stroke-linecap="round" />
+
+                    <!-- Swirl 2 -->
+                    <ellipse cx="150" cy="130" rx="13" ry="8" fill="url(#chocoCream)" />
+                    <circle cx="150" cy="122" r="7.5" fill="#e63946" />
+                    <circle cx="148" cy="120" r="2.2" fill="#ffb3c1" />
+
+                    <!-- Swirl 3 (Center Chocolate Bar & Cherry) -->
+                    <rect x="171" y="108" width="18" height="22" rx="3" transform="rotate(-12 180 119)" fill="#3c180a" stroke="#7a3e21" stroke-width="1.5" />
+                    <ellipse cx="180" cy="131" rx="14" ry="8.5" fill="url(#chocoCream)" />
+                    <circle cx="180" cy="123" r="8" fill="#d90429" />
+                    <circle cx="177" cy="120" r="2.5" fill="#ffccd5" />
+
+                    <!-- Swirl 4 -->
+                    <ellipse cx="210" cy="130" rx="13" ry="8" fill="url(#chocoCream)" />
+                    <circle cx="210" cy="122" r="7.5" fill="#e63946" />
+                    <circle cx="208" cy="120" r="2.2" fill="#ffb3c1" />
+
+                    <!-- Swirl 5 -->
+                    <ellipse cx="242" cy="128" rx="13" ry="8" fill="url(#chocoCream)" />
+                    <circle cx="242" cy="120" r="7.5" fill="#e63946" />
+                    <circle cx="240" cy="118" r="2.2" fill="#ffb3c1" />
+                    <path d="M242 113 Q247 102 254 100" fill="none" stroke="#a31621" stroke-width="2" stroke-linecap="round" />
+                  </g>
+
+                  <!-- Sprinkles & Gold Chips on Chocolate Tiers -->
+                  <g>
+                    <rect x="95" y="268" width="10" height="4" rx="2" transform="rotate(-20 95 268)" fill="#ffd166" />
+                    <rect x="138" y="276" width="10" height="4" rx="2" transform="rotate(15 138 276)" fill="#ff4d8d" />
+                    <rect x="182" y="272" width="10" height="4" rx="2" transform="rotate(-12 182 272)" fill="#4cc9f0" />
+                    <rect x="225" y="278" width="10" height="4" rx="2" transform="rotate(24 225 278)" fill="#06d6a0" />
+                    <rect x="262" y="266" width="10" height="4" rx="2" transform="rotate(-18 262 266)" fill="#ffd166" />
+                    <rect x="124" y="186" width="9" height="3.8" rx="2" transform="rotate(18 124 186)" fill="#ffd166" />
+                    <rect x="176" y="192" width="9" height="3.8" rx="2" transform="rotate(-22 176 192)" fill="#ff9ebb" />
+                    <rect x="224" y="185" width="9" height="3.8" rx="2" transform="rotate(14 224 185)" fill="#4cc9f0" />
+                  </g>
+
+                  <!-- ==================== 3 LIT BIRTHDAY CANDLES WITH MOVING FLAMES ==================== -->
+                  <!-- Left Candle -->
+                  <g transform="translate(134, 68)">
+                    <rect x="-6" y="12" width="12" height="46" rx="4" fill="#fff5f8" />
+                    <path d="M-6 22 L6 16 M-6 34 L6 28 M-6 46 L6 40" stroke="#ff4d8d" stroke-width="3.5" />
+                    <line x1="0" y1="6" x2="0" y2="12" stroke="#2b1005" stroke-width="2" />
+                    <circle class="flame-halo" cx="0" cy="-4" r="22" fill="url(#flameHalo)" />
+                    <g class="candle-flame-anim f-left">
+                      <path d="M0 -24 C9 -12 9 2 0 7 C-9 2 -9 -12 0 -24 Z" fill="url(#candleFlameOuter)" />
+                      <path d="M0 -13 C4 -6 4 1 0 4 C-4 1 -4 -6 0 -13 Z" fill="#ffffff" />
+                    </g>
+                  </g>
+
+                  <!-- Center Tall Candle -->
+                  <g transform="translate(180, 56)">
+                    <rect x="-7" y="12" width="14" height="56" rx="4" fill="#fffef2" />
+                    <path d="M-7 22 L7 15 M-7 36 L7 29 M-7 50 L7 43" stroke="#ffb703" stroke-width="4" />
+                    <line x1="0" y1="5" x2="0" y2="12" stroke="#2b1005" stroke-width="2.2" />
+                    <circle class="flame-halo" cx="0" cy="-6" r="26" fill="url(#flameHalo)" />
+                    <g class="candle-flame-anim f-center">
+                      <path d="M0 -28 C11 -14 11 2 0 8 C-11 2 -11 -14 0 -28 Z" fill="url(#candleFlameOuter)" />
+                      <path d="M0 -15 C5 -7 5 1 0 5 C-5 1 -5 -7 0 -15 Z" fill="#ffffff" />
+                    </g>
+                  </g>
+
+                  <!-- Right Candle -->
+                  <g transform="translate(226, 68)">
+                    <rect x="-6" y="12" width="12" height="46" rx="4" fill="#f0fbff" />
+                    <path d="M-6 22 L6 16 M-6 34 L6 28 M-6 46 L6 40" stroke="#4cc9f0" stroke-width="3.5" />
+                    <line x1="0" y1="6" x2="0" y2="12" stroke="#2b1005" stroke-width="2" />
+                    <circle class="flame-halo" cx="0" cy="-4" r="22" fill="url(#flameHalo)" />
+                    <g class="candle-flame-anim f-right">
+                      <path d="M0 -24 C9 -12 9 2 0 7 C-9 2 -9 -12 0 -24 Z" fill="url(#candleFlameOuter)" />
+                      <path d="M0 -13 C4 -6 4 1 0 4 C-4 1 -4 -6 0 -13 Z" fill="#ffffff" />
+                    </g>
+                  </g>
+                </g>
+              </svg>
+            </div>
+            <div class="choco-cake-footer">
+              <span class="choco-badge">🍫 Happy Birthday Chocolate Cake 🎂</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </main>

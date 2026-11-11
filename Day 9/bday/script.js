@@ -63,6 +63,7 @@
   const burstBtn = document.getElementById('burst-btn');
   const friendNameEl = document.getElementById('friend-name');
   const balloonOverlay = document.getElementById('balloon-overlay');
+  const frontBurstOverlay = document.getElementById('front-burst-overlay');
 
   const activeFlashcard = document.getElementById('active-flashcard');
   const flashcardImg = document.getElementById('flashcard-img');
@@ -288,7 +289,8 @@
       setTimeout(() => spawnFloatingBalloon(), 300);
     });
 
-    balloonOverlay.appendChild(item);
+    const targetContainer = (options.front && frontBurstOverlay) ? frontBurstOverlay : balloonOverlay;
+    targetContainer.appendChild(item);
 
     const totalMs = (duration + delay + 0.5) * 1000;
     setTimeout(() => {
@@ -296,13 +298,14 @@
     }, totalMs);
   }
 
-  function launchBalloonWave(count = 12) {
+  function launchBalloonWave(count = 12, front = false) {
     for (let i = 0; i < count; i++) {
       spawnFloatingBalloon({
         left: (i / count) * 92 + (Math.random() * 6),
         duration: 6.5 + Math.random() * 4.5,
         delay: i * 0.12,
-        size: 58 + Math.random() * 42
+        size: 58 + Math.random() * 42,
+        front
       });
     }
   }
@@ -814,7 +817,8 @@
       setTimeout(() => spawnFloatingCake(), 300);
     });
 
-    balloonOverlay.appendChild(item);
+    const targetContainer = (options.front && frontBurstOverlay) ? frontBurstOverlay : balloonOverlay;
+    targetContainer.appendChild(item);
 
     const totalMs = (duration + delay + 0.5) * 1000;
     setTimeout(() => {
@@ -822,13 +826,14 @@
     }, totalMs);
   }
 
-  function launchCakeWave(count = 8) {
+  function launchCakeWave(count = 8, front = false) {
     for (let i = 0; i < count; i++) {
       spawnFloatingCake({
         left: (i / count) * 88 + (Math.random() * 8),
         duration: 6.5 + Math.random() * 4.5,
         delay: i * 0.14,
-        size: 62 + Math.random() * 32
+        size: 62 + Math.random() * 32,
+        front
       });
     }
   }
@@ -843,14 +848,143 @@
     }, 1900);
   }
 
+  const steadyChocoCake = document.getElementById('steady-choco-cake');
+  if (steadyChocoCake) {
+    steadyChocoCake.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      const rect = steadyChocoCake.getBoundingClientRect();
+      const popX = e.clientX || (rect.left + rect.width / 2);
+      const popY = e.clientY || (rect.top + rect.height / 2);
+      createBoomExplosion(popX, popY, '#ffd166');
+    });
+  }
+
   if (burstBtn) {
     burstBtn.addEventListener('click', () => {
-      launchBalloonWave(10);
-      launchCakeWave(8);
+      launchBalloonWave(10, true);
+      launchCakeWave(8, true);
       if (typeof triggerThreeBurst === 'function') {
         triggerThreeBurst();
       }
     });
+  }
+
+  // ==================== 8C. 5-SECOND CHANGING IMAGE MOUSE CURSOR & COLOR SMOKE ====================
+  const CURSOR_IMAGES = [
+    'cursor/IMG_20261111_132133_012437-removebg-preview.png',
+    'cursor/IMG_20261111_132145_012435-removebg-preview.png',
+    'cursor/IMG_20261111_132251_012433-removebg-preview.png',
+    'cursor/IMG_20261111_132303_012423-removebg-preview.png',
+    'cursor/IMG_20261111_132342_012402-removebg-preview.png'
+  ];
+
+  const SMOKE_COLORS = [
+    { core: '#ff4d8d', outer: 'rgba(255, 77, 141, 0.48)' },
+    { core: '#ffd166', outer: 'rgba(255, 209, 102, 0.48)' },
+    { core: '#4cc9f0', outer: 'rgba(76, 201, 240, 0.48)' },
+    { core: '#06d6a0', outer: 'rgba(6, 214, 160, 0.48)' },
+    { core: '#9b5de5', outer: 'rgba(155, 93, 229, 0.48)' },
+    { core: '#ff9f1c', outer: 'rgba(255, 159, 28, 0.48)' },
+    { core: '#f72585', outer: 'rgba(247, 37, 133, 0.48)' }
+  ];
+
+  function initCustomCursorAndSmoke() {
+    const customCursor = document.getElementById('custom-img-cursor');
+    const customCursorImg = document.getElementById('custom-cursor-img');
+    const smokeLayer = document.getElementById('cursor-smoke-layer');
+    if (!customCursor || !customCursorImg || !smokeLayer) return;
+
+    // Preload all 5 cursor images
+    CURSOR_IMAGES.forEach(preloadImage);
+
+    let cursorIdx = 0;
+    let cursorX = window.innerWidth * 0.5;
+    let cursorY = window.innerHeight * 0.5;
+    let lastSmokeTime = 0;
+    let smokeColorCursor = 0;
+
+    function spawnSmokePuff(x, y, sizeBoost = 1) {
+      smokeColorCursor = (smokeColorCursor + 1) % SMOKE_COLORS.length;
+      const palette = SMOKE_COLORS[smokeColorCursor];
+      const puff = document.createElement('span');
+      puff.className = 'smoke-puff';
+      const size = Math.round((22 + Math.random() * 22) * sizeBoost);
+      const dx = (Math.random() - 0.5) * 44;
+      const dy = -18 - Math.random() * 38;
+      const dur = 0.65 + Math.random() * 0.45;
+
+      puff.style.width = `${size}px`;
+      puff.style.height = `${size}px`;
+      puff.style.left = `${x + (Math.random() - 0.5) * 14}px`;
+      puff.style.top = `${y + (Math.random() - 0.5) * 14}px`;
+      puff.style.setProperty('--smoke-color', palette.core);
+      puff.style.setProperty('--smoke-outer', palette.outer);
+      puff.style.setProperty('--dx', `${dx.toFixed(1)}px`);
+      puff.style.setProperty('--dy', `${dy.toFixed(1)}px`);
+      puff.style.setProperty('--smoke-dur', `${dur.toFixed(2)}s`);
+
+      smokeLayer.appendChild(puff);
+      setTimeout(() => {
+        if (puff.parentNode) puff.parentNode.removeChild(puff);
+      }, dur * 1000 + 80);
+    }
+
+    function spawnSmokeBurst(x, y, count = 7) {
+      for (let i = 0; i < count; i++) {
+        spawnSmokePuff(
+          x + (Math.random() - 0.5) * 28,
+          y + (Math.random() - 0.5) * 28,
+          1.25
+        );
+      }
+    }
+
+    function moveCursorTo(x, y) {
+      cursorX = x;
+      cursorY = y;
+      customCursor.style.left = `${x}px`;
+      customCursor.style.top = `${y}px`;
+
+      const now = performance.now();
+      if (now - lastSmokeTime > 28) {
+        lastSmokeTime = now;
+        spawnSmokePuff(x, y);
+      }
+    }
+
+    window.addEventListener('pointermove', (e) => {
+      moveCursorTo(e.clientX, e.clientY);
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches[0]) {
+        moveCursorTo(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    window.addEventListener('pointerdown', (e) => {
+      moveCursorTo(e.clientX, e.clientY);
+      customCursor.classList.add('is-clicking');
+      spawnSmokeBurst(e.clientX, e.clientY, 6);
+      setTimeout(() => customCursor.classList.remove('is-clicking'), 180);
+    }, { passive: true });
+
+    // Gentle idle colorful smoke around cursor even when mouse is still
+    setInterval(() => {
+      if (document.hidden) return;
+      spawnSmokePuff(cursorX, cursorY, 0.9);
+    }, 220);
+
+    // Change cursor image every 5 seconds (5000ms) with colorful smoke burst!
+    setInterval(() => {
+      cursorIdx = (cursorIdx + 1) % CURSOR_IMAGES.length;
+      customCursorImg.classList.add('is-swapping');
+      spawnSmokeBurst(cursorX, cursorY, 8);
+      setTimeout(() => {
+        customCursorImg.src = CURSOR_IMAGES[cursorIdx];
+        customCursorImg.classList.remove('is-swapping');
+      }, 180);
+    }, 5000);
   }
 
   // ==================== 9. INITIALIZE IMMEDIATELY ====================
@@ -866,6 +1000,7 @@
     startContinuousCakes();
     launchBalloonWave(8);
     launchCakeWave(6);
+    initCustomCursorAndSmoke();
     startFriendNameLoop();
     runFlashcardCycle(0);
   }
