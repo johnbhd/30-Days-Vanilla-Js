@@ -88,62 +88,226 @@
   let triggerThreeBurst = null; // Assigned by Three.js setup
   let audioCtx = null;
 
-  // ==================== 4. BALLOON POP / BOOM SOUND & VISUAL EXPLOSION ====================
-  function playBalloonPopBoomSound() {
-    try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextClass) return;
-      if (!audioCtx) {
-        audioCtx = new AudioContextClass();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+  // ==================== 4. BIRTHDAY GAME SOUND ENGINE (8-BIT BGM + ARCADE POP SFX) ====================
+  let isSoundMuted = false;
+  let bgmStarted = false;
+  let bgmTimerId = null;
 
-      const now = audioCtx.currentTime;
+  function ensureAudioContext() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    if (!audioCtx) {
+      audioCtx = new AudioContextClass();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  }
+
+  function playBalloonPopBoomSound() {
+    if (isSoundMuted) return;
+    try {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+
+      const now = ctx.currentTime;
 
       // 1. Sharp Balloon Snap / Burst Noise
-      const bufferSize = Math.floor(audioCtx.sampleRate * 0.14);
-      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const bufferSize = Math.floor(ctx.sampleRate * 0.14);
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const output = noiseBuffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
         output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.24));
       }
 
-      const whiteNoise = audioCtx.createBufferSource();
+      const whiteNoise = ctx.createBufferSource();
       whiteNoise.buffer = noiseBuffer;
 
-      const bandpass = audioCtx.createBiquadFilter();
+      const bandpass = ctx.createBiquadFilter();
       bandpass.type = 'bandpass';
       bandpass.frequency.setValueAtTime(950, now);
       bandpass.Q.setValueAtTime(0.9, now);
 
-      const noiseGain = audioCtx.createGain();
-      noiseGain.gain.setValueAtTime(0.65, now);
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.55, now);
       noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.13);
 
       whiteNoise.connect(bandpass);
       bandpass.connect(noiseGain);
-      noiseGain.connect(audioCtx.destination);
+      noiseGain.connect(ctx.destination);
       whiteNoise.start(now);
 
       // 2. Deep Punchy "Boom" Oscillator Thump
-      const osc = audioCtx.createOscillator();
-      const oscGain = audioCtx.createGain();
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(220, now);
       osc.frequency.exponentialRampToValueAtTime(38, now + 0.18);
 
-      oscGain.gain.setValueAtTime(0.75, now);
+      oscGain.gain.setValueAtTime(0.65, now);
       oscGain.gain.exponentialRampToValueAtTime(0.008, now + 0.19);
 
       osc.connect(oscGain);
-      oscGain.connect(audioCtx.destination);
+      oscGain.connect(ctx.destination);
       osc.start(now);
       osc.stop(now + 0.2);
+
+      // 3. Arcade Game Birthday Power-Up Coin Chime (G5 -> C6 -> E6)
+      const chimeNotes = [783.99, 1046.50, 1318.51];
+      chimeNotes.forEach((freq, idx) => {
+        const cOsc = ctx.createOscillator();
+        const cGain = ctx.createGain();
+        const st = now + idx * 0.055;
+        cOsc.type = 'square';
+        cOsc.frequency.setValueAtTime(freq, st);
+        cGain.gain.setValueAtTime(0.09, st);
+        cGain.gain.exponentialRampToValueAtTime(0.001, st + 0.16);
+        cOsc.connect(cGain);
+        cGain.connect(ctx.destination);
+        cOsc.start(st);
+        cOsc.stop(st + 0.17);
+      });
     } catch (_) {
       // Ignore if audio is blocked
     }
+  }
+
+  function playBirthdayGameFanfare() {
+    if (isSoundMuted) return;
+    try {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      // Upbeat Game Victory Fanfare (C5, E5, G5, C6, G5, C6)
+      const fanfare = [
+        { f: 523.25, t: 0.0, d: 0.11 },
+        { f: 659.25, t: 0.1, d: 0.11 },
+        { f: 783.99, t: 0.2, d: 0.11 },
+        { f: 1046.50, t: 0.3, d: 0.22 },
+        { f: 783.99, t: 0.52, d: 0.12 },
+        { f: 1046.50, t: 0.65, d: 0.38 }
+      ];
+      fanfare.forEach((n) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const st = now + n.t;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(n.f, st);
+        gain.gain.setValueAtTime(0.22, st);
+        gain.gain.exponentialRampToValueAtTime(0.001, st + n.d);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(st);
+        osc.stop(st + n.d + 0.02);
+      });
+    } catch (_) {}
+  }
+
+  // 8-Bit Arcade "Happy Birthday to You" Chiptune Melody Sequencer
+  const HAPPY_BIRTHDAY_MELODY = [
+    // "Hap-py Birth-day to you"
+    { note: 392.00, bass: 196.00, beats: 0.75 }, // G4
+    { note: 392.00, bass: 196.00, beats: 0.25 }, // G4
+    { note: 440.00, bass: 261.63, beats: 1.00 }, // A4
+    { note: 392.00, bass: 261.63, beats: 1.00 }, // G4
+    { note: 523.25, bass: 329.63, beats: 1.00 }, // C5
+    { note: 493.88, bass: 196.00, beats: 2.00 }, // B4
+    // "Hap-py Birth-day to you"
+    { note: 392.00, bass: 196.00, beats: 0.75 }, // G4
+    { note: 392.00, bass: 196.00, beats: 0.25 }, // G4
+    { note: 440.00, bass: 293.66, beats: 1.00 }, // A4
+    { note: 392.00, bass: 196.00, beats: 1.00 }, // G4
+    { note: 587.33, bass: 293.66, beats: 1.00 }, // D5
+    { note: 523.25, bass: 261.63, beats: 2.00 }, // C5
+    // "Hap-py Birth-day dear Friends"
+    { note: 392.00, bass: 196.00, beats: 0.75 }, // G4
+    { note: 392.00, bass: 196.00, beats: 0.25 }, // G4
+    { note: 783.99, bass: 261.63, beats: 1.00 }, // G5
+    { note: 659.25, bass: 329.63, beats: 1.00 }, // E5
+    { note: 523.25, bass: 261.63, beats: 1.00 }, // C5
+    { note: 493.88, bass: 246.94, beats: 1.00 }, // B4
+    { note: 440.00, bass: 174.61, beats: 1.80 }, // A4
+    // "Hap-py Birth-day to you!"
+    { note: 698.46, bass: 174.61, beats: 0.75 }, // F5
+    { note: 698.46, bass: 174.61, beats: 0.25 }, // F5
+    { note: 659.25, bass: 261.63, beats: 1.00 }, // E5
+    { note: 523.25, bass: 329.63, beats: 1.00 }, // C5
+    { note: 587.33, bass: 196.00, beats: 1.00 }, // D5
+    { note: 523.25, bass: 261.63, beats: 2.00 }, // C5
+    // Arcade Level-Up Sparkle Tag
+    { note: 659.25, bass: 261.63, beats: 0.35 }, // E5
+    { note: 783.99, bass: 329.63, beats: 0.35 }, // G5
+    { note: 1046.50, bass: 523.25, beats: 1.30 } // C6
+  ];
+
+  let melodyStepIndex = 0;
+
+  function playNextBirthdayGameNote() {
+    if (!bgmStarted) return;
+    const step = HAPPY_BIRTHDAY_MELODY[melodyStepIndex];
+    melodyStepIndex = (melodyStepIndex + 1) % HAPPY_BIRTHDAY_MELODY.length;
+
+    const beatMs = 340; // Upbeat 176 BPM game tempo
+    const durationSec = (step.beats * beatMs) / 1000;
+
+    if (!isSoundMuted && !document.hidden) {
+      try {
+        const ctx = ensureAudioContext();
+        if (ctx && ctx.state === 'running') {
+          const now = ctx.currentTime;
+
+          // Lead 8-bit Chiptune Voice (Triangle + subtle Square overtone)
+          const leadOsc = ctx.createOscillator();
+          const leadGain = ctx.createGain();
+          leadOsc.type = 'triangle';
+          leadOsc.frequency.setValueAtTime(step.note, now);
+          leadGain.gain.setValueAtTime(0.13, now);
+          leadGain.gain.exponentialRampToValueAtTime(0.002, now + durationSec * 0.92);
+          leadOsc.connect(leadGain);
+          leadGain.connect(ctx.destination);
+          leadOsc.start(now);
+          leadOsc.stop(now + durationSec);
+
+          const chipOsc = ctx.createOscillator();
+          const chipGain = ctx.createGain();
+          chipOsc.type = 'square';
+          chipOsc.frequency.setValueAtTime(step.note * 2, now);
+          chipGain.gain.setValueAtTime(0.024, now);
+          chipGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec * 0.65);
+          chipOsc.connect(chipGain);
+          chipGain.connect(ctx.destination);
+          chipOsc.start(now);
+          chipOsc.stop(now + durationSec * 0.7);
+
+          // Warm Game Bass Harmony Voice
+          if (step.bass) {
+            const bassOsc = ctx.createOscillator();
+            const bassGain = ctx.createGain();
+            bassOsc.type = 'sine';
+            bassOsc.frequency.setValueAtTime(step.bass, now);
+            bassGain.gain.setValueAtTime(0.09, now);
+            bassGain.gain.exponentialRampToValueAtTime(0.002, now + durationSec * 0.9);
+            bassOsc.connect(bassGain);
+            bassGain.connect(ctx.destination);
+            bassOsc.start(now);
+            bassOsc.stop(now + durationSec);
+          }
+        }
+      } catch (_) {}
+    }
+
+    bgmTimerId = setTimeout(playNextBirthdayGameNote, step.beats * beatMs);
+  }
+
+  function startBirthdayGameBGM() {
+    if (bgmStarted) {
+      ensureAudioContext();
+      return;
+    }
+    bgmStarted = true;
+    ensureAudioContext();
+    playNextBirthdayGameNote();
   }
 
   function createBoomExplosion(clientX, clientY, primaryColor = '#ff4d8d') {
@@ -871,8 +1035,40 @@
     });
   }
 
+  const WHITE_SOUND_ON_ICON = `
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="#ffffff" aria-hidden="true">
+      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"></path>
+    </svg>
+  `;
+  const WHITE_SOUND_OFF_ICON = `
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="#ffffff" aria-hidden="true">
+      <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"></path>
+    </svg>
+  `;
+
+  const toggleBgmBtn = document.getElementById('toggle-bgm-btn');
+  if (toggleBgmBtn) {
+    toggleBgmBtn.addEventListener('click', () => {
+      startBirthdayGameBGM();
+      isSoundMuted = !isSoundMuted;
+      toggleBgmBtn.innerHTML = isSoundMuted ? WHITE_SOUND_OFF_ICON : WHITE_SOUND_ON_ICON;
+      if (!isSoundMuted) {
+        playBirthdayGameFanfare();
+      }
+    });
+  }
+
+  // Unlock & start Birthday Game BGM on first user gesture
+  const unlockAudioOnce = () => {
+    startBirthdayGameBGM();
+  };
+  window.addEventListener('pointerdown', unlockAudioOnce, { passive: true });
+  window.addEventListener('keydown', unlockAudioOnce, { passive: true });
+
   if (burstBtn) {
     burstBtn.addEventListener('click', () => {
+      startBirthdayGameBGM();
+      playBirthdayGameFanfare();
       launchBalloonWave(10, true);
       launchCakeWave(8, true);
       if (typeof triggerThreeBurst === 'function') {
@@ -1044,6 +1240,7 @@
     launchBalloonWave(8);
     launchCakeWave(6);
     initCustomCursorAndSmoke();
+    startBirthdayGameBGM();
     startFriendNameLoop();
     runFlashcardCycle(0);
   }
