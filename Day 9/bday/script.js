@@ -1240,6 +1240,7 @@
     populateFullviewCakeStage();
     const todayKey = detectTodayBirthdayKey();
     setFullviewBirthdayByKey(todayKey);
+    document.body.classList.add('fullview-open');
     chocoFullviewModal.classList.add('is-open');
     chocoFullviewModal.setAttribute('aria-hidden', 'false');
     startBirthdayGameBGM();
@@ -1250,6 +1251,7 @@
 
   function closeChocoFullview() {
     if (!chocoFullviewModal) return;
+    document.body.classList.remove('fullview-open');
     chocoFullviewModal.classList.remove('is-open');
     chocoFullviewModal.setAttribute('aria-hidden', 'true');
   }
