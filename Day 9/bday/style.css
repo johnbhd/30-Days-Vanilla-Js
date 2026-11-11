@@ -1747,16 +1747,36 @@ body.celebration-started .intro-step-3 {
 }
 
 .fullview-bday-title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   font-family: 'Outfit', sans-serif;
   font-size: clamp(1.85rem, 5.5vw, 3.35rem);
   font-weight: 800;
   letter-spacing: 0.03em;
+  filter: drop-shadow(0 6px 18px rgba(255, 77, 141, 0.42));
+  animation: fullviewTitlePulse 1.8s ease-in-out infinite alternate;
+}
+
+.fullview-bday-text {
   background: linear-gradient(90deg, #ffffff 0%, #ffd166 45%, #ff8fab 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 6px 18px rgba(255, 77, 141, 0.42));
-  animation: fullviewTitlePulse 1.8s ease-in-out infinite alternate;
+}
+
+.fullview-bday-emojis {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-weight: 400;
+  color: #ffffff;
+  -webkit-text-fill-color: initial;
+  background: none;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.38));
 }
 
 @keyframes fullviewTitlePulse {

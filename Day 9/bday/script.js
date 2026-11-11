@@ -1165,16 +1165,22 @@
     nov11: {
       dateLabel: '📅 November 11',
       name: 'JB',
+      textOnly: 'HAPPY BIRTHDAY JB',
+      emojis: '🎉🎂',
       title: 'HAPPY BIRTHDAY JB 🎉🎂'
     },
     nov12: {
       dateLabel: '📅 November 12',
       name: 'Kurt',
+      textOnly: 'HAPPY BIRTHDAY KURT',
+      emojis: '🎉🎂',
       title: 'HAPPY BIRTHDAY KURT 🎉🎂'
     },
     nov16: {
       dateLabel: '📅 November 16',
       name: 'Mai',
+      textOnly: 'HAPPY BIRTHDAY MAI',
+      emojis: '🎉🎂',
       title: 'HAPPY BIRTHDAY MAI 🎉🎂'
     }
   };
@@ -1195,6 +1201,7 @@
   const chocoFullviewBackdrop = document.getElementById('choco-fullview-backdrop');
   const fullviewDateBadge = document.getElementById('fullview-date-badge');
   const fullviewBdayTitle = document.getElementById('fullview-bday-title');
+  const fullviewBdayText = document.getElementById('fullview-bday-text');
   const fullviewCakeStage = document.getElementById('fullview-cake-stage');
   const dateTabs = Array.from(document.querySelectorAll('.date-tab'));
   let activeFullviewKey = 'nov11';
@@ -1205,7 +1212,9 @@
     if (fullviewDateBadge) {
       fullviewDateBadge.textContent = info.dateLabel;
     }
-    if (fullviewBdayTitle) {
+    if (fullviewBdayText) {
+      fullviewBdayText.textContent = info.textOnly;
+    } else if (fullviewBdayTitle) {
       fullviewBdayTitle.textContent = info.title;
     }
     dateTabs.forEach((tab) => {
@@ -1272,21 +1281,34 @@
       ctx.fillStyle = glowGrad;
       ctx.fillRect(0, 0, W, H);
 
-      // 2. Draw ONLY "HAPPY BIRTHDAY [NAME] 🎉🎂" at top
+      // 2. Draw ONLY "HAPPY BIRTHDAY [NAME] 🎉🎂" at top (gradient text + full-color emojis)
       ctx.save();
-      ctx.font = '800 68px "Outfit", sans-serif';
-      ctx.textAlign = 'center';
+      const textPart = info.textOnly || `HAPPY BIRTHDAY ${(info.name || 'JB').toUpperCase()}`;
+      const emojiPart = ` ${info.emojis || '🎉🎂'}`;
+      ctx.font = '800 66px "Outfit", sans-serif';
+      const textWidth = ctx.measureText(textPart).width;
+      ctx.font = '400 64px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+      const emojiWidth = ctx.measureText(emojiPart).width;
+      const totalWidth = textWidth + emojiWidth;
+      const startX = (W - totalWidth) / 2;
+
+      ctx.font = '800 66px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = 'rgba(255, 77, 141, 0.55)';
       ctx.shadowBlur = 24;
       ctx.shadowOffsetY = 6;
 
-      const textGrad = ctx.createLinearGradient(W * 0.18, 0, W * 0.82, 0);
+      const textGrad = ctx.createLinearGradient(startX, 0, startX + textWidth, 0);
       textGrad.addColorStop(0, '#ffffff');
       textGrad.addColorStop(0.48, '#ffd166');
       textGrad.addColorStop(1, '#ff8fab');
       ctx.fillStyle = textGrad;
-      ctx.fillText(headlineText, W * 0.5, 175);
+      ctx.fillText(textPart, startX, 175);
+
+      ctx.font = '400 64px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(emojiPart, startX + textWidth, 175);
       ctx.restore();
 
       // 3. Draw ONLY the Chocolate Birthday Cake centered below the title
