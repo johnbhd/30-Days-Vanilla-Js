@@ -1191,14 +1191,17 @@
   const chocoFullviewBtn = document.getElementById('choco-fullview-btn');
   const chocoFullviewModal = document.getElementById('choco-fullview-modal');
   const chocoFullviewClose = document.getElementById('choco-fullview-close');
+  const chocoFullviewSave = document.getElementById('choco-fullview-save');
   const chocoFullviewBackdrop = document.getElementById('choco-fullview-backdrop');
   const fullviewDateBadge = document.getElementById('fullview-date-badge');
   const fullviewBdayTitle = document.getElementById('fullview-bday-title');
   const fullviewCakeStage = document.getElementById('fullview-cake-stage');
   const dateTabs = Array.from(document.querySelectorAll('.date-tab'));
+  let activeFullviewKey = 'nov11';
 
   function setFullviewBirthdayByKey(key) {
-    const info = BDAY_SCHEDULE[key] || BDAY_SCHEDULE.nov11;
+    activeFullviewKey = BDAY_SCHEDULE[key] ? key : 'nov11';
+    const info = BDAY_SCHEDULE[activeFullviewKey];
     if (fullviewDateBadge) {
       fullviewDateBadge.textContent = info.dateLabel;
     }
@@ -1206,8 +1209,114 @@
       fullviewBdayTitle.textContent = info.title;
     }
     dateTabs.forEach((tab) => {
-      tab.classList.toggle('active', tab.getAttribute('data-bday-key') === key);
+      tab.classList.toggle('active', tab.getAttribute('data-bday-key') === activeFullviewKey);
     });
+  }
+
+  function saveFullviewScreenshot() {
+    if (!chocoFullviewModal || !fullviewCakeStage) return;
+    const svgEl = fullviewCakeStage.querySelector('svg');
+    if (!svgEl) return;
+
+    // Hide date badge, 3 choice tabs, hint text, X close button, and save button during capture
+    chocoFullviewModal.classList.add('is-capturing-shot');
+    playBirthdayGameFanfare();
+
+    const info = BDAY_SCHEDULE[activeFullviewKey] || BDAY_SCHEDULE.nov11;
+    const headlineText = (fullviewBdayTitle && fullviewBdayTitle.textContent.trim()) || info.title;
+
+    // Clone the cake SVG and preserve current blown-out candle states inline for standalone rendering
+    const svgClone = svgEl.cloneNode(true);
+    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    svgClone.setAttribute('width', '680');
+    svgClone.setAttribute('height', '680');
+
+    const origCandles = Array.from(svgEl.querySelectorAll('.choco-candle-group'));
+    const cloneCandles = Array.from(svgClone.querySelectorAll('.choco-candle-group'));
+    origCandles.forEach((origCandle, idx) => {
+      if (origCandle.classList.contains('is-blown-out') && cloneCandles[idx]) {
+        const flameWrap = cloneCandles[idx].querySelector('.candle-flame-wrap');
+        if (flameWrap) {
+          flameWrap.setAttribute('opacity', '0');
+          flameWrap.style.display = 'none';
+        }
+      }
+    });
+
+    const svgData = new XMLSerializer().serializeToString(svgClone);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const W = 1200;
+      const H = 1200;
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext('2d');
+
+      // 1. Rich dark chocolate & celebration radial background (no UI chrome)
+      const bgGrad = ctx.createRadialGradient(W * 0.5, H * 0.48, 40, W * 0.5, H * 0.5, W * 0.72);
+      bgGrad.addColorStop(0, '#4a1e10');
+      bgGrad.addColorStop(0.58, '#180828');
+      bgGrad.addColorStop(1, '#080312');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Soft warm glow behind cake
+      const glowGrad = ctx.createRadialGradient(W * 0.5, H * 0.56, 20, W * 0.5, H * 0.56, 420);
+      glowGrad.addColorStop(0, 'rgba(255, 209, 102, 0.22)');
+      glowGrad.addColorStop(0.55, 'rgba(255, 77, 141, 0.12)');
+      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // 2. Draw ONLY "HAPPY BIRTHDAY [NAME] 🎉🎂" at top
+      ctx.save();
+      ctx.font = '800 68px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(255, 77, 141, 0.55)';
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 6;
+
+      const textGrad = ctx.createLinearGradient(W * 0.18, 0, W * 0.82, 0);
+      textGrad.addColorStop(0, '#ffffff');
+      textGrad.addColorStop(0.48, '#ffd166');
+      textGrad.addColorStop(1, '#ff8fab');
+      ctx.fillStyle = textGrad;
+      ctx.fillText(headlineText, W * 0.5, 175);
+      ctx.restore();
+
+      // 3. Draw ONLY the Chocolate Birthday Cake centered below the title
+      const cakeSize = 820;
+      const cakeX = (W - cakeSize) / 2;
+      const cakeY = 260;
+      ctx.drawImage(img, cakeX, cakeY, cakeSize, cakeSize);
+
+      URL.revokeObjectURL(svgUrl);
+
+      // Trigger PNG download
+      const safeName = (info.name || 'JB').toLowerCase();
+      const link = document.createElement('a');
+      link.download = `happy-birthday-${safeName}.png`;
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => {
+        chocoFullviewModal.classList.remove('is-capturing-shot');
+      }, 380);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(svgUrl);
+      chocoFullviewModal.classList.remove('is-capturing-shot');
+    };
+
+    img.src = svgUrl;
   }
 
   function populateFullviewCakeStage() {
@@ -1264,6 +1373,12 @@
   }
   if (chocoFullviewClose) {
     chocoFullviewClose.addEventListener('click', closeChocoFullview);
+  }
+  if (chocoFullviewSave) {
+    chocoFullviewSave.addEventListener('click', (e) => {
+      e.stopPropagation();
+      saveFullviewScreenshot();
+    });
   }
   if (chocoFullviewBackdrop) {
     chocoFullviewBackdrop.addEventListener('click', closeChocoFullview);

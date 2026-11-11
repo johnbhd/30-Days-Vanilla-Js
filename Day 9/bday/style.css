@@ -1791,6 +1791,46 @@ body.celebration-started .intro-step-3 {
   color: rgba(255, 245, 252, 0.86);
 }
 
+/* Bottom-Right Save / Screenshot Button in Full View */
+.choco-fullview-save {
+  position: absolute;
+  bottom: 22px;
+  right: 24px;
+  z-index: 6;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 209, 102, 0.72);
+  background: linear-gradient(135deg, rgba(92, 42, 20, 0.92), rgba(43, 17, 7, 0.96));
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6),
+              0 0 16px rgba(255, 209, 102, 0.38);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.22s ease,
+              background 0.22s ease;
+}
+
+.choco-fullview-save:hover,
+.choco-fullview-save:focus-visible {
+  transform: scale(1.12);
+  background: linear-gradient(135deg, #ff4d8d, #ff9f1c);
+  box-shadow: 0 10px 26px rgba(255, 77, 141, 0.65);
+}
+
+/* Clean Screenshot Mode: hide date bar, 3 choice tabs, hint text, X button, and save button */
+.choco-fullview-modal.is-capturing-shot .fullview-date-bar,
+.choco-fullview-modal.is-capturing-shot .fullview-hint,
+.choco-fullview-modal.is-capturing-shot .choco-fullview-close,
+.choco-fullview-modal.is-capturing-shot .choco-fullview-save {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 /* Hide cursor image when Chocolate Cake Full View is open, keeping only the smoke/aura effect */
 body.fullview-open .custom-cursor-img {
   opacity: 0 !important;
