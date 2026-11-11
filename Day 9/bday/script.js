@@ -440,10 +440,22 @@
   if (nextCardBtn) {
     nextCardBtn.addEventListener('click', () => jumpToCard(currentPhotoIndex + 1));
   }
+  const WHITE_PAUSE_ICON = `
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="#ffffff" aria-hidden="true">
+      <rect x="6" y="4" width="4" height="16" rx="1.5"></rect>
+      <rect x="14" y="4" width="4" height="16" rx="1.5"></rect>
+    </svg>
+  `;
+  const WHITE_PLAY_ICON = `
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="#ffffff" aria-hidden="true">
+      <polygon points="7,4 20,12 7,20"></polygon>
+    </svg>
+  `;
+
   if (togglePlayBtn) {
     togglePlayBtn.addEventListener('click', () => {
       isFlashcardPlaying = !isFlashcardPlaying;
-      togglePlayBtn.textContent = isFlashcardPlaying ? '⏸' : '▶';
+      togglePlayBtn.innerHTML = isFlashcardPlaying ? WHITE_PAUSE_ICON : WHITE_PLAY_ICON;
       if (isFlashcardPlaying) {
         runFlashcardCycle(currentPhotoIndex + 1);
       } else {

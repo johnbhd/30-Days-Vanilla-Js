@@ -572,16 +572,16 @@ body.celebration-started .intro-step-3 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 6px 18px;
+  gap: 8px;
+  padding: 8px 22px;
   border-radius: 999px;
-  background: rgba(255, 209, 102, 0.16);
-  border: 1px solid rgba(255, 209, 102, 0.42);
+  background: rgba(255, 209, 102, 0.18);
+  border: 1.5px solid rgba(255, 209, 102, 0.5);
   color: var(--gold);
   font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-size: clamp(0.98rem, 2.3vw, 1.15rem);
+  font-weight: 800;
+  letter-spacing: 0.05em;
   cursor: pointer;
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
