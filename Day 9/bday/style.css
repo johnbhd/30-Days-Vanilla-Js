@@ -1106,13 +1106,13 @@ body.celebration-started .intro-step-3 {
 }
 
 .choco-badge {
-  padding: 3px 12px;
+  padding: 5px 16px;
   border-radius: 999px;
   background: rgba(255, 209, 102, 0.18);
   border: 1px solid rgba(255, 209, 102, 0.42);
   color: var(--gold);
-  font-size: 0.76rem;
-  font-weight: 700;
+  font-size: clamp(0.96rem, 2.3vw, 1.12rem);
+  font-weight: 800;
 }
 
 /* GIF-like Continuous Moving Animations for Chocolate Cake */
