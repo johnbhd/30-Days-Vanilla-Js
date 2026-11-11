@@ -1152,12 +1152,130 @@
   const steadyChocoCake = document.getElementById('steady-choco-cake');
   if (steadyChocoCake) {
     steadyChocoCake.addEventListener('pointerdown', (e) => {
+      if (e.target && e.target.closest('#choco-fullview-btn')) return;
       e.stopPropagation();
       startBirthdayGameBGM();
       playCandleBlowSound();
       candleGroups.forEach((c) => blowOutCandle(c));
     });
   }
+
+  // ==================== FULL VIEW CHOCOLATE CAKE MODAL & DATE CELEBRANT (Nov 11 JB, Nov 12 Kurt, Nov 16 Mai) ====================
+  const BDAY_SCHEDULE = {
+    nov11: {
+      dateLabel: '📅 November 11',
+      name: 'JB',
+      title: 'HAPPY BIRTHDAY JB 🎉🎂'
+    },
+    nov12: {
+      dateLabel: '📅 November 12',
+      name: 'Kurt',
+      title: 'HAPPY BIRTHDAY KURT 🎉🎂'
+    },
+    nov16: {
+      dateLabel: '📅 November 16',
+      name: 'Mai',
+      title: 'HAPPY BIRTHDAY MAI 🎉🎂'
+    }
+  };
+
+  function detectTodayBirthdayKey() {
+    const now = new Date();
+    const month = now.getMonth(); // 10 = November (0-indexed)
+    const day = now.getDate();
+    if (month === 10 && day === 12) return 'nov12';
+    if (month === 10 && day === 16) return 'nov16';
+    return 'nov11'; // Nov 11 -> JB (and default)
+  }
+
+  const chocoFullviewBtn = document.getElementById('choco-fullview-btn');
+  const chocoFullviewModal = document.getElementById('choco-fullview-modal');
+  const chocoFullviewClose = document.getElementById('choco-fullview-close');
+  const chocoFullviewBackdrop = document.getElementById('choco-fullview-backdrop');
+  const fullviewDateBadge = document.getElementById('fullview-date-badge');
+  const fullviewBdayTitle = document.getElementById('fullview-bday-title');
+  const fullviewCakeStage = document.getElementById('fullview-cake-stage');
+  const dateTabs = Array.from(document.querySelectorAll('.date-tab'));
+
+  function setFullviewBirthdayByKey(key) {
+    const info = BDAY_SCHEDULE[key] || BDAY_SCHEDULE.nov11;
+    if (fullviewDateBadge) {
+      fullviewDateBadge.textContent = info.dateLabel;
+    }
+    if (fullviewBdayTitle) {
+      fullviewBdayTitle.textContent = info.title;
+    }
+    dateTabs.forEach((tab) => {
+      tab.classList.toggle('active', tab.getAttribute('data-bday-key') === key);
+    });
+  }
+
+  function populateFullviewCakeStage() {
+    if (!fullviewCakeStage || fullviewCakeStage.children.length > 0) return;
+    const origSvg = document.querySelector('#steady-choco-cake .choco-cake-gif-svg');
+    if (!origSvg) return;
+    const clonedSvg = origSvg.cloneNode(true);
+    fullviewCakeStage.appendChild(clonedSvg);
+
+    const modalCandles = Array.from(clonedSvg.querySelectorAll('.choco-candle-group'));
+    modalCandles.forEach((candleEl) => {
+      candleEl.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        startBirthdayGameBGM();
+        playCandleBlowSound();
+        blowOutCandle(candleEl);
+      });
+    });
+
+    clonedSvg.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      startBirthdayGameBGM();
+      playCandleBlowSound();
+      modalCandles.forEach((c) => blowOutCandle(c));
+    });
+  }
+
+  function openChocoFullview() {
+    if (!chocoFullviewModal) return;
+    populateFullviewCakeStage();
+    const todayKey = detectTodayBirthdayKey();
+    setFullviewBirthdayByKey(todayKey);
+    chocoFullviewModal.classList.add('is-open');
+    chocoFullviewModal.setAttribute('aria-hidden', 'false');
+    startBirthdayGameBGM();
+    playBirthdayGameFanfare();
+    launchBalloonWave(8, true);
+    launchCakeWave(6, true);
+  }
+
+  function closeChocoFullview() {
+    if (!chocoFullviewModal) return;
+    chocoFullviewModal.classList.remove('is-open');
+    chocoFullviewModal.setAttribute('aria-hidden', 'true');
+  }
+
+  if (chocoFullviewBtn) {
+    chocoFullviewBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openChocoFullview();
+    });
+  }
+  if (chocoFullviewClose) {
+    chocoFullviewClose.addEventListener('click', closeChocoFullview);
+  }
+  if (chocoFullviewBackdrop) {
+    chocoFullviewBackdrop.addEventListener('click', closeChocoFullview);
+  }
+  dateTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const key = tab.getAttribute('data-bday-key');
+      setFullviewBirthdayByKey(key);
+      playBirthdayGameFanfare();
+    });
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeChocoFullview();
+  });
 
   const WHITE_SOUND_ON_ICON = `
     <svg viewBox="0 0 24 24" width="15" height="15" fill="#ffffff" aria-hidden="true">

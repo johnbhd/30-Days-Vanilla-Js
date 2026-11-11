@@ -1523,3 +1523,203 @@ body.celebration-started .intro-step-3 {
     transform: scale(1);
   }
 }
+
+
+/* ==================== CHOCOLATE CAKE BOTTOM-RIGHT FULL VIEW ICON & MODAL ==================== */
+.choco-fullview-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 8;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 209, 102, 0.65);
+  background: linear-gradient(135deg, rgba(64, 28, 14, 0.88), rgba(24, 9, 30, 0.92));
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6),
+              0 0 14px rgba(255, 209, 102, 0.32);
+  transition: transform 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+}
+
+.choco-fullview-btn:hover,
+.choco-fullview-btn:focus-visible {
+  transform: scale(1.12);
+  background: linear-gradient(135deg, #ff4d8d, #ff9f1c);
+  box-shadow: 0 8px 22px rgba(255, 77, 141, 0.6);
+}
+
+.choco-fullview-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              visibility 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.choco-fullview-modal.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.choco-fullview-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(44, 18, 32, 0.92) 0%, rgba(8, 3, 18, 0.97) 100%);
+  backdrop-filter: blur(18px);
+}
+
+.choco-fullview-dialog {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 680px;
+  border-radius: 28px;
+  padding: 26px 22px 22px;
+  background: linear-gradient(155deg, rgba(66, 28, 16, 0.78), rgba(22, 9, 34, 0.88));
+  border: 2px solid rgba(255, 209, 102, 0.55);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.78),
+              0 0 55px rgba(255, 183, 3, 0.32);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  transform: scale(0.88) translateY(20px);
+  transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.choco-fullview-modal.is-open .choco-fullview-dialog {
+  transform: scale(1) translateY(0);
+}
+
+.choco-fullview-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.choco-fullview-close:hover {
+  background: rgba(255, 77, 141, 0.48);
+  transform: scale(1.08);
+}
+
+.fullview-date-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.fullview-date-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 16px;
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.2);
+  border: 1px solid rgba(255, 209, 102, 0.52);
+  color: var(--gold);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.fullview-date-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.date-tab {
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.78);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.date-tab.active,
+.date-tab:hover {
+  background: linear-gradient(135deg, #ff4d8d, #ff9f1c);
+  border-color: var(--gold);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(255, 77, 141, 0.45);
+  transform: translateY(-1px);
+}
+
+.fullview-bday-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(1.55rem, 4.8vw, 2.45rem);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  background: linear-gradient(90deg, #ffffff 0%, #ffd166 45%, #ff8fab 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 6px 18px rgba(255, 77, 141, 0.42));
+  animation: fullviewTitlePulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes fullviewTitlePulse {
+  0% {
+    transform: scale(0.98);
+  }
+  100% {
+    transform: scale(1.03);
+  }
+}
+
+.fullview-cake-stage {
+  width: 100%;
+  max-width: 420px;
+  height: clamp(250px, 46vh, 390px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.fullview-cake-stage .choco-cake-gif-svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+}
+
+.fullview-hint {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 245, 252, 0.82);
+}

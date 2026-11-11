@@ -377,6 +377,21 @@
                   </g>
                 </g>
               </svg>
+              <!-- Bottom Right Full View Icon Button -->
+              <button
+                id="choco-fullview-btn"
+                class="choco-fullview-btn"
+                type="button"
+                aria-label="Full view birthday chocolate cake"
+                title="Full View Birthday Cake"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <polyline points="9 21 3 21 3 15"></polyline>
+                  <line x1="21" y1="3" x2="14" y2="10"></line>
+                  <line x1="3" y1="21" x2="10" y2="14"></line>
+                </svg>
+              </button>
             </div>
             <div class="choco-cake-footer">
               <span class="choco-badge">🍫 Happy Birthday Chocolate Cake 🎂</span>
@@ -386,6 +401,36 @@
       </div>
     </section>
   </main>
+
+  <!-- ==================== FULL VIEW CHOCOLATE CAKE BIRTHDAY MODAL ==================== -->
+  <div id="choco-fullview-modal" class="choco-fullview-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Full View Happy Birthday Celebration">
+    <div class="choco-fullview-backdrop" id="choco-fullview-backdrop"></div>
+    <div class="choco-fullview-dialog">
+      <button id="choco-fullview-close" class="choco-fullview-close" type="button" aria-label="Close full view" title="Close Full View">
+        ✕
+      </button>
+
+      <!-- Date Badge & Celebrant Schedule Switcher (Nov 11 JB, Nov 12 Kurt, Nov 16 Mai) -->
+      <div class="fullview-date-bar">
+        <span id="fullview-date-badge" class="fullview-date-badge">📅 November 11</span>
+        <div class="fullview-date-tabs" role="tablist" aria-label="Birthday dates">
+          <button type="button" class="date-tab active" data-bday-key="nov11">Nov 11 • JB</button>
+          <button type="button" class="date-tab" data-bday-key="nov12">Nov 12 • Kurt</button>
+          <button type="button" class="date-tab" data-bday-key="nov16">Nov 16 • Mai</button>
+        </div>
+      </div>
+
+      <!-- Dynamic Headline: HAPPY BIRTHDAY [NAME] 🎉🎂 -->
+      <h2 id="fullview-bday-title" class="fullview-bday-title">
+        HAPPY BIRTHDAY JB 🎉🎂
+      </h2>
+
+      <!-- Large Interactive Chocolate Cake Stage (Click Candles to Blow!) -->
+      <div id="fullview-cake-stage" class="fullview-cake-stage"></div>
+
+      <p class="fullview-hint">✨ Tap or click the candles to blow them out &amp; make a wish! ✨</p>
+    </div>
+  </div>
 
   <!-- Three.js WebGL Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
