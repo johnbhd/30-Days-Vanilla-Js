@@ -1112,10 +1112,6 @@
       startBirthdayGameBGM();
       playCandleBlowSound();
       blowOutCandle(candleEl);
-      const rect = candleEl.getBoundingClientRect();
-      const popX = e.clientX || (rect.left + rect.width / 2);
-      const popY = e.clientY || (rect.top + rect.height / 3);
-      createBoomExplosion(popX, popY, '#ffd166');
     });
   });
 
@@ -1126,10 +1122,6 @@
       startBirthdayGameBGM();
       playCandleBlowSound();
       candleGroups.forEach((c) => blowOutCandle(c));
-      const rect = steadyChocoCake.getBoundingClientRect();
-      const popX = e.clientX || (rect.left + rect.width / 2);
-      const popY = e.clientY || (rect.top + rect.height / 2);
-      createBoomExplosion(popX, popY, '#ffd166');
     });
   }
 
