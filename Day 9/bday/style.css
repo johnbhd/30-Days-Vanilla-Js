@@ -1653,14 +1653,14 @@ body.celebration-started .intro-step-3 {
   height: 100vh;
   max-width: none;
   border-radius: 0;
-  padding: 28px 24px 24px;
+  padding: 16px 24px 22px;
   background: radial-gradient(circle at 50% 45%, rgba(74, 30, 16, 0.82) 0%, rgba(20, 8, 32, 0.94) 68%, rgba(8, 3, 18, 0.98) 100%);
   border: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
+  justify-content: flex-start;
+  gap: 12px;
   text-align: center;
   transform: scale(0.94);
   transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
@@ -1699,6 +1699,8 @@ body.celebration-started .intro-step-3 {
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  margin-top: 2px;
+  margin-bottom: clamp(22px, 4.5vh, 46px);
 }
 
 .fullview-date-badge {
