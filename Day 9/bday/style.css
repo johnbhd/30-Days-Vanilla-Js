@@ -1,0 +1,884 @@
+/* ==========================================================================
+   Three.js Birthday & Friendship Celebration — Stylesheet
+   ========================================================================== */
+
+:root {
+  --bg-deep: #0b0518;
+  --bg-mid: #1a0c33;
+  --bg-rose: #2d123e;
+  --glass-bg: rgba(24, 12, 46, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --gold: #ffd166;
+  --pink: #ff4d8d;
+  --cyan: #4cc9f0;
+  --mint: #06d6a0;
+  --violet: #b5179e;
+  --text-main: #ffffff;
+  --text-soft: rgba(255, 245, 252, 0.82);
+  --card-radius: 24px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at 50% 15%, #2b1349 0%, #150829 52%, #090314 100%);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==================== THREE.JS & BALLOON LAYERS ==================== */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.balloon-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.floating-balloon-item {
+  position: absolute;
+  bottom: -180px;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45));
+  animation: balloonRise linear forwards;
+}
+
+.floating-balloon-sway {
+  display: block;
+  animation: balloonSway ease-in-out infinite alternate;
+}
+
+@keyframes balloonRise {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.88);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.92;
+  }
+  90% {
+    opacity: 0.92;
+  }
+  100% {
+    transform: translate3d(0, -130vh, 0) scale(1.04);
+    opacity: 0;
+  }
+}
+
+@keyframes balloonSway {
+  0% {
+    transform: translateX(-22px) rotate(-6deg);
+  }
+  100% {
+    transform: translateX(22px) rotate(6deg);
+  }
+}
+
+/* Ambient Glowing Background Orbs */
+.ambient-glow {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(85px);
+  opacity: 0.38;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.glow-1 {
+  width: 380px;
+  height: 380px;
+  background: #ff4d8d;
+  top: -80px;
+  left: -90px;
+  animation: orbPulse 9s ease-in-out infinite alternate;
+}
+
+.glow-2 {
+  width: 420px;
+  height: 420px;
+  background: #7209b7;
+  bottom: -110px;
+  right: -80px;
+  animation: orbPulse 11s ease-in-out infinite alternate-reverse;
+}
+
+.glow-3 {
+  width: 300px;
+  height: 300px;
+  background: #ffd166;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.18;
+}
+
+@keyframes orbPulse {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.18) translate(25px, -20px);
+  }
+}
+
+/* ==================== CINEMATIC INTRO OVERLAY ==================== */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: radial-gradient(circle at center, rgba(34, 14, 64, 0.92) 0%, rgba(9, 3, 20, 0.97) 100%);
+  backdrop-filter: blur(18px);
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+              visibility 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.intro-overlay.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(1.12);
+}
+
+.intro-card {
+  position: relative;
+  max-width: 480px;
+  width: 100%;
+  padding: 36px 28px 32px;
+  border-radius: 30px;
+  text-align: center;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 209, 102, 0.38);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.65),
+              0 0 50px rgba(255, 77, 141, 0.28);
+  animation: introCardFloat 3s ease-in-out infinite alternate;
+}
+
+@keyframes introCardFloat {
+  0% {
+    transform: translateY(0px) rotateX(0deg);
+  }
+  100% {
+    transform: translateY(-10px) rotateX(2deg);
+  }
+}
+
+.intro-balloons-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.intro-gift-icon {
+  font-size: 3.8rem;
+  display: inline-block;
+  filter: drop-shadow(0 8px 18px rgba(255, 209, 102, 0.5));
+  animation: giftBounce 1.4s ease-in-out infinite;
+}
+
+.intro-float-balloon {
+  font-size: 2.6rem;
+  display: inline-block;
+  animation: emojiFloat 1.8s ease-in-out infinite alternate;
+}
+
+.intro-float-balloon.b-right {
+  animation-delay: 0.4s;
+}
+
+@keyframes giftBounce {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  35% {
+    transform: scale(1.14) rotate(-6deg);
+  }
+  70% {
+    transform: scale(1.1) rotate(6deg);
+  }
+}
+
+.intro-tag {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.intro-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.75rem, 5vw, 2.35rem);
+  font-weight: 800;
+  background: linear-gradient(90deg, #ffffff, #ffd166, #ff8fab);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 10px;
+}
+
+.intro-subtitle {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-soft);
+  margin-bottom: 24px;
+}
+
+.open-celebration-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  max-width: 280px;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff4d8d 0%, #ff9f1c 55%, #ffd166 100%);
+  color: #1a0826;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(255, 77, 141, 0.45);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.open-celebration-btn:hover,
+.open-celebration-btn:focus-visible {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 16px 38px rgba(255, 209, 102, 0.6);
+}
+
+.intro-countdown {
+  font-size: 0.74rem;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* Staggered Intro Reveal Classes on Main Stage */
+.intro-step {
+  opacity: 0;
+  transform: translate3d(0, 34px, -60px) scale(0.92);
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.celebration-started .intro-step-0 {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-delay: 0.08s;
+}
+
+body.celebration-started .intro-step-1 {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-delay: 0.18s;
+}
+
+body.celebration-started .intro-step-2 {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-delay: 0.36s;
+}
+
+body.celebration-started .intro-step-3 {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-delay: 0.52s;
+}
+
+/* ==================== TOP BAR ==================== */
+.top-bar {
+  position: relative;
+  z-index: 10;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 16px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.top-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gold);
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #06d6a0;
+  box-shadow: 0 0 10px #06d6a0;
+  animation: dotBlink 1.2s ease-in-out infinite;
+}
+
+@keyframes dotBlink {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.55;
+  }
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.chip-btn:hover {
+  background: rgba(255, 209, 102, 0.22);
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+/* ==================== MAIN STAGE LAYOUT ==================== */
+.bday-stage {
+  position: relative;
+  z-index: 10;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 8px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ==================== 1. MESSAGE LOOP CARD ==================== */
+.glass-panel {
+  width: 100%;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.message-card {
+  padding: 18px 20px 14px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.message-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--pink), var(--cyan), transparent);
+}
+
+.crown-ribbon {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.14);
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+
+.gratitude-message {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.25rem, 3.6vw, 2rem);
+  line-height: 1.45;
+  font-weight: 700;
+  color: #ffffff;
+  max-width: 720px;
+  margin: 0 auto 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+}
+
+/* 1-Second Changing Friend Name Slot */
+.name-slot-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 145px;
+  perspective: 700px;
+}
+
+.friend-name {
+  display: inline-block;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  padding: 3px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff4d8d 0%, #ff9f1c 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 22px rgba(255, 77, 141, 0.48),
+              inset 0 1px 1px rgba(255, 255, 255, 0.45);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+/* Dynamic per-friend gradient themes */
+.friend-name[data-index="0"] { background: linear-gradient(135deg, #ff4d8d, #ff9f1c); box-shadow: 0 6px 22px rgba(255, 77, 141, 0.5); }
+.friend-name[data-index="1"] { background: linear-gradient(135deg, #4cc9f0, #4361ee); box-shadow: 0 6px 22px rgba(76, 201, 240, 0.5); }
+.friend-name[data-index="2"] { background: linear-gradient(135deg, #06d6a0, #118ab2); box-shadow: 0 6px 22px rgba(6, 214, 160, 0.5); }
+.friend-name[data-index="3"] { background: linear-gradient(135deg, #f72585, #b5179e); box-shadow: 0 6px 22px rgba(247, 37, 133, 0.5); }
+.friend-name[data-index="4"] { background: linear-gradient(135deg, #ffd166, #f77f00); color: #1b0a28; text-shadow: none; box-shadow: 0 6px 22px rgba(255, 209, 102, 0.5); }
+.friend-name[data-index="5"] { background: linear-gradient(135deg, #9b5de5, #f15bb5); box-shadow: 0 6px 22px rgba(155, 93, 229, 0.5); }
+.friend-name[data-index="6"] { background: linear-gradient(135deg, #00bbf9, #00f5d4); color: #091e26; text-shadow: none; box-shadow: 0 6px 22px rgba(0, 245, 212, 0.5); }
+.friend-name[data-index="7"] { background: linear-gradient(135deg, #ff6b6b, #ffd166); color: #1f0812; text-shadow: none; box-shadow: 0 6px 22px rgba(255, 107, 107, 0.5); }
+
+.friend-name.name-enter {
+  animation: namePopIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.friend-name.name-exit {
+  animation: nameFlipOut 0.18s ease-in forwards;
+}
+
+@keyframes namePopIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) rotateX(-65deg) scale(0.84);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg) scale(1);
+  }
+}
+
+@keyframes nameFlipOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px) rotateX(65deg) scale(0.86);
+  }
+}
+
+.msg-blessing {
+  display: inline-block;
+  background: linear-gradient(90deg, #ffd166, #ff9ebb, #4cc9f0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-style: italic;
+}
+
+/* Friends Roster Pills */
+.friends-roster {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.roster-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.22s ease;
+}
+
+.roster-pill.active {
+  background: rgba(255, 209, 102, 0.24);
+  border-color: var(--gold);
+  color: #fff;
+  transform: translateY(-2px) scale(1.06);
+  box-shadow: 0 4px 12px rgba(255, 209, 102, 0.35);
+}
+
+/* ==================== 2. TWO BIRTHDAY EMOJIS BELOW MESSAGE ==================== */
+.birthday-emojis-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.bday-emoji {
+  font-size: clamp(2.1rem, 5vw, 2.75rem);
+  display: inline-block;
+  filter: drop-shadow(0 6px 14px rgba(255, 209, 102, 0.45));
+  animation: emojiFloat 1.5s ease-in-out infinite alternate;
+  user-select: none;
+}
+
+.bday-emoji.emoji-right {
+  animation-delay: 0.35s;
+}
+
+@keyframes emojiFloat {
+  0% {
+    transform: translateY(0) scale(1) rotate(-7deg);
+  }
+  100% {
+    transform: translateY(-9px) scale(1.14) rotate(7deg);
+  }
+}
+
+/* ==================== 3. FLASHCARD IMAGE IN-AND-OUT LOOP ==================== */
+.flashcard-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.flashcard-deck-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  height: clamp(290px, 48vh, 420px);
+  perspective: 1200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Decorative Stacked Flashcards Behind Active Card */
+.deck-ghost {
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  transition: transform 0.5s ease;
+}
+
+.deck-ghost-1 {
+  transform: translate3d(10px, 8px, -30px) rotateZ(2.5deg) scale(0.96);
+}
+
+.deck-ghost-2 {
+  transform: translate3d(-12px, 14px, -60px) rotateZ(-3deg) scale(0.92);
+}
+
+/* Active Flashcard */
+.flashcard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 22px;
+  padding: 12px 12px 10px;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.6),
+              0 0 32px rgba(255, 77, 141, 0.22);
+  backdrop-filter: blur(18px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+}
+
+.flashcard-pin {
+  position: absolute;
+  top: -14px;
+  right: 18px;
+  font-size: 1.65rem;
+  z-index: 5;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+  animation: emojiFloat 2s ease-in-out infinite alternate;
+}
+
+/* Photo Viewport with Smart Portrait + Landscape Dual Layer */
+.flashcard-photo-viewport {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  border-radius: 15px;
+  overflow: hidden;
+  background: #0d061a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.flashcard-blur-bg {
+  position: absolute;
+  inset: -16px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(20px) brightness(0.62) saturate(1.35);
+  transform: scale(1.08);
+  z-index: 1;
+  transition: background-image 0.3s ease;
+}
+
+.flashcard-img {
+  position: relative;
+  z-index: 2;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.45));
+}
+
+.flashcard-shimmer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.18) 48%,
+    transparent 66%
+  );
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+
+.flashcard.is-entering .flashcard-shimmer {
+  animation: cardShimmer 0.9s ease-out forwards;
+}
+
+@keyframes cardShimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+/* Flashcard Footer Caption */
+.flashcard-caption-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 6px 2px;
+  font-size: 0.85rem;
+}
+
+.caption-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.photo-counter {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.2);
+  border: 1px solid rgba(255, 209, 102, 0.42);
+  color: var(--gold);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+/* ==================== FLASHCARD IN-AND-OUT LOOP KEYFRAMES ==================== */
+.flashcard.is-entering {
+  animation: flashcardIn 0.58s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.flashcard.is-holding {
+  animation: flashcardHoldFloat 2s ease-in-out infinite alternate;
+}
+
+.flashcard.is-exiting {
+  animation: flashcardOut 0.52s cubic-bezier(0.55, 0.05, 0.67, 0.19) forwards;
+}
+
+@keyframes flashcardIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(-85px, 42px, -160px) rotateY(32deg) rotateZ(-8deg) scale(0.8);
+  }
+  65% {
+    opacity: 1;
+    transform: translate3d(6px, -4px, 15px) rotateY(-4deg) rotateZ(1.2deg) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateY(0deg) rotateZ(0deg) scale(1);
+  }
+}
+
+@keyframes flashcardHoldFloat {
+  0% {
+    transform: translate3d(0, 0, 0) rotateY(-1.5deg) rotateX(1deg);
+  }
+  100% {
+    transform: translate3d(0, -6px, 8px) rotateY(1.5deg) rotateX(-1deg);
+  }
+}
+
+@keyframes flashcardOut {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotateY(0deg) rotateZ(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(90px, -36px, -140px) rotateY(-32deg) rotateZ(8deg) scale(0.82);
+  }
+}
+
+/* ==================== FLASHCARD CONTROLS & DOTS ==================== */
+.flashcard-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ctrl-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.ctrl-btn:hover {
+  background: rgba(255, 77, 141, 0.35);
+  border-color: var(--pink);
+  transform: scale(1.08);
+}
+
+.card-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  max-width: 260px;
+  justify-content: center;
+}
+
+.card-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s ease;
+}
+
+.card-dot.active {
+  width: 22px;
+  background: linear-gradient(90deg, var(--pink), var(--gold));
+  box-shadow: 0 0 10px rgba(255, 209, 102, 0.6);
+}
+
+/* Responsive Adjustments for Mobile Screens */
+@media (max-width: 600px) {
+  .top-bar {
+    justify-content: center;
+  }
+  .message-card {
+    padding: 14px 14px 12px;
+  }
+  .gratitude-message {
+    font-size: clamp(1.12rem, 4.5vw, 1.45rem);
+  }
+  .name-slot-container {
+    min-width: 120px;
+  }
+  .flashcard-deck-wrapper {
+    height: clamp(260px, 44vh, 350px);
+  }
+}

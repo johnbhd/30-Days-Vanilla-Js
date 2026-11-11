@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Happy Birthday &amp; Thank You Friends! 🎂🎈</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Pacifico&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="intro-active">
+  <!-- Three.js 3D WebGL Birthday Scene (3D Glossy Balloons + 3D Confetti) -->
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+  <!-- Crisp Floating SVG Balloon Graphics Layer (Moving Upward & Swaying) -->
+  <div id="balloon-overlay" class="balloon-overlay" aria-hidden="true"></div>
+
+  <!-- Ambient Glow Orbs -->
+  <div class="ambient-glow glow-1" aria-hidden="true"></div>
+  <div class="ambient-glow glow-2" aria-hidden="true"></div>
+  <div class="ambient-glow glow-3" aria-hidden="true"></div>
+
+  <!-- ==================== CINEMATIC BIRTHDAY INTRO OVERLAY ==================== -->
+  <div id="intro-overlay" class="intro-overlay" role="dialog" aria-label="Birthday Celebration Intro">
+    <div class="intro-sparkles" id="intro-sparkles" aria-hidden="true"></div>
+    <div class="intro-card" id="intro-card">
+      <div class="intro-balloons-cluster" aria-hidden="true">
+        <span class="intro-float-balloon b-left">🎈</span>
+        <span class="intro-gift-icon" id="intro-gift-icon">🎂</span>
+        <span class="intro-float-balloon b-right">🎈</span>
+      </div>
+      <p class="intro-tag">✨ A Special Birthday &amp; Friendship Tribute ✨</p>
+      <h2 class="intro-title">To The Best Friends Ever</h2>
+      <p class="intro-subtitle">
+        Jadrien • Mark • Kurt • Mai • Francis • Jamma • Earl • Jerzel
+      </p>
+      <button id="open-celebration-btn" class="open-celebration-btn" type="button">
+        <span>🎉 Open Celebration</span>
+        <span class="intro-countdown" id="intro-countdown">(Auto-starts in 3s)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Top Mini Floating Action Bar -->
+  <header class="top-bar intro-step intro-step-0">
+    <div class="top-badge">
+      <span class="pulse-dot"></span>
+      <span>Birthday &amp; Friendship Loop</span>
+    </div>
+    <div class="top-actions">
+      <button id="replay-intro-btn" class="chip-btn" type="button" title="Replay Intro Animation">
+        ✨ Replay Intro
+      </button>
+      <button id="burst-btn" class="chip-btn" type="button" title="Launch Balloon &amp; Confetti Wave">
+        🎈 Release Balloons
+      </button>
+      <label for="folder-input" class="chip-btn file-label" title="Add or load more photos from a folder">
+        📂 +Photos
+        <input id="folder-input" type="file" accept="image/*" multiple hidden />
+      </label>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CELEBRATION STAGE ==================== -->
+  <main class="bday-stage">
+    <!-- 1. Animated Message Loop Card -->
+    <section class="message-card glass-panel intro-step intro-step-1" aria-live="polite">
+      <div class="crown-ribbon">
+        <span>🎊 HAPPY BIRTHDAY &amp; FRIENDSHIP MEMORIES 🎊</span>
+      </div>
+
+      <h1 class="gratitude-message">
+        <span class="msg-prefix">Thank you</span>
+        <span class="name-slot-container" id="name-slot-container">
+          <span id="friend-name" class="friend-name is-visible" data-index="0">Jadrien</span>
+        </span>
+        <span class="msg-body">for the friendship we had,</span>
+        <span class="msg-blessing">God bless you all</span>
+      </h1>
+
+      <!-- Friend Progress Pills (Synced with 1-second loop) -->
+      <div class="friends-roster" id="friends-roster" aria-label="Friends list">
+        <span class="roster-pill active" data-friend="0">Jadrien</span>
+        <span class="roster-pill" data-friend="1">Mark</span>
+        <span class="roster-pill" data-friend="2">Kurt</span>
+        <span class="roster-pill" data-friend="3">Mai</span>
+        <span class="roster-pill" data-friend="4">Francis</span>
+        <span class="roster-pill" data-friend="5">Jamma</span>
+        <span class="roster-pill" data-friend="6">Earl</span>
+        <span class="roster-pill" data-friend="7">Jerzel</span>
+      </div>
+
+      <!-- 2. Two Birthday Emojis Below Message -->
+      <div class="birthday-emojis-row intro-step intro-step-2" aria-label="Two birthday emojis">
+        <span class="bday-emoji emoji-left" role="img" aria-label="Birthday Cake">🎂</span>
+        <span class="bday-emoji emoji-right" role="img" aria-label="Birthday Balloon">🎈</span>
+      </div>
+    </section>
+
+    <!-- 3. Flashcard of Images Loop (In-and-Out Animation Below Emojis) -->
+    <section class="flashcard-section intro-step intro-step-3" aria-label="Friendship Photo Flashcards">
+      <div class="flashcard-deck-wrapper" id="flashcard-deck-wrapper">
+        <!-- Decorative Stacked Cards Behind Active Flashcard -->
+        <div class="deck-ghost deck-ghost-2" aria-hidden="true"></div>
+        <div class="deck-ghost deck-ghost-1" aria-hidden="true"></div>
+
+        <!-- Active Animated Flashcard (In & Out Loop) -->
+        <article class="flashcard is-entering" id="active-flashcard">
+          <div class="flashcard-pin" aria-hidden="true">🎈</div>
+          <div class="flashcard-photo-viewport">
+            <!-- Blurred ambient fill so portrait & landscape photos both fill the frame without cropping faces -->
+            <div class="flashcard-blur-bg" id="flashcard-blur-bg"></div>
+            <img
+              id="flashcard-img"
+              class="flashcard-img"
+              src="Messenger_creation_1068577195033636_010226.jpeg"
+              alt="Friendship memory photo"
+            />
+            <div class="flashcard-shimmer" aria-hidden="true"></div>
+          </div>
+
+          <footer class="flashcard-caption-bar">
+            <div class="caption-left">
+              <span class="caption-heart">💛</span>
+              <span id="flashcard-label" class="caption-title">Friendship Memory #1</span>
+            </div>
+            <div class="caption-right">
+              <span id="flashcard-counter" class="photo-counter">1 / 12</span>
+            </div>
+          </footer>
+        </article>
+      </div>
+
+      <!-- Flashcard Controls & Thumbnail Progress Dots -->
+      <div class="flashcard-controls">
+        <button id="prev-card-btn" class="ctrl-btn" type="button" aria-label="Previous photo" title="Previous Photo">
+          ◀
+        </button>
+        <div class="card-dots" id="card-dots" role="tablist" aria-label="Photo indicators"></div>
+        <button id="toggle-play-btn" class="ctrl-btn play-pause" type="button" aria-label="Pause or resume slideshow" title="Pause / Resume Flashcard Loop">
+          ⏸
+        </button>
+        <button id="next-card-btn" class="ctrl-btn" type="button" aria-label="Next photo" title="Next Photo">
+          ▶
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Three.js WebGL Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Pre-indexed folder images manifest -->
+  <script src="images-manifest.js"></script>
+  <!-- Main Animation & Loop Controller -->
+  <script src="script.js"></script>
+</body>
+</html>
