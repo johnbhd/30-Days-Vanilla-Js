@@ -19,6 +19,7 @@
     'Francis',
     'Jamma',
     'Earl',
+    'Reijen',
     'Jerzel'
   ];
 
@@ -1030,32 +1031,65 @@
       const ctx = ensureAudioContext();
       if (!ctx) return;
       const now = ctx.currentTime;
+      const totalDur = 3.0; // Full 3-second candle blow + smoke sizzle effect
 
-      // Soft Breath Whoosh Noise
-      const len = Math.floor(ctx.sampleRate * 0.28);
+      // 1. 3-Second Breath Blow Whoosh + Wick Smoke Sizzle Envelope
+      const len = Math.floor(ctx.sampleRate * totalDur);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
       const data = buf.getChannelData(0);
       for (let i = 0; i < len; i++) {
-        const env = Math.sin((i / len) * Math.PI);
-        data[i] = (Math.random() * 2 - 1) * env * 0.55;
+        const t = i / ctx.sampleRate;
+        // Strong initial blow (0s - 1.1s), gentle smoking wick sizzle (1.1s - 2.6s), soft relight whoosh (2.6s - 3.0s)
+        let env = 0;
+        if (t < 1.1) {
+          env = Math.sin((t / 1.1) * Math.PI) * 0.85;
+        } else if (t < 2.6) {
+          env = 0.22 * Math.exp(-(t - 1.1) * 0.9) * (0.7 + 0.3 * Math.sin(t * 28));
+        } else {
+          env = Math.sin(((t - 2.6) / 0.4) * Math.PI) * 0.38;
+        }
+        data[i] = (Math.random() * 2 - 1) * env;
       }
       const src = ctx.createBufferSource();
       src.buffer = buf;
 
       const filter = ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(620, now);
-      filter.frequency.exponentialRampToValueAtTime(240, now + 0.26);
-      filter.Q.setValueAtTime(1.4, now);
+      filter.frequency.setValueAtTime(760, now);
+      filter.frequency.exponentialRampToValueAtTime(240, now + 1.0);
+      filter.frequency.linearRampToValueAtTime(1200, now + 2.5);
+      filter.frequency.exponentialRampToValueAtTime(680, now + totalDur);
+      filter.Q.setValueAtTime(1.5, now);
 
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.5, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.27);
+      gain.gain.setValueAtTime(0.65, now);
+      gain.gain.setValueAtTime(0.55, now + 0.9);
+      gain.gain.linearRampToValueAtTime(0.28, now + 2.5);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + totalDur);
 
       src.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
       src.start(now);
+
+      // 2. Soft Low Wind Resonance during the Blow (0s - 3s)
+      const windOsc = ctx.createOscillator();
+      const windGain = ctx.createGain();
+      windOsc.type = 'sine';
+      windOsc.frequency.setValueAtTime(190, now);
+      windOsc.frequency.exponentialRampToValueAtTime(95, now + 1.1);
+      windOsc.frequency.linearRampToValueAtTime(160, now + 2.9);
+
+      windGain.gain.setValueAtTime(0.001, now);
+      windGain.gain.linearRampToValueAtTime(0.18, now + 0.15);
+      windGain.gain.exponentialRampToValueAtTime(0.04, now + 1.3);
+      windGain.gain.linearRampToValueAtTime(0.09, now + 2.75);
+      windGain.gain.exponentialRampToValueAtTime(0.001, now + totalDur);
+
+      windOsc.connect(windGain);
+      windGain.connect(ctx.destination);
+      windOsc.start(now);
+      windOsc.stop(now + totalDur);
     } catch (_) {}
   }
 

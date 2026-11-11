@@ -640,7 +640,8 @@ body.celebration-started .intro-step-3 {
 .friend-name[data-index="4"] { background: linear-gradient(135deg, #ffd166, #f77f00); color: #1b0a28; text-shadow: none; box-shadow: 0 6px 22px rgba(255, 209, 102, 0.5); }
 .friend-name[data-index="5"] { background: linear-gradient(135deg, #9b5de5, #f15bb5); box-shadow: 0 6px 22px rgba(155, 93, 229, 0.5); }
 .friend-name[data-index="6"] { background: linear-gradient(135deg, #00bbf9, #00f5d4); color: #091e26; text-shadow: none; box-shadow: 0 6px 22px rgba(0, 245, 212, 0.5); }
-.friend-name[data-index="7"] { background: linear-gradient(135deg, #ff6b6b, #ffd166); color: #1f0812; text-shadow: none; box-shadow: 0 6px 22px rgba(255, 107, 107, 0.5); }
+.friend-name[data-index="7"] { background: linear-gradient(135deg, #ff70a6, #ff9770); color: #1f0812; text-shadow: none; box-shadow: 0 6px 22px rgba(255, 112, 166, 0.5); }
+.friend-name[data-index="8"] { background: linear-gradient(135deg, #ff6b6b, #ffd166); color: #1f0812; text-shadow: none; box-shadow: 0 6px 22px rgba(255, 107, 107, 0.5); }
 
 .friend-name.name-enter {
   animation: namePopIn 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
