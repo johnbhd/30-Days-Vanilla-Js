@@ -311,6 +311,10 @@
     playNextBirthdayGameNote();
   }
 
+  function isMobileViewport() {
+    return window.innerWidth <= 680;
+  }
+
   function createBoomExplosion(clientX, clientY, primaryColor = '#ff4d8d') {
     playBalloonPopBoomSound();
 
@@ -329,8 +333,8 @@
     ring.className = 'boom-ring';
     boom.appendChild(ring);
 
-    // Flying Rubber & Confetti Shards
-    const shardCount = 18;
+    // Flying Rubber & Confetti Shards (fewer on mobile for zero lag)
+    const shardCount = isMobileViewport() ? 8 : 18;
     for (let i = 0; i < shardCount; i++) {
       const shard = document.createElement('span');
       shard.className = 'boom-shard';
@@ -414,12 +418,25 @@
 
   let balloonUidCounter = 0;
 
+  function canSpawnBackgroundFloater(front = false) {
+    if (front) {
+      if (!frontBurstOverlay) return true;
+      const maxFront = isMobileViewport() ? 6 : 24;
+      return frontBurstOverlay.childElementCount < maxFront;
+    }
+    if (!balloonOverlay) return false;
+    const maxBg = isMobileViewport() ? 4 : 18;
+    return balloonOverlay.childElementCount < maxBg;
+  }
+
   function spawnFloatingBalloon(options = {}) {
     if (!balloonOverlay) return;
+    if (!canSpawnBackgroundFloater(Boolean(options.front))) return;
     balloonUidCounter += 1;
+    const mobile = isMobileViewport();
     const palette = BALLOON_PALETTE[Math.floor(Math.random() * BALLOON_PALETTE.length)];
-    const size = options.size || Math.floor(56 + Math.random() * 44);
-    const leftPct = options.left !== undefined ? options.left : Math.random() * 92;
+    const size = options.size || (mobile ? Math.floor(44 + Math.random() * 20) : Math.floor(56 + Math.random() * 44));
+    const leftPct = options.left !== undefined ? options.left : (4 + Math.random() * 86);
     const duration = options.duration || (8.5 + Math.random() * 6.5);
     const swayDuration = 2.2 + Math.random() * 1.8;
     const delay = options.delay || 0;
@@ -464,25 +481,28 @@
   }
 
   function launchBalloonWave(count = 12, front = false) {
-    for (let i = 0; i < count; i++) {
+    const mobile = isMobileViewport();
+    const effectiveCount = mobile ? Math.min(count, 3) : count;
+    for (let i = 0; i < effectiveCount; i++) {
       spawnFloatingBalloon({
-        left: (i / count) * 92 + (Math.random() * 6),
+        left: (i / effectiveCount) * 86 + (4 + Math.random() * 6),
         duration: 6.5 + Math.random() * 4.5,
-        delay: i * 0.12,
-        size: 58 + Math.random() * 42,
+        delay: i * 0.14,
+        size: mobile ? (46 + Math.random() * 18) : (58 + Math.random() * 42),
         front
       });
     }
   }
 
   function startContinuousBalloons() {
-    for (let i = 0; i < 7; i++) {
-      spawnFloatingBalloon({ delay: i * 0.7 });
+    const initialCount = isMobileViewport() ? 2 : 7;
+    for (let i = 0; i < initialCount; i++) {
+      spawnFloatingBalloon({ delay: i * 0.8 });
     }
     setInterval(() => {
       if (document.hidden) return;
       spawnFloatingBalloon();
-    }, 1600);
+    }, isMobileViewport() ? 3600 : 1600);
   }
 
   // ==================== 7. FLASHCARD IMAGE IN-AND-OUT LOOP ====================
@@ -645,13 +665,15 @@
     );
     camera.position.set(0, 0, 26);
 
+    const isMobile = isMobileViewport();
     const renderer = new THREE.WebGLRenderer({
       canvas,
       alpha: true,
-      antialias: true
+      antialias: !isMobile,
+      powerPreference: 'high-performance'
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1.2 : 2));
 
     // Lighting for glossy 3D balloons
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.72);
@@ -669,16 +691,17 @@
     cyanPointLight.position.set(14, -8, 10);
     scene.add(cyanPointLight);
 
-    // 3D Balloons Group
+    // 3D Balloons Group (fewer & lighter geometry on mobile to avoid lag)
     const balloonColors = [0xff4d8d, 0xffd166, 0x4cc9f0, 0x06d6a0, 0x9b5de5, 0xff9f1c, 0xf72585];
     const balloonCssColors = ['#ff4d8d', '#ffd166', '#4cc9f0', '#06d6a0', '#9b5de5', '#ff9f1c', '#f72585'];
     const balloons3D = [];
     const clickableMeshes = [];
 
-    const sphereGeo = new THREE.SphereGeometry(1.15, 28, 28);
+    const segs = isMobile ? 16 : 28;
+    const sphereGeo = new THREE.SphereGeometry(1.15, segs, segs);
     sphereGeo.scale(1, 1.22, 1);
 
-    const knotGeo = new THREE.ConeGeometry(0.22, 0.28, 12);
+    const knotGeo = new THREE.ConeGeometry(0.22, 0.28, isMobile ? 8 : 12);
     const stringMaterial = new THREE.LineBasicMaterial({
       color: 0xffffff,
       transparent: true,
@@ -691,9 +714,9 @@
       new THREE.Vector3(0.14, -3.1, -0.06),
       new THREE.Vector3(-0.08, -4.0, 0.04)
     ]);
-    const stringGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(16));
+    const stringGeo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(isMobile ? 10 : 16));
 
-    const TOTAL_3D_BALLOONS = 22;
+    const TOTAL_3D_BALLOONS = isMobile ? 5 : 22;
     for (let i = 0; i < TOTAL_3D_BALLOONS; i++) {
       const group = new THREE.Group();
       const colorIdx = i % balloonColors.length;
@@ -745,8 +768,8 @@
       clickableMeshes.push(bodyMesh);
     }
 
-    // 3D Confetti Particles
-    const CONFETTI_COUNT = 220;
+    // 3D Confetti Particles (fewer on mobile for smooth 60fps)
+    const CONFETTI_COUNT = isMobile ? 45 : 220;
     const confettiPieces = [];
     const confettiGeo = new THREE.PlaneGeometry(0.28, 0.16);
 
@@ -959,9 +982,11 @@
 
   function spawnFloatingCake(options = {}) {
     if (!balloonOverlay) return;
+    if (!canSpawnBackgroundFloater(Boolean(options.front))) return;
     cakeUidCounter += 1;
-    const size = options.size || Math.floor(60 + Math.random() * 34);
-    const leftPct = options.left !== undefined ? options.left : (4 + Math.random() * 88);
+    const mobile = isMobileViewport();
+    const size = options.size || (mobile ? Math.floor(48 + Math.random() * 18) : Math.floor(60 + Math.random() * 34));
+    const leftPct = options.left !== undefined ? options.left : (4 + Math.random() * 86);
     const duration = options.duration || (8.5 + Math.random() * 6);
     const swayDuration = 2.2 + Math.random() * 1.6;
     const delay = options.delay || 0;
@@ -1004,25 +1029,28 @@
   }
 
   function launchCakeWave(count = 8, front = false) {
-    for (let i = 0; i < count; i++) {
+    const mobile = isMobileViewport();
+    const effectiveCount = mobile ? Math.min(count, 2) : count;
+    for (let i = 0; i < effectiveCount; i++) {
       spawnFloatingCake({
-        left: (i / count) * 88 + (Math.random() * 8),
+        left: (i / effectiveCount) * 84 + (6 + Math.random() * 8),
         duration: 6.5 + Math.random() * 4.5,
-        delay: i * 0.14,
-        size: 62 + Math.random() * 32,
+        delay: i * 0.16,
+        size: mobile ? (48 + Math.random() * 18) : (62 + Math.random() * 32),
         front
       });
     }
   }
 
   function startContinuousCakes() {
-    for (let i = 0; i < 6; i++) {
-      spawnFloatingCake({ delay: i * 0.8 });
+    const initialCount = isMobileViewport() ? 2 : 6;
+    for (let i = 0; i < initialCount; i++) {
+      spawnFloatingCake({ delay: i * 0.9 });
     }
     setInterval(() => {
       if (document.hidden) return;
       spawnFloatingCake();
-    }, 1900);
+    }, isMobileViewport() ? 4200 : 1900);
   }
 
   function playCandleBlowSound() {
@@ -1545,7 +1573,8 @@
       customCursor.style.top = `${y}px`;
 
       const now = performance.now();
-      if (now - lastSmokeTime > 28) {
+      const throttleMs = isMobileViewport() ? 90 : 28;
+      if (now - lastSmokeTime > throttleMs) {
         lastSmokeTime = now;
         spawnSmokePuff(x, y);
       }
@@ -1564,7 +1593,7 @@
     window.addEventListener('pointerdown', (e) => {
       moveCursorTo(e.clientX, e.clientY);
       customCursor.classList.add('is-clicking');
-      spawnSmokeBurst(e.clientX, e.clientY, 6);
+      spawnSmokeBurst(e.clientX, e.clientY, isMobileViewport() ? 3 : 6);
       setTimeout(() => customCursor.classList.remove('is-clicking'), 180);
     }, { passive: true });
 
@@ -1618,8 +1647,10 @@
     initThreeBirthdayScene();
     startContinuousBalloons();
     startContinuousCakes();
-    launchBalloonWave(8);
-    launchCakeWave(6);
+    if (!isMobileViewport()) {
+      launchBalloonWave(8);
+      launchCakeWave(6);
+    }
     initCustomCursorAndSmoke();
     startBirthdayGameBGM();
     startFriendNameLoop();

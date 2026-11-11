@@ -1302,23 +1302,57 @@ body.celebration-started .intro-step-3 {
   }
 }
 
-/* Responsive Adjustments for Mobile Screens */
-@media (max-width: 600px) {
+/* Responsive & Zero-Lag GPU Adjustments for Mobile Screens */
+@media (max-width: 680px) {
+  .bday-stage {
+    padding: 6px 10px 22px;
+    gap: 12px;
+  }
   .top-bar {
     justify-content: center;
   }
   .message-card {
-    padding: 14px 14px 12px;
+    padding: 14px 12px 12px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .crown-ribbon {
+    padding: 7px 16px;
+    font-size: 0.92rem;
   }
   .gratitude-message {
-    font-size: clamp(1.12rem, 4.5vw, 1.45rem);
+    font-size: clamp(1.08rem, 4.4vw, 1.38rem);
+    gap: 4px 8px;
   }
   .name-slot-container {
-    min-width: 120px;
+    min-width: 115px;
+  }
+  .msg-blessing {
+    font-size: clamp(1.2rem, 5vw, 1.55rem);
+    padding: 5px 20px 8px;
   }
   .flashcard-deck-wrapper,
   .choco-cake-card {
-    height: clamp(260px, 44vh, 350px);
+    height: clamp(255px, 42vh, 330px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .choco-name-tag {
+    font-size: 0.78rem;
+    padding: 4px 11px;
+  }
+  .floating-balloon-item {
+    filter: none;
+  }
+  .ambient-glow {
+    filter: blur(55px);
+    opacity: 0.26;
+  }
+  .fullview-date-bar {
+    margin-bottom: 14px;
+  }
+  .fullview-cake-stage {
+    height: clamp(240px, 48vh, 380px);
   }
 }
 
