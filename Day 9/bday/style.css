@@ -1010,3 +1010,54 @@ body.celebration-started .intro-step-3 {
     height: clamp(260px, 44vh, 350px);
   }
 }
+
+
+/* ==================== ANIMATED BIRTHDAY CAKE ON RIGHT PART OF IMG ==================== */
+.cake-right-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 8px;
+  width: 96px;
+  z-index: 25;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.cake-companion-item {
+  width: 82px;
+  height: 96px;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.55));
+  animation: cakeBobFloat 2.6s ease-in-out infinite alternate;
+}
+
+.cake-companion-item:hover .floating-balloon-sway {
+  filter: brightness(1.18) drop-shadow(0 0 16px rgba(255, 209, 102, 0.8));
+}
+
+@keyframes cakeBobFloat {
+  0% {
+    transform: translateY(18px) scale(0.96);
+  }
+  100% {
+    transform: translateY(-22px) scale(1.05);
+  }
+}
+
+@media (max-width: 600px) {
+  .cake-right-zone {
+    right: 6px;
+    width: 76px;
+  }
+  .cake-companion-item {
+    width: 68px;
+    height: 80px;
+  }
+}

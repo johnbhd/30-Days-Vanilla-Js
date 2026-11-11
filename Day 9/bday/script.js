@@ -724,9 +724,129 @@
     animate();
   }
 
+  // ==================== 8B. FLOATING BIRTHDAY CAKES IN BACKGROUND ====================
+  function createBirthdayCakeSVG(uid) {
+    return `
+      <svg viewBox="0 0 120 140" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="cakeBase-${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#ff8fab" />
+            <stop offset="50%" stop-color="#ff4d8d" />
+            <stop offset="100%" stop-color="#c9184a" />
+          </linearGradient>
+          <linearGradient id="cakeTop-${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#ffd166" />
+            <stop offset="50%" stop-color="#ffb703" />
+            <stop offset="100%" stop-color="#fb8500" />
+          </linearGradient>
+          <radialGradient id="flameGrad-${uid}" cx="50%" cy="60%" r="55%">
+            <stop offset="0%" stop-color="#ffffff" />
+            <stop offset="45%" stop-color="#ffd166" />
+            <stop offset="100%" stop-color="#ff4d00" />
+          </radialGradient>
+        </defs>
+        <!-- Golden Cake Plate -->
+        <ellipse cx="60" cy="122" rx="52" ry="9" fill="#ffd166" stroke="#fff0b8" stroke-width="2" />
+        <!-- Bottom Tier Sponge -->
+        <rect x="16" y="76" width="88" height="44" rx="10" fill="url(#cakeBase-${uid})" />
+        <!-- Bottom Tier Cream Frosting Drips -->
+        <path d="M16 84 Q25 96 34 84 T52 84 T70 84 T88 84 T104 84 L104 76 L16 76 Z" fill="#fff5f8" />
+        <!-- Top Tier Sponge -->
+        <rect x="28" y="44" width="64" height="34" rx="8" fill="url(#cakeTop-${uid})" />
+        <!-- Top Tier Cream Frosting Drips -->
+        <path d="M28 52 Q36 62 44 52 T60 52 T76 52 T92 52 L92 44 L28 44 Z" fill="#ffffff" />
+        <!-- Cherries on Top -->
+        <circle cx="38" cy="43" r="4.5" fill="#e63946" />
+        <circle cx="60" cy="43" r="4.5" fill="#e63946" />
+        <circle cx="82" cy="43" r="4.5" fill="#e63946" />
+        <!-- 3 Birthday Candles -->
+        <rect x="44" y="22" width="6" height="22" rx="2" fill="#4cc9f0" />
+        <rect x="57" y="18" width="6" height="26" rx="2" fill="#06d6a0" />
+        <rect x="70" y="22" width="6" height="22" rx="2" fill="#9b5de5" />
+        <!-- Glowing Candle Flames -->
+        <path d="M47 8 C51 14 51 19 47 21 C43 19 43 14 47 8 Z" fill="url(#flameGrad-${uid})" />
+        <path d="M60 4 C64 10 64 15 60 17 C56 15 56 10 60 4 Z" fill="url(#flameGrad-${uid})" />
+        <path d="M73 8 C77 14 77 19 73 21 C69 19 69 14 73 8 Z" fill="url(#flameGrad-${uid})" />
+        <!-- Decorative Sprinkles -->
+        <circle cx="34" cy="102" r="2.5" fill="#ffd166" />
+        <circle cx="60" cy="105" r="2.5" fill="#4cc9f0" />
+        <circle cx="84" cy="100" r="2.5" fill="#06d6a0" />
+      </svg>
+    `;
+  }
+
+  let cakeUidCounter = 0;
+
+  function spawnFloatingCake(options = {}) {
+    if (!balloonOverlay) return;
+    cakeUidCounter += 1;
+    const size = options.size || Math.floor(60 + Math.random() * 34);
+    const leftPct = options.left !== undefined ? options.left : (4 + Math.random() * 88);
+    const duration = options.duration || (8.5 + Math.random() * 6);
+    const swayDuration = 2.2 + Math.random() * 1.6;
+    const delay = options.delay || 0;
+
+    const item = document.createElement('div');
+    item.className = 'floating-balloon-item';
+    item.style.width = `${size}px`;
+    item.style.height = `${Math.round(size * 1.18)}px`;
+    item.style.left = `${leftPct}%`;
+    item.style.animationDuration = `${duration}s`;
+    item.style.animationDelay = `${delay}s`;
+    item.title = 'Click Cake to Pop! 🎂💥';
+
+    const swayWrap = document.createElement('span');
+    swayWrap.className = 'floating-balloon-sway';
+    swayWrap.style.width = '100%';
+    swayWrap.style.height = '100%';
+    swayWrap.style.animationDuration = `${swayDuration}s`;
+    swayWrap.innerHTML = createBirthdayCakeSVG(cakeUidCounter);
+
+    item.appendChild(swayWrap);
+
+    item.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      const rect = item.getBoundingClientRect();
+      const popX = e.clientX || (rect.left + rect.width / 2);
+      const popY = e.clientY || (rect.top + rect.height / 2);
+      createBoomExplosion(popX, popY, '#ffd166');
+      if (item.parentNode) item.parentNode.removeChild(item);
+      setTimeout(() => spawnFloatingCake(), 300);
+    });
+
+    balloonOverlay.appendChild(item);
+
+    const totalMs = (duration + delay + 0.5) * 1000;
+    setTimeout(() => {
+      if (item.parentNode) item.parentNode.removeChild(item);
+    }, totalMs);
+  }
+
+  function launchCakeWave(count = 8) {
+    for (let i = 0; i < count; i++) {
+      spawnFloatingCake({
+        left: (i / count) * 88 + (Math.random() * 8),
+        duration: 6.5 + Math.random() * 4.5,
+        delay: i * 0.14,
+        size: 62 + Math.random() * 32
+      });
+    }
+  }
+
+  function startContinuousCakes() {
+    for (let i = 0; i < 6; i++) {
+      spawnFloatingCake({ delay: i * 0.8 });
+    }
+    setInterval(() => {
+      if (document.hidden) return;
+      spawnFloatingCake();
+    }, 1900);
+  }
+
   if (burstBtn) {
     burstBtn.addEventListener('click', () => {
-      launchBalloonWave(12);
+      launchBalloonWave(10);
+      launchCakeWave(8);
       if (typeof triggerThreeBurst === 'function') {
         triggerThreeBurst();
       }
@@ -743,7 +863,9 @@
 
     initThreeBirthdayScene();
     startContinuousBalloons();
-    launchBalloonWave(10);
+    startContinuousCakes();
+    launchBalloonWave(8);
+    launchCakeWave(6);
     startFriendNameLoop();
     runFlashcardCycle(0);
   }
